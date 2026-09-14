@@ -1,0 +1,37 @@
+# PDF Annotation and Relationship Graph
+
+A web application where users upload text-based PDFs, highlight passages, link highlights with typed relationships visualized as an interactive graph, and receive smart highlight and relation suggestions.
+
+## Key Features
+- **PDF Ingestion & Text Extraction**: Extracts clean text, normalizes sentences, and tracks exact character offsets.
+- **Interactive Annotation**: Select text to create typed annotations and notes.
+- **Relationship Knowledge Graph**: Connect annotations with typed relationships, rendered with React Flow and dagre layout.
+- **Smart Highlights**: Vector embedding similarity to suggest relevant passages based on current annotations and user feedback.
+- **Suggested Relations**: LLM-assisted relationship suggestions between annotations.
+- **Job Tracking & Robust Concurrency**: Background job processing with progress tracking, SQLite WAL, and versioned optimistic locking.
+
+## Stack
+- **Backend**: FastAPI, SQLite (SQLAlchemy WAL mode), PyMuPDF, pysbd, sentence-transformers, numpy.
+- **Frontend**: React, Vite, pdfjs-dist, React Flow, dagre, TanStack Query.
+
+## Quick Start
+
+### Backend Setup
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+cp .env.example .env
+uvicorn backend.app.main:app --reload --port 8000
+```
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Running Tests
+- Backend: `pytest`
+- Frontend: `npm test` (inside `frontend/`)

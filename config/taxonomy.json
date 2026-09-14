@@ -1,0 +1,19 @@
+{
+  "labels": [
+    "Claim",
+    "Evidence",
+    "Definition",
+    "Method",
+    "Result",
+    "Problem",
+    "Solution"
+  ],
+  "relation_types": [
+    "supports",
+    "refutes",
+    "defines",
+    "elaborates",
+    "causes",
+    "relates_to"
+  ]
+}
