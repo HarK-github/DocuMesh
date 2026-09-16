@@ -43,6 +43,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    from backend.app.routes.documents import router as documents_router
+    from backend.app.routes.jobs import router as jobs_router
+
+    app.include_router(documents_router)
+    app.include_router(jobs_router)
+
     @app.get("/health", tags=["System"])
     def health_check() -> dict:
         """Health check endpoint confirming API operational status."""

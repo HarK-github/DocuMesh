@@ -3,7 +3,9 @@
 A web application where users upload text-based PDFs, highlight passages, link highlights with typed relationships visualized as an interactive graph, and receive smart highlight and relation suggestions.
 
 ## Key Features
-- **PDF Ingestion & Text Extraction**: Extracts clean text, normalizes sentences, and tracks exact character offsets.
+- **PDF Ingestion & Text Extraction**: Extracts clean text, normalizes sentences, and tracks exact character offsets (`POST /documents`, `GET /documents/{id}`, `GET /documents/{id}/text`).
+- **Deduplication & Safety**: Instant SHA-256 deduplication and upload size/page limits.
+- **Background Jobs**: Tracked jobs with progress tracking and failure logging (`GET /jobs/{id}`).
 - **Interactive Annotation**: Select text to create typed annotations and notes.
 - **Relationship Knowledge Graph**: Connect annotations with typed relationships, rendered with React Flow and dagre layout.
 - **Smart Highlights**: Vector embedding similarity to suggest relevant passages based on current annotations and user feedback.
