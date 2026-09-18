@@ -13,14 +13,21 @@ _engine = None
 _SessionLocal = None
 
 
+def reset_engine() -> None:
+    """Reset cached engine and session factory (useful for tests)."""
+    global _engine, _SessionLocal
+    _engine = None
+    _SessionLocal = None
+
+
 def get_engine(database_url: str = None):
     """Create or return SQLAlchemy engine configured for SQLite WAL safety."""
-    global _engine
-    if database_url is None and _engine is not None:
-        return _engine
-
+    global _engine, _SessionLocal
     settings = get_settings()
     url = database_url or settings.database_url
+
+    if database_url is None and _engine is not None and str(_engine.url) == url:
+        return _engine
 
     # Ensure parent directory exists for file-based SQLite
     if url.startswith("sqlite:///") and not url.startswith("sqlite:///:memory:"):
@@ -44,6 +51,7 @@ def get_engine(database_url: str = None):
 
     if database_url is None:
         _engine = engine
+        _SessionLocal = None
     return engine
 
 

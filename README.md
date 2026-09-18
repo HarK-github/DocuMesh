@@ -6,8 +6,9 @@ A web application where users upload text-based PDFs, highlight passages, link h
 - **PDF Ingestion & Text Extraction**: Extracts clean text, normalizes sentences, and tracks exact character offsets (`POST /documents`, `GET /documents/{id}`, `GET /documents/{id}/text`).
 - **Deduplication & Safety**: Instant SHA-256 deduplication and upload size/page limits.
 - **Background Jobs**: Tracked jobs with progress tracking and failure logging (`GET /jobs/{id}`).
-- **Interactive Annotation**: Select text to create typed annotations and notes.
-- **Relationship Knowledge Graph**: Connect annotations with typed relationships, rendered with React Flow and dagre layout.
+- **Interactive Annotation**: Full CRUD for annotations with offset verification and quote matching (`GET|POST /documents/{id}/annotations`, `PATCH|DELETE /annotations/{id}`).
+- **Relationship Knowledge Graph**: Typed relations and unified graph view with cycle and taxonomy checks (`GET|POST /documents/{id}/relations`, `PATCH|DELETE /relations/{id}`, `GET /documents/{id}/graph`).
+- **Taxonomy Management**: Seeded taxonomy labels and relation types (`GET /taxonomy`).
 - **Smart Highlights**: Vector embedding similarity to suggest relevant passages based on current annotations and user feedback.
 - **Suggested Relations**: LLM-assisted relationship suggestions between annotations.
 - **Job Tracking & Robust Concurrency**: Background job processing with progress tracking, SQLite WAL, and versioned optimistic locking.

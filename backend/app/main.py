@@ -45,9 +45,15 @@ def create_app() -> FastAPI:
 
     from backend.app.routes.documents import router as documents_router
     from backend.app.routes.jobs import router as jobs_router
+    from backend.app.routes.taxonomy import router as taxonomy_router
+    from backend.app.routes.annotations import router as annotations_router
+    from backend.app.routes.relations import router as relations_router
 
     app.include_router(documents_router)
     app.include_router(jobs_router)
+    app.include_router(taxonomy_router)
+    app.include_router(annotations_router)
+    app.include_router(relations_router)
 
     @app.get("/health", tags=["System"])
     def health_check() -> dict:

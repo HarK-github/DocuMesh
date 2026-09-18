@@ -24,8 +24,10 @@ def client_and_db(tmp_path, monkeypatch):
     monkeypatch.setenv("MAX_UPLOAD_MB", "2")
     monkeypatch.setenv("MAX_PDF_PAGES", "10")
 
-    # Clear cached settings
+    # Clear cached settings and database engine
     get_settings.cache_clear()
+    from backend.app.db import reset_engine
+    reset_engine()
 
     engine = create_engine(f"sqlite:///{db_file}")
     init_db(engine_override=engine)
