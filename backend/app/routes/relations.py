@@ -14,7 +14,31 @@ from backend.app.schemas import (
     AnnotationResponse,
 )
 
+from backend.app.services.jobs import create_job, submit_job
+from backend.app.services.llm import get_llm_client, LLMNotConfiguredError
+from backend.app.services.relation_suggester import process_suggest_relations_job
+
 router = APIRouter(tags=["Relations"])
+
+
+@router.post("/documents/{document_id}/suggest-relations")
+def suggest_relations(document_id: int, db: Session = Depends(get_db)) -> dict:
+    """Trigger background LLM relationship discovery across annotation pairs."""
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    try:
+        get_llm_client()
+    except LLMNotConfiguredError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"LLM service is not configured: {str(exc)}",
+        )
+
+    job = create_job(db, job_type="suggest_relations", document_id=document_id)
+    submit_job(job.id, process_suggest_relations_job, document_id)
+    return {"job_id": job.id}
 
 
 @router.get("/documents/{document_id}/relations", response_model=List[RelationResponse])
