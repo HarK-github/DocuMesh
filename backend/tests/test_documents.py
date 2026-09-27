@@ -23,6 +23,7 @@ def client_and_db(tmp_path, monkeypatch):
     monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
     monkeypatch.setenv("MAX_UPLOAD_MB", "2")
     monkeypatch.setenv("MAX_PDF_PAGES", "10")
+    monkeypatch.setenv("EMBEDDING_MODEL_NAME", "fake")
 
     # Clear cached settings and database engine
     get_settings.cache_clear()

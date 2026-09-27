@@ -11,10 +11,13 @@ from backend.app.settings import get_settings
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown lifecycle handler."""
-    # Phase 1 & 7: DB initialization and startup job cleanup
     try:
         from backend.app.db import init_db
         init_db()
+        from backend.app.services.jobs import cleanup_stale_jobs
+        cleanup_stale_jobs()
+        from backend.app.services.embedder import get_embedder
+        get_embedder()
     except Exception:
         pass
     yield
@@ -48,12 +51,14 @@ def create_app() -> FastAPI:
     from backend.app.routes.taxonomy import router as taxonomy_router
     from backend.app.routes.annotations import router as annotations_router
     from backend.app.routes.relations import router as relations_router
+    from backend.app.routes.suggestions import router as suggestions_router
 
     app.include_router(documents_router)
     app.include_router(jobs_router)
     app.include_router(taxonomy_router)
     app.include_router(annotations_router)
     app.include_router(relations_router)
+    app.include_router(suggestions_router)
 
     @app.get("/health", tags=["System"])
     def health_check() -> dict:
