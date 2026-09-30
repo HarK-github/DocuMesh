@@ -7,10 +7,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  RefreshCw,
   PlusCircle,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
+  queryKeys,
   useDocument,
   useDocumentText,
   useAnnotations,
@@ -42,6 +43,7 @@ export default function App() {
   const [uploadError, setUploadError] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [isSuggestingHighlights, setIsSuggestingHighlights] = useState(false);
+  const queryClient = useQueryClient();
 
   // Health and taxonomy
   const { data: healthData, isError: healthError } = useHealth();
@@ -64,9 +66,15 @@ export default function App() {
   const updateRelationMutation = useUpdateRelation(selectedDocId);
   const deleteRelationMutation = useDeleteRelation(selectedDocId);
 
-  // Clear completed job after a delay
+  // Clear completed job after a delay and invalidate queries
   useEffect(() => {
     if (jobData?.status === 'done' || jobData?.status === 'failed') {
+      if (jobData?.status === 'done' && selectedDocId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.relations(selectedDocId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.annotations(selectedDocId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graph(selectedDocId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(selectedDocId) });
+      }
       const timer = setTimeout(() => {
         if (jobData?.status === 'done') {
           setActiveJobId(null);
@@ -74,7 +82,7 @@ export default function App() {
       }, 3500);
       return () => clearTimeout(timer);
     }
-  }, [jobData?.status]);
+  }, [jobData?.status, selectedDocId, queryClient]);
 
   // Load existing suggestions for document
   const fetchSuggestions = async () => {
@@ -131,8 +139,9 @@ export default function App() {
     try {
       await api.post(`/suggestions/${sugId}/accept`);
       await fetchSuggestions();
-      // Refetch annotations
-      createAnnotationMutation.reset();
+      queryClient.invalidateQueries({ queryKey: queryKeys.annotations(selectedDocId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(selectedDocId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(selectedDocId) });
     } catch (err) {
       alert(`Failed to accept suggestion: ${err.message}`);
     }
@@ -449,7 +458,9 @@ export default function App() {
             style={{
               flex: activeTab === 'both' ? 5 : 1,
               height: '100%',
-              overflow: 'hidden',
+              overflow: 'clip',
+              minWidth: 0,
+              minHeight: 0,
             }}
           >
             <GraphView
@@ -459,6 +470,7 @@ export default function App() {
               selectedAnnotationId={selectedAnnotationId}
               onSelectAnnotation={handleSelectAnnotation}
               onCreateRelation={(payload) => createRelationMutation.mutate(payload)}
+              onUpdateRelation={(id, data) => updateRelationMutation.mutate({ id, data })}
               onSaveNodePosition={(id, data) => updateAnnotationMutation.mutate({ id, data })}
               onDeleteRelation={(id) => deleteRelationMutation.mutate(id)}
             />

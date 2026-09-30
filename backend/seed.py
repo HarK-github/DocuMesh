@@ -62,9 +62,9 @@ def seed_database() -> int:
         # Seed annotations matching exact phrases in sample text
         quotes_to_seed = [
             ("Can machines think?", "Problem", "Turing's fundamental philosophical question", 150.0, 100.0),
-            ("The definitions might be framed so as to reflect so far as possible the normal use of the words, but this attitude is dangerous.", "Claim", "Critique of conventional definitions", 150.0, 220.0),
-            ("Digital computers can simulate any discrete state machine.", "Evidence", "Discrete state equivalence property", 450.0, 100.0),
-            ("They can all be done with one digital computer, suitably programmed for each case.", "Solution", "Sufficiency of a single universal computer", 450.0, 220.0),
+            ("The definitions might be framed so as to reflect so far as possible the normal use of the words, but this attitude is dangerous.", "Claim", "Critique of conventional definitions", 150.0, 260.0),
+            ("This special property of digital computers, that they can simulate any discrete state machine, is described by saying that they are universal machines.", "Evidence", "Discrete state equivalence property", 450.0, 100.0),
+            ("They can all be done with one digital computer, suitably programmed for each case.", "Solution", "Sufficiency of a single universal computer", 450.0, 260.0),
         ]
 
         created_anns = []
