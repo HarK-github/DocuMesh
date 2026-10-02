@@ -65,6 +65,24 @@ def create_app() -> FastAPI:
         """Health check endpoint confirming API operational status."""
         return {"status": "ok"}
 
+    # Serve production frontend single-page application if built
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse
+
+    dist_dir = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+    if dist_dir.exists():
+        assets_dir = dist_dir / "assets"
+        if assets_dir.exists():
+            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def serve_spa(full_path: str):
+            file_path = dist_dir / full_path
+            if full_path and file_path.is_file():
+                return FileResponse(file_path)
+            return FileResponse(dist_dir / "index.html")
+
     return app
 
 

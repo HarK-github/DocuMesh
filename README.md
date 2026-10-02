@@ -130,6 +130,41 @@ python backend/load_test.py --url http://127.0.0.1:8000 -n 200 -c 20
 ### Jobs
 - `GET /jobs/{id}` - Retrieve job execution status (`queued`, `running`, `done`, `failed`), progress (0-100), result, and error.
 
+## Free Hosting & Deployment
+
+The application is containerized with a multi-stage `Dockerfile` and configured for instant free-tier deployment across multiple platforms.
+
+### Option 1: Hugging Face Spaces (Recommended - 100% Free, 16 GB RAM)
+Hugging Face Spaces provides **2 vCPU, 16 GB RAM** on their free tier with **no credit card required**, which is ideal for PyTorch and sentence-transformer embeddings.
+
+1. Go to [huggingface.co/new-space](https://huggingface.co/new-space).
+2. Set Space Name (e.g. `pdf-knowledge-graph`).
+3. Select **Docker** as the Space SDK (Blank template).
+4. In your terminal, link and push your repository:
+   ```bash
+   git remote add space https://huggingface.co/spaces/<YOUR_HF_USERNAME>/<YOUR_SPACE_NAME>
+   git push space main
+   ```
+5. Your app will automatically build and become live at `https://<YOUR_HF_USERNAME>-<YOUR_SPACE_NAME>.hf.space`.
+
+---
+
+### Option 2: Render Free Tier
+1. Push this repository to GitHub.
+2. Go to [render.com](https://render.com) and create a **New Web Service**.
+3. Connect your repository. Render will automatically detect [`render.yaml`](file:///mnt/DE94962594960067/Users/kandp/Documents/Work/Personal_Git_Files/pdf_analyser_annot/render.yaml) and the [`Dockerfile`](file:///mnt/DE94962594960067/Users/kandp/Documents/Work/Personal_Git_Files/pdf_analyser_annot/Dockerfile).
+4. Click **Deploy**. Render will build and deploy the container on their free tier.
+
+---
+
+### Option 3: Local / VPS Production Service
+To run the optimized production build (FastAPI serving the unified SPA and API) on any Linux server:
+```bash
+./scripts/start_production.sh
+```
+This builds the frontend bundle into `frontend/dist`, initializes the database seed, and serves the complete application on port `8000` (or `$PORT`).
+
 ## Known Limitations
 - Text-only PDFs: scanned image PDFs without embedded text layers require upstream OCR (out of scope).
 - Single-document knowledge graph view (cross-document relations out of scope).
+
