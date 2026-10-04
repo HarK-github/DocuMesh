@@ -18,6 +18,7 @@ import {
   Trash2,
   Check,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { getLabelStyle } from '../lib/colors';
 
@@ -28,27 +29,35 @@ const NODE_HEIGHT = 100;
  * Custom React Flow Node with prominent handles on all 4 borders.
  * Allows easy drag-to-connect from any side.
  */
-function AnnotationNode({ _id, data, selected }) {
+export function AnnotationNode({ _id, data, selected }) {
   const ann = data?.annotation;
   if (!ann) return null;
 
+  const isSuggested = ann.status === 'suggested';
   const theme = getLabelStyle(ann.label);
 
   return (
     <div
+      data-testid={`node-${ann.id}`}
+      data-status={ann.status || 'confirmed'}
       style={{
         width: NODE_WIDTH,
         minHeight: NODE_HEIGHT,
         borderRadius: '10px',
-        border: selected ? '2.5px solid #2563eb' : `1.5px solid ${theme.border}`,
+        border: selected
+          ? '2.5px solid #2563eb'
+          : isSuggested
+          ? `2px dashed ${theme.border}`
+          : `1.5px solid ${theme.border}`,
         background: selected ? '#ffffff' : theme.bg,
+        opacity: isSuggested ? 0.72 : 1,
         boxShadow: selected
           ? '0 6px 20px rgba(37, 99, 235, 0.25)'
           : '0 2px 8px rgba(0, 0, 0, 0.06)',
         padding: '10px 12px',
         position: 'relative',
         cursor: 'grab',
-        transition: 'border 0.15s ease, box-shadow 0.15s ease',
+        transition: 'border 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
         boxSizing: 'border-box',
       }}
     >
@@ -78,7 +87,7 @@ function AnnotationNode({ _id, data, selected }) {
         title="Connect from left"
       />
 
-      {/* Header: Label Badge + Version */}
+      {/* Header: Label Badge + Score/Version */}
       <div
         style={{
           display: 'flex',
@@ -87,23 +96,51 @@ function AnnotationNode({ _id, data, selected }) {
           marginBottom: '6px',
         }}
       >
-        <span
-          style={{
-            fontWeight: 700,
-            color: theme.text,
-            background: theme.badge,
-            padding: '2px 8px',
-            borderRadius: '4px',
-            textTransform: 'uppercase',
-            fontSize: '0.68rem',
-            letterSpacing: '0.04em',
-          }}
-        >
-          {ann.label}
-        </span>
-        <span style={{ color: '#94a3b8', fontSize: '0.65rem', fontWeight: 600 }}>
-          v{ann.version}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span
+            style={{
+              fontWeight: 700,
+              color: theme.text,
+              background: theme.badge,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              textTransform: 'uppercase',
+              fontSize: '0.68rem',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {ann.label}
+          </span>
+          {isSuggested && (
+            <span
+              style={{
+                fontSize: '0.62rem',
+                fontWeight: 700,
+                padding: '2px 5px',
+                borderRadius: '4px',
+                background: '#fef3c7',
+                color: '#92400e',
+                border: '1px solid #fde047',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '2px',
+              }}
+              title={`Similarity score: ${Math.round((ann.score || 0) * 100)}%`}
+            >
+              <Sparkles size={9} />
+              {ann.score ? `${Math.round(ann.score * 100)}%` : 'SUGGESTED'}
+            </span>
+          )}
+        </div>
+        {!isSuggested ? (
+          <span style={{ color: '#94a3b8', fontSize: '0.65rem', fontWeight: 600 }}>
+            v{ann.version}
+          </span>
+        ) : (
+          <span style={{ color: '#ca8a04', fontSize: '0.65rem', fontWeight: 700 }}>
+            ghost
+          </span>
+        )}
       </div>
 
       {/* Quote Preview */}
@@ -139,6 +176,68 @@ function AnnotationNode({ _id, data, selected }) {
           title={ann.note}
         >
           {ann.note}
+        </div>
+      )}
+
+      {/* Ghost Node Actions: Accept & Reject */}
+      {isSuggested && (
+        <div
+          style={{
+            marginTop: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button
+            type="button"
+            data-testid={`accept-ghost-${ann.id}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              data?.onAccept?.(ann.id);
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '4px',
+              background: '#16a34a',
+              color: '#ffffff',
+              fontSize: '0.68rem',
+              fontWeight: 600,
+              padding: '2px 8px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '3px',
+            }}
+            title="Accept suggestion as confirmed highlight"
+          >
+            <Check size={11} /> Accept
+          </button>
+          <button
+            type="button"
+            data-testid={`reject-ghost-${ann.id}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              data?.onReject?.(ann.id);
+            }}
+            style={{
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              background: '#ffffff',
+              color: '#dc2626',
+              fontSize: '0.68rem',
+              fontWeight: 600,
+              padding: '2px 8px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '3px',
+            }}
+            title="Reject suggestion"
+          >
+            <X size={11} /> Reject
+          </button>
         </div>
       )}
     </div>
@@ -185,6 +284,8 @@ export default function GraphView({
   selectedAnnotationId = null,
   selectedRelationId = null,
   onSelectAnnotation = () => {},
+  onAcceptSuggestion = () => {},
+  onRejectSuggestion = () => {},
   onCreateRelation = () => {},
   onUpdateRelation = () => {},
   onSaveNodePosition = () => {},
@@ -193,6 +294,7 @@ export default function GraphView({
   const [filterLabel, setFilterLabel] = useState('ALL');
   const [filterRelType, setFilterRelType] = useState('ALL');
   const [showNeighborsOnly, setShowNeighborsOnly] = useState(false);
+  const [showSimilarTo, setShowSimilarTo] = useState(false);
 
   // Connection dialog state (drag from handle to handle)
   const [pendingConnection, setPendingConnection] = useState(null);
@@ -222,6 +324,11 @@ export default function GraphView({
       rels = rels.filter((r) => r.type === filterRelType);
     }
 
+    // Hide similar_to edges by default unless toggled on
+    if (!showSimilarTo) {
+      rels = rels.filter((r) => r.type !== 'similar_to');
+    }
+
     // Filter neighbors of selected node
     if (showNeighborsOnly && selectedAnnotationId) {
       const neighborIds = new Set([selectedAnnotationId]);
@@ -234,37 +341,50 @@ export default function GraphView({
     }
 
     return { filteredAnnotations: anns, filteredRelations: rels };
-  }, [annotations, relations, filterLabel, filterRelType, showNeighborsOnly, selectedAnnotationId]);
+  }, [annotations, relations, filterLabel, filterRelType, showSimilarTo, showNeighborsOnly, selectedAnnotationId]);
 
-  // Transform annotations to React Flow nodes
+  // Transform annotations to React Flow nodes (using unique keys for suggested ghost nodes)
   const initialNodes = useMemo(() => {
     return filteredAnnotations.map((ann, idx) => {
-      // If position is unassigned or (0,0), distribute across a clean grid
+      const isSuggested = ann.status === 'suggested';
+      const nodeId = isSuggested ? `sug-${ann.id}` : String(ann.id);
       const posX = ann.x && ann.x !== 0 ? ann.x : 60 + (idx % 3) * 290;
       const posY = ann.y && ann.y !== 0 ? ann.y : 80 + Math.floor(idx / 3) * 160;
 
       return {
-        id: String(ann.id),
+        id: nodeId,
         type: 'annotation',
         position: { x: posX, y: posY },
         selected: ann.id === selectedAnnotationId,
         data: {
           annotation: ann,
+          onAccept: onAcceptSuggestion,
+          onReject: onRejectSuggestion,
         },
       };
     });
-  }, [filteredAnnotations, selectedAnnotationId]);
+  }, [filteredAnnotations, selectedAnnotationId, onAcceptSuggestion, onRejectSuggestion]);
 
   // Transform relations to React Flow edges with optimal handles and badges
   const initialEdges = useMemo(() => {
-    const annMap = new Map(filteredAnnotations.map((a) => [String(a.id), a]));
+    const annKeyMap = new Map();
+    filteredAnnotations.forEach((a) => {
+      const k = a.status === 'suggested' ? `sug-${a.id}` : String(a.id);
+      annKeyMap.set(k, a);
+    });
 
     return filteredRelations
-      .filter((r) => annMap.has(String(r.source_id)) && annMap.has(String(r.target_id)))
       .map((rel) => {
         const isSuggested = rel.status === 'suggested';
-        const srcAnn = annMap.get(String(rel.source_id));
-        const tgtAnn = annMap.get(String(rel.target_id));
+        const sourceKey = isSuggested ? `sug-${rel.source_id}` : String(rel.source_id);
+        const targetKey = String(rel.target_id);
+
+        if (!annKeyMap.has(sourceKey) || !annKeyMap.has(targetKey)) {
+          return null;
+        }
+
+        const srcAnn = annKeyMap.get(sourceKey);
+        const tgtAnn = annKeyMap.get(targetKey);
 
         // Smart handle alignment based on relative coordinates
         let sourceHandle = 'bottom';
@@ -300,22 +420,29 @@ export default function GraphView({
           ? '#f59e0b'
           : rel.type === 'contradicts'
           ? '#ef4444'
+          : rel.type === 'similar_to'
+          ? '#ca8a04'
           : '#64748b';
+
+        const edgeLabel =
+          rel.type === 'similar_to' && rel.score
+            ? `similar_to (${Math.round(rel.score * 100)}%)`
+            : rel.type;
 
         return {
           id: `edge-${rel.id}`,
-          source: String(rel.source_id),
-          target: String(rel.target_id),
+          source: sourceKey,
+          target: targetKey,
           sourceHandle,
           targetHandle,
           type: 'smoothstep',
           pathOptions: { borderRadius: 16 },
-          label: rel.type,
+          label: edgeLabel,
           animated: isSuggested || isFocused,
           style: {
             stroke: strokeColor,
             strokeWidth: isFocused ? 4 : 2,
-            strokeDasharray: isSuggested && !isFocused ? '6,4' : undefined,
+            strokeDasharray: isSuggested || (rel.type === 'similar_to' && !isFocused) ? '6,4' : undefined,
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
@@ -340,8 +467,9 @@ export default function GraphView({
           labelBgBorderRadius: 6,
           data: { relation: rel },
         };
-      });
-  }, [filteredRelations, filteredAnnotations]);
+      })
+      .filter(Boolean);
+  }, [filteredAnnotations, filteredRelations, selectedRelationId]);
 
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
@@ -495,13 +623,23 @@ export default function GraphView({
           ))}
         </select>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#475569' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#475569', fontSize: '0.75rem' }}>
           <input
             type="checkbox"
             checked={showNeighborsOnly}
             onChange={(e) => setShowNeighborsOnly(e.target.checked)}
           />
           <span>Neighbors only</span>
+        </label>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#475569', fontSize: '0.75rem' }}>
+          <input
+            type="checkbox"
+            data-testid="toggle-similar-to"
+            checked={showSimilarTo}
+            onChange={(e) => setShowSimilarTo(e.target.checked)}
+          />
+          <span>Show similar_to</span>
         </label>
 
         <button
@@ -538,7 +676,7 @@ export default function GraphView({
         onEdgesChange={onEdgesChange}
         onNodeDragStop={handleNodeDragStop}
         onConnect={handleConnect}
-        onNodeClick={(_, node) => onSelectAnnotation(parseInt(node.id, 10))}
+        onNodeClick={(_, node) => onSelectAnnotation(node.data?.annotation?.id)}
         onEdgeClick={handleEdgeClick}
         fitView
       >

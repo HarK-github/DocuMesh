@@ -418,3 +418,50 @@ def test_reject_idempotency(scoped_setup) -> None:
     rej2 = client.post(f"/suggestions/{target_sug['id']}/reject")
     assert rej2.status_code == 200
     assert rej2.json()["status"] == "rejected"
+
+
+def test_graph_includes_ghost_nodes_and_excludes_rejected(scoped_setup) -> None:
+    """Graph endpoint returns suggested ghost nodes and edges, and excludes rejected suggestions."""
+    client, doc_id, ann1_id, _, _, _ = scoped_setup
+
+    res = client.post(
+        f"/documents/{doc_id}/suggest-highlights",
+        json={"seed_annotation_id": ann1_id, "scope": "passage"},
+    )
+    assert res.status_code == 200
+    sugs = res.json()
+    assert len(sugs) >= 2
+    sug_to_reject = sugs[0]
+    sug_to_keep = sugs[1]
+
+    # Graph initially has confirmed nodes + ghost nodes for both suggestions
+    g_res = client.get(f"/documents/{doc_id}/graph")
+    assert g_res.status_code == 200
+    graph = g_res.json()
+
+    ghost_nodes = [n for n in graph["annotations"] if n["status"] == "suggested"]
+    ghost_edges = [e for e in graph["relations"] if e["status"] == "suggested"]
+
+    assert any(n["id"] == sug_to_reject["id"] for n in ghost_nodes)
+    assert any(n["id"] == sug_to_keep["id"] for n in ghost_nodes)
+    assert all(n["seed_annotation_id"] == ann1_id for n in ghost_nodes)
+    assert all(n["label"] == "Claim" for n in ghost_nodes)
+    assert all(n["score"] is not None for n in ghost_nodes)
+
+    assert any(e["type"] == "similar_to" and e["source_id"] == sug_to_reject["id"] and e["target_id"] == ann1_id for e in ghost_edges)
+    assert any(e["type"] == "similar_to" and e["source_id"] == sug_to_keep["id"] and e["target_id"] == ann1_id for e in ghost_edges)
+
+    # Reject one suggestion
+    client.post(f"/suggestions/{sug_to_reject['id']}/reject")
+
+    # Rejected suggestion must be absent from graph
+    g_res2 = client.get(f"/documents/{doc_id}/graph")
+    graph2 = g_res2.json()
+    ghost_nodes2 = [n for n in graph2["annotations"] if n["status"] == "suggested"]
+    ghost_edges2 = [e for e in graph2["relations"] if e["status"] == "suggested"]
+    assert not any(n["id"] == sug_to_reject["id"] for n in ghost_nodes2)
+    assert not any(e["source_id"] == sug_to_reject["id"] for e in ghost_edges2)
+
+    # sug_to_keep is still present
+    assert any(n["id"] == sug_to_keep["id"] for n in ghost_nodes2)
+    assert any(e["source_id"] == sug_to_keep["id"] and e["target_id"] == ann1_id for e in ghost_edges2)

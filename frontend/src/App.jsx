@@ -60,6 +60,7 @@ export default function App() {
   const { data: textData } = useDocumentText(selectedDocId);
   const { data: annotations = [] } = useAnnotations(selectedDocId);
   const { data: relations = [] } = useRelations(selectedDocId);
+  const { data: graphData } = useGraph(selectedDocId);
 
   // Job tracking
   const { data: jobData } = useJob(activeJobId);
@@ -146,6 +147,7 @@ export default function App() {
       await api.post(`/suggestions/${sugId}/accept`);
       await fetchSuggestions();
       queryClient.invalidateQueries({ queryKey: queryKeys.annotations(selectedDocId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.relations(selectedDocId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.graph(selectedDocId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(selectedDocId) });
     } catch (err) {
@@ -158,6 +160,8 @@ export default function App() {
     try {
       await api.post(`/suggestions/${sugId}/reject`);
       await fetchSuggestions();
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(selectedDocId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(selectedDocId) });
     } catch (err) {
       alert(`Failed to reject suggestion: ${err.message}`);
     }
@@ -540,12 +544,14 @@ export default function App() {
             }}
           >
             <GraphView
-              annotations={annotations}
-              relations={relations}
+              annotations={graphData?.annotations || annotations}
+              relations={graphData?.relations || relations}
               taxonomy={taxonomy}
               selectedAnnotationId={selectedAnnotationId}
               selectedRelationId={selectedRelationId}
               onSelectAnnotation={handleSelectAnnotation}
+              onAcceptSuggestion={handleAcceptSuggestion}
+              onRejectSuggestion={handleRejectSuggestion}
               onCreateRelation={(payload) => createRelationMutation.mutate(payload)}
               onUpdateRelation={(id, data) => updateRelationMutation.mutate({ id, data })}
               onSaveNodePosition={(id, data) => updateAnnotationMutation.mutate({ id, data })}

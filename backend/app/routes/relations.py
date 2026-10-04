@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 from backend.app.db import get_db
-from backend.app.models import Document, Annotation, Relation, RelationType
+from backend.app.models import Document, Annotation, Relation, RelationType, Suggestion
 from backend.app.schemas import (
     RelationCreate,
     RelationUpdate,
@@ -13,6 +13,7 @@ from backend.app.schemas import (
     GraphResponse,
     AnnotationResponse,
 )
+from backend.app.services.clean import snap_to_word_boundaries
 
 from backend.app.services.jobs import create_job, submit_job
 from backend.app.services.llm import get_llm_client, LLMNotConfiguredError
@@ -161,7 +162,7 @@ def delete_relation(relation_id: int, db: Session = Depends(get_db)) -> None:
 
 @router.get("/documents/{document_id}/graph", response_model=GraphResponse)
 def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> GraphResponse:
-    """Retrieve full graph view: annotations (nodes) and relations (edges)."""
+    """Retrieve full graph view: annotations (nodes), relations (edges), and pending suggestions as ghost nodes."""
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -169,8 +170,92 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
     annotations = db.query(Annotation).filter(Annotation.document_id == document_id).all()
     relations = db.query(Relation).filter(Relation.document_id == document_id).all()
 
+    nodes: List[AnnotationResponse] = [
+        AnnotationResponse(
+            id=a.id,
+            document_id=a.document_id,
+            start=a.start,
+            end=a.end,
+            quote=a.quote,
+            label=a.label,
+            note=a.note,
+            x=a.x,
+            y=a.y,
+            version=a.version,
+            created_at=a.created_at,
+            status="confirmed",
+        )
+        for a in annotations
+    ]
+
+    edges: List[RelationResponse] = [
+        RelationResponse(
+            id=r.id,
+            document_id=r.document_id,
+            source_id=r.source_id,
+            target_id=r.target_id,
+            type=r.type,
+            status=r.status or "confirmed",
+            reason=r.reason,
+            version=r.version,
+        )
+        for r in relations
+    ]
+
+    # Query pending suggestions and append as ghost nodes and similar_to edges
+    pending_sugs = (
+        db.query(Suggestion)
+        .filter(
+            Suggestion.document_id == document_id,
+            Suggestion.status == "pending",
+        )
+        .all()
+    )
+
+    for sug in pending_sugs:
+        sent = sug.sentence
+        if sent and doc.clean_text:
+            s_start, s_end = snap_to_word_boundaries(doc.clean_text, sent.start, sent.end)
+            quote = doc.clean_text[s_start:s_end]
+        else:
+            s_start, s_end = (sent.start, sent.end) if sent else (0, 0)
+            quote = ""
+
+        ghost_node = AnnotationResponse(
+            id=sug.id,
+            document_id=sug.document_id,
+            start=s_start,
+            end=s_end,
+            quote=quote,
+            label=sug.label or "Claim",
+            note=f"Suggested highlight ({int(sug.score * 100)}% match)",
+            x=0.0,
+            y=0.0,
+            version=1,
+            created_at=None,
+            status="suggested",
+            score=round(sug.score, 4),
+            sentence_id=sug.sentence_id,
+            seed_annotation_id=sug.seed_annotation_id,
+        )
+        nodes.append(ghost_node)
+
+        if sug.seed_annotation_id:
+            ghost_edge = RelationResponse(
+                id=-(sug.id),
+                document_id=document_id,
+                source_id=sug.id,
+                target_id=sug.seed_annotation_id,
+                type="similar_to",
+                status="suggested",
+                reason=str(round(sug.score, 4)),
+                version=1,
+                score=round(sug.score, 4),
+            )
+            edges.append(ghost_edge)
+
     return GraphResponse(
         document_id=document_id,
-        annotations=[AnnotationResponse.model_validate(a) for a in annotations],
-        relations=[RelationResponse.model_validate(r) for r in relations],
+        annotations=nodes,
+        relations=edges,
     )

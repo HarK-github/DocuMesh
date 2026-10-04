@@ -92,6 +92,7 @@ class AnnotationResponse(BaseModel):
     status: Optional[str] = "confirmed"
     score: Optional[float] = None
     sentence_id: Optional[int] = None
+    seed_annotation_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
 

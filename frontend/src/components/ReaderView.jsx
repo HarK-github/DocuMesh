@@ -52,7 +52,7 @@ export default function ReaderView({
     const timer = setTimeout(() => setActiveFlashId(null), 1800);
 
     const el = containerRef.current.querySelector(
-      `[data-annotation-id="${scrollToAnnotationId}"]`
+      `[data-annotation-id="${scrollToAnnotationId}"], [data-suggestion-id="${scrollToAnnotationId}"]`
     );
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -338,21 +338,27 @@ export default function ReaderView({
                 // 3. Pending suggestion
                 if (hasSugs) {
                   const sug = seg.suggestions[0];
+                  const isSugSelected = selectedAnnotationId === sug?.id;
                   return (
                     <mark
                       key={`sug-${pIdx}-${sIdx}`}
                       data-start={seg.start}
                       data-end={seg.end}
                       data-suggestion-id={sug?.id}
+                      onClick={() => onSelectAnnotation(sug?.id)}
                       className={isFlashing ? 'flash-highlight' : ''}
                       style={{
-                        backgroundColor: '#fef9c366',
+                        backgroundColor: isSugSelected ? '#fef08a' : '#fef9c388',
                         color: '#713f12',
-                        borderBottom: '2px dashed #ca8a04',
+                        borderBottom: isSugSelected ? '2px solid #ca8a04' : '2px dashed #ca8a04',
                         padding: '1px 3px',
                         borderRadius: '4px',
                         margin: '0 1px',
                         display: 'inline',
+                        cursor: 'pointer',
+                        outline: isSugSelected ? '2px solid #ca8a04' : 'none',
+                        outlineOffset: '1px',
+                        transition: 'all 0.15s ease',
                       }}
                       title={`Suggested highlight (relevance: ${(
                         (sug?.score || 0) * 100
