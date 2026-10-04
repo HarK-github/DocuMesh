@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # Taxonomy Schemas
@@ -157,3 +157,38 @@ class JobResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# Chat Schemas
+class ChatMessage(BaseModel):
+    """Dialogue turn in chat conversation."""
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    """Payload for document chat query."""
+    question: str = Field(..., min_length=1)
+    history: List[ChatMessage] = Field(default_factory=list)
+
+    @field_validator("question")
+    @classmethod
+    def question_must_not_be_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Question cannot be empty or blank")
+        return v.strip()
+
+
+class CitationItem(BaseModel):
+    """Validated citation referencing an entity in document or graph."""
+    type: str  # "sentence" | "annotation" | "relation"
+    id: int
+    start: Optional[int] = None
+    end: Optional[int] = None
+
+
+class ChatResponse(BaseModel):
+    """Answer with citations and context flag returned by chat service."""
+    answer: str
+    citations: List[CitationItem]
+    used_context: bool

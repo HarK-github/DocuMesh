@@ -53,6 +53,7 @@ def create_app() -> FastAPI:
     from backend.app.routes.annotations import router as annotations_router
     from backend.app.routes.relations import router as relations_router
     from backend.app.routes.suggestions import router as suggestions_router
+    from backend.app.routes.chat import router as chat_router
 
     app.include_router(documents_router)
     app.include_router(jobs_router)
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(annotations_router)
     app.include_router(relations_router)
     app.include_router(suggestions_router)
+    app.include_router(chat_router)
 
     @app.get("/health", tags=["System"])
     def health_check() -> dict:
