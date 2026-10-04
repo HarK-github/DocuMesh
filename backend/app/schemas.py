@@ -141,8 +141,8 @@ class GraphResponse(BaseModel):
 # Suggestion Schemas
 class SuggestHighlightsRequest(BaseModel):
     """Payload to request scoped highlight suggestions."""
-    seed_annotation_id: int
-    scope: str = "passage"  # 'passage' | 'category'
+    seed_annotation_id: Optional[int] = None
+    scope: Optional[str] = "passage"  # 'passage' | 'category'
 
 
 class SuggestionResponse(BaseModel):
