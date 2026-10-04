@@ -52,6 +52,73 @@ def intervals_overlap(start1: int, end1: int, start2: int, end2: int) -> bool:
     return max(start1, start2) < min(end1, end2)
 
 
+def compute_candidate_score(
+    candidate_vec: np.ndarray,
+    positive_embeddings: List[np.ndarray],
+    negative_embeddings: List[np.ndarray],
+    neg_weight: float = 0.5,
+) -> float:
+    """Pure scoring function: max_sim(cand, positives) - NEG_WEIGHT * max_sim(cand, negatives)."""
+    if not positive_embeddings:
+        return 0.0
+
+    pos_sim = max(cosine_similarity(candidate_vec, p) for p in positive_embeddings)
+    neg_sim = (
+        max(cosine_similarity(candidate_vec, n) for n in negative_embeddings)
+        if negative_embeddings
+        else 0.0
+    )
+    return float(pos_sim - neg_weight * neg_sim)
+
+
+def select_diverse_candidates_mmr(
+    candidates: List[Dict[str, Any]],
+    mmr_lambda: float = 0.7,
+    limit: int = 5,
+) -> List[Dict[str, Any]]:
+    """Greedily select candidates maximizing MMR_LAMBDA * score - (1 - MMR_LAMBDA) * max_sim(cand, already_picked)."""
+    if not candidates or limit <= 0:
+        return []
+
+    remaining = list(candidates)
+    selected = []
+
+    while remaining and len(selected) < limit:
+        best_cand = None
+        best_mmr_score = -float("inf")
+        best_idx = -1
+
+        for idx, cand in enumerate(remaining):
+            cand_score = cand["score"]
+            c_vec = cand.get("vector") if cand.get("vector") is not None else cand.get("embedding")
+
+            if not selected:
+                mmr_score = cand_score
+            else:
+                max_sim_picked = max(
+                    cosine_similarity(
+                        c_vec,
+                        s.get("vector") if s.get("vector") is not None else s.get("embedding"),
+                    )
+                    for s in selected
+                )
+                mmr_score = mmr_lambda * cand_score - (1.0 - mmr_lambda) * max_sim_picked
+
+            if mmr_score > best_mmr_score:
+                best_mmr_score = mmr_score
+                best_cand = cand
+                best_idx = idx
+
+        if best_cand is not None and best_idx >= 0:
+            selected.append(best_cand)
+            remaining.pop(best_idx)
+        else:
+            break
+
+    return selected
+
+
+
 def rank_sentences(
     sentences: List[Dict[str, Any]],
     positive_embeddings: List[np.ndarray],
