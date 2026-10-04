@@ -18,6 +18,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         cleanup_stale_jobs()
         from backend.app.services.embedder import get_embedder
         get_embedder()
+        from backend.app.services.vector_store import rebuild_vector_store_if_needed
+        from backend.app.db import get_session_factory
+        with get_session_factory()() as db_session:
+            rebuild_vector_store_if_needed(db_session)
     except Exception:
         pass
     yield

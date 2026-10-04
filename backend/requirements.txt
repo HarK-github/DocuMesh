@@ -8,6 +8,7 @@ pysbd>=0.3.4
 sentence-transformers>=2.5.0
 huggingface-hub>=0.20.0
 numpy>=1.24.0
+chromadb>=0.4.0
 python-multipart>=0.0.9
 httpx>=0.27.0
 pytest>=8.0.0

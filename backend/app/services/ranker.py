@@ -1,8 +1,40 @@
 """Ranking service for smart highlight suggestions based on embedding similarity."""
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 from backend.app.settings import get_settings
+from backend.app.services.vector_store import get_vector_store, BaseVectorStore
+
+
+def retrieve_candidates(
+    query_vector: np.ndarray,
+    document_id: int,
+    store: Optional[BaseVectorStore] = None,
+    pool_size: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Retrieve top CANDIDATE_POOL_SIZE candidates from vector store filtered by document_id."""
+    settings = get_settings()
+    k = pool_size if pool_size is not None else settings.candidate_pool_size
+    vstore = store if store is not None else get_vector_store()
+
+    results = vstore.query(vector=query_vector, k=k, filters={"document_id": document_id})
+    candidates = []
+    for item in results:
+        meta = item.get("metadata", {})
+        cand = {
+            "id": meta.get("sentence_id", item.get("id")),
+            "sentence_id": meta.get("sentence_id"),
+            "document_id": meta.get("document_id", document_id),
+            "start": meta.get("start"),
+            "end": meta.get("end"),
+            "page": meta.get("page"),
+            "embedding": item.get("vector"),
+            "vector": item.get("vector"),
+            "store_score": item.get("score"),
+        }
+        candidates.append(cand)
+    return candidates
+
 
 
 def cosine_similarity(v1: np.ndarray, v2: np.ndarray) -> float:

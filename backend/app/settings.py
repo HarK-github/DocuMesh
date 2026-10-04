@@ -64,6 +64,37 @@ class Settings(BaseSettings):
         alias="SIMILARITY_THRESHOLD",
         description="Cosine similarity threshold for suggestions",
     )
+    # Vector store configuration
+    vector_store: str = Field(
+        default="chroma",
+        alias="VECTOR_STORE",
+        description="Vector store backend: chroma, fake",
+    )
+    vector_store_path: str = Field(
+        default="./data/chroma",
+        alias="VECTOR_STORE_PATH",
+        description="Persistent directory for Chroma vector store",
+    )
+    candidate_pool_size: int = Field(
+        default=30,
+        alias="CANDIDATE_POOL_SIZE",
+        description="Candidate pool size retrieved from vector store",
+    )
+    neg_weight: float = Field(
+        default=0.5,
+        alias="NEG_WEIGHT",
+        description="Negative penalty weight for rejected suggestions",
+    )
+    mmr_lambda: float = Field(
+        default=0.7,
+        alias="MMR_LAMBDA",
+        description="MMR diversity trade-off parameter between 0 and 1",
+    )
+    max_pending_per_seed: int = Field(
+        default=10,
+        alias="MAX_PENDING_PER_SEED",
+        description="Maximum pending suggestions allowed per seed annotation",
+    )
 
     # LLM configuration (suggested relations & document chat)
     llm_provider: str = Field(
