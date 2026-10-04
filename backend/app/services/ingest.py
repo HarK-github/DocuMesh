@@ -78,6 +78,7 @@ def process_document(job_id: Optional[str], document_id: int, pdf_path: str) -> 
                 import numpy as np
 
                 store = get_vector_store()
+                store.delete(filters={"document_id": document_id})
                 store_items = []
                 saved_sentences = (
                     session.query(Sentence)

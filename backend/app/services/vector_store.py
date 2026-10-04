@@ -33,8 +33,12 @@ class BaseVectorStore(ABC):
         pass
 
     @abstractmethod
-    def delete(self, ids: List[str]) -> None:
-        """Delete items by ID."""
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Delete items by ID or by metadata filter."""
         pass
 
     @abstractmethod
@@ -93,10 +97,23 @@ class FakeVectorStore(BaseVectorStore):
         candidates.sort(key=lambda x: x["score"], reverse=True)
         return candidates[:k]
 
-    def delete(self, ids: List[str]) -> None:
-        """Remove items from memory."""
-        for i in ids:
-            self._items.pop(str(i), None)
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Remove items from memory by id or filter."""
+        if ids:
+            for i in ids:
+                self._items.pop(str(i), None)
+        if filters:
+            to_remove = [
+                k
+                for k, it in self._items.items()
+                if all(it["metadata"].get(fk) == fv for fk, fv in filters.items())
+            ]
+            for k in to_remove:
+                self._items.pop(k, None)
 
     def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
         """Count in-memory items."""
@@ -197,11 +214,18 @@ class ChromaVectorStore(BaseVectorStore):
         output.sort(key=lambda x: x["score"], reverse=True)
         return output
 
-    def delete(self, ids: List[str]) -> None:
-        """Delete items by id."""
-        if not ids:
-            return
-        self._collection.delete(ids=[str(i) for i in ids])
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Delete items by id or filter."""
+        if ids:
+            self._collection.delete(ids=[str(i) for i in ids])
+        elif filters:
+            where = self._format_where(filters)
+            if where:
+                self._collection.delete(where=where)
 
     def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
         """Count items matching where clause."""

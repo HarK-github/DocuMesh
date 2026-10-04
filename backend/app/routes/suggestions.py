@@ -256,10 +256,11 @@ def generate_highlight_suggestions(
     )
     prior_sentence_ids = {s.sentence_id for s in prior_sugs}
 
+    valid_sentence_ids = {s.id for s in sentences}
     scored_candidates = []
     for cand in raw_candidates:
         s_id = cand.get("sentence_id", cand.get("id"))
-        if s_id in prior_sentence_ids:
+        if s_id not in valid_sentence_ids or s_id in prior_sentence_ids:
             continue
 
         c_start = int(cand["start"])

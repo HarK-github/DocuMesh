@@ -59,12 +59,15 @@ def seed_database() -> int:
         session.query(Annotation).filter(Annotation.document_id == doc_id).delete()
         session.commit()
 
-        # Seed annotations matching exact phrases in sample text
+        # Seed annotations matching exact phrases in sample text across multiple categories
         quotes_to_seed = [
-            ("Can machines think?", "Problem", "Turing's fundamental philosophical question", 150.0, 100.0),
-            ("The definitions might be framed so as to reflect so far as possible the normal use of the words, but this attitude is dangerous.", "Claim", "Critique of conventional definitions", 150.0, 260.0),
-            ("This special property of digital computers, that they can simulate any discrete state machine, is described by saying that they are universal machines.", "Evidence", "Discrete state equivalence property", 450.0, 100.0),
-            ("They can all be done with one digital computer, suitably programmed for each case.", "Solution", "Sufficiency of a single universal computer", 450.0, 260.0),
+            ("Can machines think?", "Problem", "Turing's fundamental philosophical question", 150.0, 80.0),
+            ("The definitions might be framed so as to reflect so far as possible the normal use of the words, but this attitude is dangerous.", "Claim", "Critique of conventional definitions", 150.0, 200.0),
+            ("These questions replace our original, 'Can machines think?'", "Claim", "Reformulation into operational imitation game", 150.0, 320.0),
+            ("The imitation game has the advantage of drawing a fairly sharp line between the physical and the intellectual capacities of a human being.", "Claim", "Separation of physical and cognitive capacity", 150.0, 440.0),
+            ("The new form of the problem can be described in terms of a game which we call the 'imitation game'.", "Evidence", "Setup of the imitation game protocol", 450.0, 80.0),
+            ("This special property of digital computers, that they can simulate any discrete state machine, is described by saying that they are universal machines.", "Evidence", "Discrete state equivalence property", 450.0, 200.0),
+            ("They can all be done with one digital computer, suitably programmed for each case.", "Solution", "Sufficiency of a single universal computer", 450.0, 320.0),
         ]
 
         created_anns = []
@@ -92,22 +95,22 @@ def seed_database() -> int:
             session.refresh(a)
 
         # Seed relationships
-        if len(created_anns) >= 4:
-            # 1. Ann 0 (Problem) -> Ann 3 (Solution) relates_to
+        if len(created_anns) >= 7:
+            # 1. Ann 0 (Problem) -> Ann 6 (Solution) relates_to
             r1 = Relation(
                 document_id=doc_id,
                 source_id=created_anns[0].id,
-                target_id=created_anns[3].id,
+                target_id=created_anns[6].id,
                 type="relates_to",
                 status="confirmed",
                 reason="The universal machine provides an answer to the thinking machine question",
                 version=1,
             )
-            # 2. Ann 2 (Evidence) -> Ann 3 (Solution) supports
+            # 2. Ann 5 (Evidence) -> Ann 6 (Solution) supports
             r2 = Relation(
                 document_id=doc_id,
-                source_id=created_anns[2].id,
-                target_id=created_anns[3].id,
+                source_id=created_anns[5].id,
+                target_id=created_anns[6].id,
                 type="supports",
                 status="confirmed",
                 reason="Simulation equivalence supports universal applicability",

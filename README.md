@@ -34,6 +34,12 @@ All settings are configured via environment variables (see `.env.example`):
 | `EMBED_BATCH_SIZE` | `32` | Batch size for sentence embedding |
 | `SIMILARITY_THRESHOLD` | `0.35` | Minimum cosine similarity score for suggestions |
 | `SUGGESTION_COUNT` | `5` | Maximum number of suggestions returned per request |
+| `VECTOR_STORE` | `chroma` | Vector store backend: `chroma` or `fake` |
+| `VECTOR_STORE_PATH` | `./data/chroma` | Persistent directory for Chroma vector store |
+| `CANDIDATE_POOL_SIZE` | `30` | Number of candidate sentence vectors retrieved before MMR |
+| `NEG_WEIGHT` | `0.5` | Penalty multiplier for rejected suggestions of the same label |
+| `MMR_LAMBDA` | `0.7` | MMR diversity balance (0 = maximum diversity, 1 = maximum relevance) |
+| `MAX_PENDING_PER_SEED` | `10` | Maximum pending suggestions allowed per seed annotation |
 | `LLM_PROVIDER` | `fake` | Provider: `fake`, `huggingface`, or `openai` |
 | `LLM_MODEL` | `meta-llama/Llama-3.2-1B-Instruct` | Model identifier (e.g. `meta-llama/Llama-3.2-1B-Instruct`, `Qwen/Qwen2.5-1.5B-Instruct`, `gpt-4o-mini`) |
 | `HF_TOKEN` | `""` | Hugging Face User Access Token (for `LLM_PROVIDER=huggingface`) |
@@ -51,6 +57,44 @@ All settings are configured via environment variables (see `.env.example`):
 | `SQLITE_BUSY_TIMEOUT_MS` | `5000` | SQLite WAL busy timeout in milliseconds |
 | `CORS_ORIGINS` | `["http://localhost:5173"]` | Permitted CORS origin origins |
 | `VITE_API_URL` | `http://localhost:8000` | Frontend API base URL |
+
+> [!NOTE]
+> **Architecture Distinction**: **Smart Highlights** is an embedding retrieval system with human feedback (active learning loop), not generative RAG. The system never generates hallucinated text; it scores and ranks verbatim document sentences against user seeds. **Document Chat** is the graph-augmented RAG feature that uses an LLM to answer questions and ground claims in graph relations.
+
+## Scoped Smart Highlights & Vector Store
+
+DocuMesh features an active-learning highlight discovery loop designed around human agency:
+
+1. **Rebuildable Vector Store Index**:
+   - SQLite remains the authoritative source of truth. Sentence vectors are stored in SQLite as raw byte BLOBs.
+   - Chroma (`chromadb`, cosine distance) acts as a high-performance rebuildable index.
+   - On server startup (`main.py`), DocuMesh inspects all documents in `ready` state. If the vector store collection is missing or empty for a document, it immediately rebuilds the index from the SQLite BLOBs without re-running the embedding model.
+   - When running tests, the system seamlessly uses an in-memory `FakeVectorStore` selected via `VECTOR_STORE=fake`.
+
+2. **Highlight Rules & Boundary Hygiene**:
+   - **Word Boundary Snapping**: Selection offsets automatically snap outward to the nearest word boundary via `snap_to_word_boundaries`, shared between client (`offsets.js`) and server (`clean.py`).
+   - **Idempotent Duplicates**: A composite unique constraint on `(document_id, start, end, label)` ensures duplicate creation attempts return the existing annotation (`200 OK`) instead of erroring, protecting against double-clicks and retries.
+   - **Overlaps & Multi-Layering**: Multiple annotations over overlapping or nested character spans are fully supported. Clicking overlapping text selects the innermost (most specific) annotation, and a layers indicator allows switching between overlapping annotations in the details panel.
+   - **Boundary Adjustments**: Start and end boundaries can be nudged directly in the details panel via `PATCH /annotations/{id}`, guarded by optimistic version locking (`409 Conflict` on concurrent edits).
+   - **Superseded Suggestions**: When a confirmed annotation is created over a pending suggestion's range, that suggestion is marked `superseded` and excluded from pending views.
+
+3. **Scoped Suggestions & Diversity Loop**:
+   - Triggered from the reader popup or annotation panel with scope selection:
+     - **This passage**: Positives are restricted to the seed annotation's vector.
+     - **This category**: Positives include all annotations sharing the seed's label.
+     - **Default Scope Rule**: Automatically defaults to *This category* if the label already has $\ge 3$ confirmed annotations, or *This passage* otherwise.
+   - **Negative Feedback**: Rejected suggestions under the same label serve as negative vectors ($\text{NEG\_WEIGHT} = 0.5$). Rejections under one label do not penalize suggestions under other labels.
+   - **Maximal Marginal Relevance (MMR)**: Candidates retrieved from Chroma are scored and re-ranked with greedy MMR ($\text{MMR\_LAMBDA} = 0.7$) to prevent redundant near-duplicate suggestions.
+   - **Pending Cap & Thresholding**: Enforces `SIMILARITY_THRESHOLD = 0.35` (returns "No more similar passages found" if no candidate clears) and `MAX_PENDING_PER_SEED = 10` (returns a cap warning without bloating the graph).
+   - **Atomic Acceptance**: Accepting a suggestion creates the confirmed annotation and a `similar_to` relation back to the seed annotation in a single atomic database transaction. Accepting twice is idempotent.
+   - **AI Safety Rule**: The AI never continues or seeds from its own unconfirmed suggestions; only confirmed annotations can be seeds.
+
+4. **Graph Ghost Nodes**:
+   - Pending suggestions are returned in `GET /documents/{id}/graph` as nodes with `status = "suggested"`.
+   - Ghost nodes render with dashed borders, faded opacity (0.72), match score percentages, and inline Accept/Reject buttons.
+   - A dashed `similar_to` edge connects the ghost node to its seed annotation.
+   - `similar_to` edges are hidden by default to prevent visual hub-and-spoke clutter, with an interactive toolbar switch to toggle their visibility.
+   - Selecting a ghost node scrolls the reader to its faded highlight, and vice versa.
 
 ## How Document Chat Uses the Graph
 
