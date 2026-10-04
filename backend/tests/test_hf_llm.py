@@ -65,7 +65,7 @@ def test_hf_client_initialization_defaults_and_overrides(monkeypatch):
 
     client = HuggingFaceLLMClient()
     assert client.api_key == "hf_testtoken123"
-    assert client.model == "meta-llama/Llama-3.2-1B-Instruct"
+    assert client.model == "meta-llama/Llama-3.1-8B-Instruct"
 
     # Custom model
     monkeypatch.setenv("LLM_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")

@@ -162,3 +162,29 @@ def test_suggest_relations_no_api_key(relation_test_setup, monkeypatch) -> None:
     res = client.post(f"/documents/{doc_id}/suggest-relations")
     assert res.status_code == 503
     assert "LLM service is not configured" in res.json()["detail"]
+
+
+def test_suggest_relations_scoped_seed(relation_test_setup) -> None:
+    """Verify relations discovery scoped to a seed annotation."""
+    client, doc_id, ann1_id, ann2_id, SessionFactory = relation_test_setup
+
+    fake_client = FakeLLMClient(default_type="supports")
+    set_shared_llm_client(fake_client)
+
+    res = client.post(
+        f"/documents/{doc_id}/suggest-relations",
+        json={"seed_annotation_id": ann1_id},
+    )
+    assert res.status_code == 200
+    job_id = res.json()["job_id"]
+
+    for _ in range(20):
+        time.sleep(0.1)
+        job_res = client.get(f"/jobs/{job_id}").json()
+        if job_res["status"] in ("done", "failed"):
+            break
+
+    job_data = client.get(f"/jobs/{job_id}").json()
+    assert job_data["status"] == "done"
+    assert job_data["result"]["suggested_count"] > 0
+

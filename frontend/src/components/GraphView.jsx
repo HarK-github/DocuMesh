@@ -294,7 +294,7 @@ export default function GraphView({
   const [filterLabel, setFilterLabel] = useState('ALL');
   const [filterRelType, setFilterRelType] = useState('ALL');
   const [showNeighborsOnly, setShowNeighborsOnly] = useState(false);
-  const [showSimilarTo, setShowSimilarTo] = useState(false);
+  const [showSimilarTo, setShowSimilarTo] = useState(true);
 
   // Connection dialog state (drag from handle to handle)
   const [pendingConnection, setPendingConnection] = useState(null);

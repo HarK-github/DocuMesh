@@ -172,7 +172,7 @@ class OpenAILLMClient(BaseLLMClient):
 class HuggingFaceLLMClient(BaseLLMClient):
     """Hugging Face Serverless Inference client using official huggingface_hub."""
 
-    DEFAULT_MODEL = "meta-llama/Llama-3.2-1B-Instruct"
+    DEFAULT_MODEL = "meta-llama/Llama-3.1-8B-Instruct"
 
     def __init__(self) -> None:
         from huggingface_hub import InferenceClient

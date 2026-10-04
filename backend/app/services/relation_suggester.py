@@ -3,12 +3,14 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any, List, Tuple, Optional
+import numpy as np
 from sqlalchemy.orm import Session
 from backend.app.settings import get_settings
 from backend.app.db import get_session_factory
 from backend.app.models import Annotation, Relation, RelationType
 from backend.app.services.llm import get_llm_client, LLMNotConfiguredError
 from backend.app.services.jobs import update_job_status
+from backend.app.services.embedder import get_embedder
 
 
 def _build_prompt(ann1: Dict[str, Any], ann2: Dict[str, Any], valid_types: List[str]) -> str:
@@ -17,27 +19,148 @@ def _build_prompt(ann1: Dict[str, Any], ann2: Dict[str, Any], valid_types: List[
     l1 = ann1.get("label", "")
     q2 = ann2.get("quote", "")
     l2 = ann2.get("label", "")
+
+    # Exclude technical/structural relation types like similar_to from semantic extraction prompt
+    semantic_types = [t for t in valid_types if t != "similar_to"]
+    if not semantic_types:
+        semantic_types = valid_types
+
     return f"""Given two passages annotated in a document:
 
-Passage 1 (Source):
+Passage 1:
 Quote: "{q1}"
 Label: {l1}
 
-Passage 2 (Target):
+Passage 2:
 Quote: "{q2}"
 Label: {l2}
 
-Permitted relation types: {valid_types}
+Permitted relation types: {semantic_types}
 
-Determine if there is a typed relationship where Passage 1 relates to Passage 2.
-You MUST reply with a JSON object containing:
-- "type": exactly one string from the permitted relation types, or null if no clear relationship exists.
-- "reason": a short explanation (1-2 sentences) justifying the relation.
+Relation Type Guidance:
+- "supports": Passage 1 provides evidence, rationale, or proof supporting Passage 2 (or vice versa).
+- "refutes": Passage 1 contradicts, counters, or questions Passage 2.
+- "defines": Passage 1 defines, names, or specifies a concept/term used in Passage 2.
+- "elaborates": Passage 1 provides further detail, depth, or context for Passage 2.
+- "causes": Passage 1 directly leads to, causes, or influences Passage 2.
+- "relates_to": Passages share a clear conceptual or topical relationship.
+
+Instructions:
+1. Determine if a typed relationship exists between these two passages.
+2. If a relationship exists, specify "type" (one of the permitted relation types), "direction" ("forward" if Passage 1 relates to Passage 2, or "reverse" if Passage 2 relates to Passage 1), and a 1-2 sentence "reason".
+3. If no clear relationship exists, set "type" to null.
+
+You MUST reply with a JSON object in this format:
+{{
+  "type": "one_of_the_permitted_types_or_null",
+  "direction": "forward",
+  "reason": "1-2 sentence explanation justifying the relation"
+}}
 """
 
 
-def process_suggest_relations_job(job_id: str, document_id: int) -> Dict[str, Any]:
-    """Execute LLM relation suggestions across bounded annotation pairs."""
+def select_candidate_pairs(
+    annotations: List[Dict[str, Any]],
+    existing_relations: List[Relation],
+    max_pairs: int = 10,
+    seed_annotation_id: Optional[int] = None,
+) -> List[Tuple[Dict[str, Any], Dict[str, Any]]]:
+    """Select and rank high-relevance annotation pairs for relation inference."""
+    if len(annotations) < 2:
+        return []
+
+    # Exclude pairs that already have a typed relationship (supports, refutes, etc.)
+    existing_typed = {
+        (min(r.source_id, r.target_id), max(r.source_id, r.target_id))
+        for r in existing_relations
+        if r.type != "similar_to"
+    }
+    # Existing similar_to relations are prime candidates to infer typed relations for
+    similar_pairs = {
+        (min(r.source_id, r.target_id), max(r.source_id, r.target_id))
+        for r in existing_relations
+        if r.type == "similar_to"
+    }
+
+    embedder = get_embedder()
+    quotes = [a.get("quote", "") for a in annotations]
+    try:
+        vecs = embedder.embed(quotes)
+    except Exception:
+        vecs = None
+
+    candidates: List[Tuple[float, Dict[str, Any], Dict[str, Any]]] = []
+
+    for i in range(len(annotations)):
+        for j in range(i + 1, len(annotations)):
+            a1, a2 = annotations[i], annotations[j]
+            pair_key = (min(a1["id"], a2["id"]), max(a1["id"], a2["id"]))
+            if pair_key in existing_typed:
+                continue
+
+            score = 0.0
+
+            # Priority 1: Scoped to seed annotation if provided
+            if seed_annotation_id is not None:
+                if a1["id"] == seed_annotation_id or a2["id"] == seed_annotation_id:
+                    score += 10.0
+                else:
+                    continue
+
+            # Priority 2: Connections established via smart highlight similar_to
+            if pair_key in similar_pairs:
+                score += 3.0
+
+            # Priority 3: Semantic embedding cosine similarity
+            if vecs is not None and len(vecs) > max(i, j):
+                try:
+                    cos_sim = float(np.dot(vecs[i], vecs[j]))
+                    score += max(0.0, cos_sim)
+                except Exception:
+                    pass
+
+            # Natural ordering: earlier passage as source, later as target
+            if a1.get("start", 0) <= a2.get("start", 0):
+                candidates.append((score, a1, a2))
+            else:
+                candidates.append((score, a2, a1))
+
+    candidates.sort(key=lambda x: x[0], reverse=True)
+
+    # Ensure diversity across annotations when no seed is specified
+    if seed_annotation_id is None and len(candidates) > max_pairs:
+        selected: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []
+        node_counts: Dict[int, int] = {}
+        max_per_node = max(2, max_pairs // 3)
+
+        for _, a1, a2 in candidates:
+            c1 = node_counts.get(a1["id"], 0)
+            c2 = node_counts.get(a2["id"], 0)
+            if c1 < max_per_node and c2 < max_per_node:
+                selected.append((a1, a2))
+                node_counts[a1["id"]] = c1 + 1
+                node_counts[a2["id"]] = c2 + 1
+                if len(selected) >= max_pairs:
+                    break
+
+        if len(selected) < max_pairs:
+            for _, a1, a2 in candidates:
+                if (a1, a2) not in selected:
+                    selected.append((a1, a2))
+                    if len(selected) >= max_pairs:
+                        break
+
+        return selected[:max_pairs]
+
+    return [(a1, a2) for _, a1, a2 in candidates[:max_pairs]]
+
+
+def process_suggest_relations_job(
+    job_id: str,
+    document_id: int,
+    seed_annotation_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Execute LLM relation suggestions across bounded, high-relevance annotation pairs."""
     settings = get_settings()
     session_factory = get_session_factory()
 
@@ -57,7 +180,7 @@ def process_suggest_relations_job(job_id: str, document_id: int) -> Dict[str, An
             .all()
         )
         annotations = [
-            {"id": a.id, "quote": a.quote, "label": a.label}
+            {"id": a.id, "quote": a.quote, "label": a.label, "start": a.start, "end": a.end}
             for a in ann_rows
         ]
         existing_relations = (
@@ -65,22 +188,20 @@ def process_suggest_relations_job(job_id: str, document_id: int) -> Dict[str, An
             .filter(Relation.document_id == document_id)
             .all()
         )
-        existing_pairs = {(r.source_id, r.target_id) for r in existing_relations}
         taxonomy_types = [r.name for r in session.query(RelationType).all()]
 
     if len(annotations) < 2:
         return {"suggested_count": 0, "message": "At least 2 annotations are required to infer relations."}
 
-    candidate_pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []
-    for a1 in annotations:
-        for a2 in annotations:
-            if a1["id"] != a2["id"] and (a1["id"], a2["id"]) not in existing_pairs:
-                candidate_pairs.append((a1, a2))
+    candidate_pairs = select_candidate_pairs(
+        annotations=annotations,
+        existing_relations=existing_relations,
+        max_pairs=settings.max_relation_pairs,
+        seed_annotation_id=seed_annotation_id,
+    )
 
-    # Cap pairs from settings
-    candidate_pairs = candidate_pairs[: settings.max_relation_pairs]
     if not candidate_pairs:
-        return {"suggested_count": 0, "message": "No new annotation pairs to analyze."}
+        return {"suggested_count": 0, "message": "No new candidate annotation pairs to analyze."}
 
     update_job_status(job_id, progress=30)
 
@@ -98,6 +219,7 @@ def process_suggest_relations_job(job_id: str, document_id: int) -> Dict[str, An
 
                 rel_type = data.get("type")
                 reason = data.get("reason", "")
+                direction = data.get("direction", "forward")
 
                 if not rel_type or rel_type not in taxonomy_types:
                     failed_pairs.append({
@@ -107,10 +229,16 @@ def process_suggest_relations_job(job_id: str, document_id: int) -> Dict[str, An
                     })
                     return None
 
+                # Determine direction: if LLM indicated reverse, swap source and target
+                if direction == "reverse":
+                    src_id, tgt_id = a2["id"], a1["id"]
+                else:
+                    src_id, tgt_id = a1["id"], a2["id"]
+
                 return {
                     "document_id": document_id,
-                    "source_id": a1["id"],
-                    "target_id": a2["id"],
+                    "source_id": src_id,
+                    "target_id": tgt_id,
                     "type": rel_type,
                     "reason": reason,
                 }

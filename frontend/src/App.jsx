@@ -175,8 +175,12 @@ export default function App() {
   const handleSuggestRelations = async () => {
     if (!selectedDocId) return;
     try {
-      setJobDescription('Analyzing annotation pairs with AI...');
-      const res = await api.post(`/documents/${selectedDocId}/suggest-relations`);
+      const payload = selectedAnnotationId ? { seed_annotation_id: selectedAnnotationId } : {};
+      const desc = selectedAnnotationId
+        ? 'Analyzing relations for selected annotation...'
+        : 'Analyzing annotation pairs with AI...';
+      setJobDescription(desc);
+      const res = await api.post(`/documents/${selectedDocId}/suggest-relations`, payload);
       if (res.job_id) {
         setActiveJobId(res.job_id);
       }
@@ -316,18 +320,22 @@ export default function App() {
               gap: '6px',
               padding: '6px 12px',
               borderRadius: '6px',
-              border: '1px solid #dbeafe',
-              background: '#eff6ff',
+              border: selectedAnnotationId ? '1px solid #93c5fd' : '1px solid #dbeafe',
+              background: selectedAnnotationId ? '#dbeafe' : '#eff6ff',
               color: '#1d4ed8',
               fontSize: '0.8rem',
               fontWeight: 600,
-              cursor: annotations.length < 2 ? 'not-allowed' : 'pointer',
-              opacity: annotations.length < 2 ? 0.6 : 1,
+              cursor: annotations.length < 2 || activeJobId !== null ? 'not-allowed' : 'pointer',
+              opacity: annotations.length < 2 || activeJobId !== null ? 0.6 : 1,
             }}
-            title="Infer typed relationships between annotations using AI"
+            title={
+              selectedAnnotationId
+                ? 'Infer typed relationships connected to selected annotation using AI'
+                : 'Infer typed relationships between annotations across document using AI'
+            }
           >
             <Sparkles size={14} />
-            <span>Discover Relations</span>
+            <span>{selectedAnnotationId ? 'Discover Relations (Selected)' : 'Discover Relations'}</span>
           </button>
 
           <label
@@ -403,7 +411,11 @@ export default function App() {
               <Loader2 size={16} color="#2563eb" className="spin" />
             )}
             <span style={{ fontWeight: 600 }}>
-              {jobDescription || `Job ${jobData.type}`} ({jobData.status})
+              {jobData.status === 'done' && jobData.type === 'suggest_relations' && jobData.result?.suggested_count !== undefined
+                ? jobData.result.suggested_count > 0
+                  ? `Relation discovery complete: found ${jobData.result.suggested_count} new relation${jobData.result.suggested_count === 1 ? '' : 's'}!`
+                  : 'Relation discovery complete: no clear new relations found among analyzed pairs.'
+                : `${jobDescription || `Job ${jobData.type}`} (${jobData.status})`}
             </span>
             {jobData.status === 'failed' && (
               <span style={{ color: '#b91c1c' }}>: {jobData.error}</span>

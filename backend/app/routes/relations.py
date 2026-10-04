@@ -1,6 +1,6 @@
 """Relation CRUD and Graph view endpoints with taxonomy and cycle validation."""
 
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
@@ -12,6 +12,7 @@ from backend.app.schemas import (
     RelationResponse,
     GraphResponse,
     AnnotationResponse,
+    SuggestRelationsRequest,
 )
 from backend.app.services.clean import snap_to_word_boundaries
 
@@ -23,7 +24,11 @@ router = APIRouter(tags=["Relations"])
 
 
 @router.post("/documents/{document_id}/suggest-relations")
-def suggest_relations(document_id: int, db: Session = Depends(get_db)) -> dict:
+def suggest_relations(
+    document_id: int,
+    payload: Optional[SuggestRelationsRequest] = None,
+    db: Session = Depends(get_db),
+) -> dict:
     """Trigger background LLM relationship discovery across annotation pairs."""
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
@@ -37,8 +42,9 @@ def suggest_relations(document_id: int, db: Session = Depends(get_db)) -> dict:
             detail=f"LLM service is not configured: {str(exc)}",
         )
 
+    seed_annotation_id = payload.seed_annotation_id if payload else None
     job = create_job(db, job_type="suggest_relations", document_id=document_id)
-    submit_job(job.id, process_suggest_relations_job, document_id)
+    submit_job(job.id, process_suggest_relations_job, document_id, seed_annotation_id)
     return {"job_id": job.id}
 
 

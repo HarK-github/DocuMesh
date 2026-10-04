@@ -130,6 +130,11 @@ class RelationResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SuggestRelationsRequest(BaseModel):
+    """Optional payload to scope relation suggestions to a specific seed annotation."""
+    seed_annotation_id: Optional[int] = None
+
+
 # Graph Schema
 class GraphResponse(BaseModel):
     """Combined graph view of annotations (nodes) and relations (edges)."""
