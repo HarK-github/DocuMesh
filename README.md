@@ -34,9 +34,11 @@ All settings are configured via environment variables (see `.env.example`):
 | `EMBED_BATCH_SIZE` | `32` | Batch size for sentence embedding |
 | `SIMILARITY_THRESHOLD` | `0.35` | Minimum cosine similarity score for suggestions |
 | `SUGGESTION_COUNT` | `5` | Maximum number of suggestions returned per request |
-| `LLM_PROVIDER` | `fake` | Provider: `fake` or `openai` |
-| `LLM_MODEL` | `gpt-4o-mini` | LLM model for relationship extraction |
-| `LLM_API_KEY` | `""` | API key (required if provider is `openai`) |
+| `LLM_PROVIDER` | `fake` | Provider: `fake`, `huggingface`, or `openai` |
+| `LLM_MODEL` | `meta-llama/Llama-3.2-1B-Instruct` | Model identifier (e.g. `meta-llama/Llama-3.2-1B-Instruct`, `Qwen/Qwen2.5-1.5B-Instruct`, `gpt-4o-mini`) |
+| `HF_TOKEN` | `""` | Hugging Face User Access Token (for `LLM_PROVIDER=huggingface`) |
+| `LLM_API_KEY` | `""` | API key (required if provider is `openai`, or fallback for `huggingface`) |
+| `HF_ENDPOINT` | `https://router.huggingface.co/hf-inference/v1/chat/completions` | Hugging Face OpenAI-compatible inference router |
 | `LLM_MAX_CONCURRENCY` | `3` | Max concurrent LLM requests via Semaphore |
 | `LLM_TIMEOUT_SECONDS` | `30.0` | Timeout per LLM completion call |
 | `MAX_RELATION_PAIRS` | `10` | Maximum candidate annotation pairs evaluated |

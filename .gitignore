@@ -38,6 +38,7 @@ htmlcov/
 *.sqlite3
 *.db
 uploads/
+data/
 *.local
 
 # Environment & secrets

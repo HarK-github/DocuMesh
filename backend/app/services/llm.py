@@ -80,6 +80,34 @@ class FakeLLMClient(BaseLLMClient):
         return f"According to the document text and annotations, the answer is confirmed by {cited_str}."
 
 
+def _extract_json_object(content: str) -> Dict[str, Any]:
+    """Parse JSON object from text, handling markdown fences, trailing text, and extra braces."""
+    trimmed = content.strip()
+    if trimmed.startswith("```"):
+        lines = trimmed.splitlines()
+        if len(lines) >= 2 and lines[-1].strip().startswith("```"):
+            trimmed = "\n".join(lines[1:-1]).strip()
+        elif lines[0].strip().startswith("```"):
+            trimmed = "\n".join(lines[1:]).strip()
+
+    try:
+        return json.loads(trimmed)
+    except json.JSONDecodeError:
+        idx = trimmed.find("{")
+        if idx != -1:
+            try:
+                decoder = json.JSONDecoder()
+                obj, _ = decoder.raw_decode(trimmed[idx:])
+                if isinstance(obj, dict):
+                    return obj
+            except Exception:
+                pass
+        match = re.search(r"\{.*\}", trimmed, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+        raise
+
+
 class OpenAILLMClient(BaseLLMClient):
     """OpenAI API client implementation."""
 
@@ -118,7 +146,7 @@ class OpenAILLMClient(BaseLLMClient):
                 resp.raise_for_status()
                 data = resp.json()
                 content = data["choices"][0]["message"]["content"]
-                return json.loads(content)
+                return _extract_json_object(content)
 
     def complete(self, messages: List[Dict[str, str]]) -> str:
         """Call OpenAI chat completions API expecting plain text response."""
@@ -141,6 +169,86 @@ class OpenAILLMClient(BaseLLMClient):
                 return data["choices"][0]["message"]["content"]
 
 
+class HuggingFaceLLMClient(BaseLLMClient):
+    """Hugging Face Serverless Inference client using official huggingface_hub."""
+
+    DEFAULT_MODEL = "meta-llama/Llama-3.2-1B-Instruct"
+
+    def __init__(self) -> None:
+        from huggingface_hub import InferenceClient
+
+        settings = get_settings()
+        token = settings.hf_token or settings.llm_api_key
+        if not token:
+            raise LLMNotConfiguredError(
+                "Hugging Face token is not configured. Set HF_TOKEN or LLM_API_KEY in your environment."
+            )
+        self.api_key = token
+        if settings.llm_model and settings.llm_model != "gpt-4o-mini":
+            self.model = settings.llm_model
+        else:
+            self.model = self.DEFAULT_MODEL
+
+        self.timeout = settings.llm_timeout_seconds
+        self._semaphore = threading.Semaphore(settings.llm_max_concurrency)
+        provider = settings.hf_provider if settings.hf_provider else None
+        self._client = InferenceClient(
+            api_key=self.api_key,
+            provider=provider,
+            timeout=self.timeout,
+        )
+
+    def _call_with_retry(self, **kwargs) -> Any:
+        """Execute chat completion with transient error retries."""
+        import time
+
+        max_attempts = 3
+        last_error = None
+        for attempt in range(max_attempts):
+            try:
+                return self._client.chat.completions.create(**kwargs)
+            except Exception as exc:
+                last_error = exc
+                if attempt < max_attempts - 1:
+                    time.sleep(0.8 * (attempt + 1))
+                else:
+                    raise last_error
+
+    def complete_json(self, prompt: str) -> Dict[str, Any]:
+        """Call Hugging Face chat completion API expecting JSON response."""
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a precise relational knowledge graph extraction assistant. "
+                    "You must return ONLY a raw JSON object with no Markdown backticks, "
+                    "no explanations, and no other text."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ]
+        with self._semaphore:
+            resp = self._call_with_retry(
+                model=self.model,
+                messages=messages,
+                max_tokens=512,
+                temperature=0.0,
+            )
+            content = resp.choices[0].message.content
+            return _extract_json_object(content)
+
+    def complete(self, messages: List[Dict[str, str]]) -> str:
+        """Call Hugging Face chat completions API expecting plain text response."""
+        with self._semaphore:
+            resp = self._call_with_retry(
+                model=self.model,
+                messages=messages,
+                max_tokens=1024,
+                temperature=0.0,
+            )
+            return resp.choices[0].message.content.strip()
+
+
 _shared_llm_client: Optional[BaseLLMClient] = None
 
 
@@ -151,13 +259,14 @@ def get_llm_client() -> BaseLLMClient:
         return _shared_llm_client
 
     settings = get_settings()
-    if settings.llm_provider == "fake":
+    provider = (settings.llm_provider or "").lower().strip()
+    if provider == "fake":
         return FakeLLMClient()
 
-    if not settings.llm_api_key:
-        raise LLMNotConfiguredError("LLM_API_KEY environment variable is missing or empty")
+    if provider in ("huggingface", "hf"):
+        return HuggingFaceLLMClient()
 
-    if settings.llm_provider == "openai":
+    if provider == "openai":
         return OpenAILLMClient()
 
     raise ValueError(f"Unsupported LLM provider: {settings.llm_provider}")

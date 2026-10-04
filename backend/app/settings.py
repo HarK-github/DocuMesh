@@ -65,21 +65,36 @@ class Settings(BaseSettings):
         description="Cosine similarity threshold for suggestions",
     )
 
-    # LLM configuration (suggested relations)
+    # LLM configuration (suggested relations & document chat)
     llm_provider: str = Field(
         default="fake",
         alias="LLM_PROVIDER",
-        description="LLM provider: fake, openai",
+        description="LLM provider: fake, openai, huggingface",
     )
     llm_model: str = Field(
         default="gpt-4o-mini",
         alias="LLM_MODEL",
-        description="Model name for relation extraction",
+        description="Model name for relation extraction & chat",
     )
     llm_api_key: str = Field(
         default="",
         alias="LLM_API_KEY",
         description="API key for chosen LLM provider",
+    )
+    hf_token: str = Field(
+        default="",
+        alias="HF_TOKEN",
+        description="Hugging Face user access token for serverless inference",
+    )
+    hf_endpoint: str = Field(
+        default="https://router.huggingface.co/hf-inference/v1/chat/completions",
+        alias="HF_ENDPOINT",
+        description="OpenAI-compatible router endpoint for Hugging Face inference",
+    )
+    hf_provider: str = Field(
+        default="featherless-ai",
+        alias="HF_PROVIDER",
+        description="Provider identifier for Hugging Face serverless inference (e.g. featherless-ai)",
     )
     llm_max_concurrency: int = Field(
         default=3,
