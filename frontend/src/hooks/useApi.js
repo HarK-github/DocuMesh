@@ -157,3 +157,13 @@ export function useJob(jobId) {
     },
   });
 }
+
+/**
+ * useChat hook for asking document-scoped questions with graph context.
+ */
+export function useChat(documentId) {
+  return useMutation({
+    mutationFn: ({ question, history = [] }) =>
+      api.post(`/documents/${documentId}/chat`, { question, history }),
+  });
+}

@@ -33,12 +33,15 @@ import PdfViewer from './components/PdfViewer';
 import GraphView from './components/GraphView';
 import AnnotationPanel from './components/AnnotationPanel';
 import SuggestionList from './components/SuggestionList';
+import ChatPanel from './components/ChatPanel';
 
 export default function App() {
   const [selectedDocId, setSelectedDocId] = useState(1);
   const [activeTab, setActiveTab] = useState('both'); // 'viewer' | 'graph' | 'both'
   const [docViewMode, setDocViewMode] = useState('reader'); // 'reader' | 'pdf'
+  const [sidebarTab, setSidebarTab] = useState('chat'); // 'inspector' | 'chat'
   const [selectedAnnotationId, setSelectedAnnotationId] = useState(null);
+  const [selectedRelationId, setSelectedRelationId] = useState(null);
   const [scrollToId, setScrollToId] = useState(null);
   const [flashRange, setFlashRange] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
@@ -538,6 +541,7 @@ export default function App() {
               relations={relations}
               taxonomy={taxonomy}
               selectedAnnotationId={selectedAnnotationId}
+              selectedRelationId={selectedRelationId}
               onSelectAnnotation={handleSelectAnnotation}
               onCreateRelation={(payload) => createRelationMutation.mutate(payload)}
               onUpdateRelation={(id, data) => updateRelationMutation.mutate({ id, data })}
@@ -547,44 +551,121 @@ export default function App() {
           </div>
         )}
 
-        {/* Right Sidebar: Annotations & Suggestions */}
+        {/* Right Sidebar: Inspector (Annotations & Suggestions) or Chat */}
         <div
           style={{
-            width: '340px',
+            width: '360px',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '8px',
             height: '100%',
             overflow: 'hidden',
           }}
         >
-          {/* Top Panel: Annotations */}
-          <div style={{ flex: 6, minHeight: 0 }}>
-            <AnnotationPanel
-              annotations={annotations}
-              taxonomy={taxonomy}
-              selectedId={selectedAnnotationId}
-              onSelect={handleSelectAnnotation}
-              onUpdate={({ id, data }) => updateAnnotationMutation.mutateAsync({ id, data })}
-              onDelete={(id) => deleteAnnotationMutation.mutate(id)}
-            />
+          {/* Sidebar Tab Switcher */}
+          <div
+            style={{
+              display: 'flex',
+              background: '#e2e8f0',
+              padding: '2px',
+              borderRadius: '8px',
+              gap: '2px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setSidebarTab('inspector')}
+              style={{
+                flex: 1,
+                padding: '5px 8px',
+                borderRadius: '6px',
+                border: 'none',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: sidebarTab === 'inspector' ? '#ffffff' : 'transparent',
+                color: sidebarTab === 'inspector' ? '#2563eb' : '#64748b',
+                boxShadow: sidebarTab === 'inspector' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+              }}
+            >
+              Annotations ({annotations.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarTab('chat')}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                padding: '5px 8px',
+                borderRadius: '6px',
+                border: 'none',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: sidebarTab === 'chat' ? '#ffffff' : 'transparent',
+                color: sidebarTab === 'chat' ? '#2563eb' : '#64748b',
+                boxShadow: sidebarTab === 'chat' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+              }}
+            >
+              <Sparkles size={13} color={sidebarTab === 'chat' ? '#2563eb' : '#64748b'} />
+              <span>Document Chat</span>
+            </button>
           </div>
 
-          {/* Bottom Panel: Smart Highlights Suggestions */}
-          <div style={{ flex: 4, minHeight: 0 }}>
-            <SuggestionList
-              suggestions={suggestions}
-              isLoading={isSuggestingHighlights}
-              onAccept={handleAcceptSuggestion}
-              onReject={handleRejectSuggestion}
-              onRefresh={handleGenerateHighlights}
-              onSelect={(sug) => {
-                setScrollToId(null);
-                // Highlight corresponding area
+          {sidebarTab === 'chat' ? (
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              <ChatPanel
+                documentId={selectedDocId}
+                cleanText={textData?.clean_text || ''}
+                taxonomy={taxonomy}
+                onSelectAnnotation={handleSelectAnnotation}
+                onSelectRelation={(relId) => setSelectedRelationId(relId)}
+                onJumpToRange={(range) => setFlashRange(range)}
+                onCreateAnnotation={(payload) => createAnnotationMutation.mutate(payload)}
+              />
+            </div>
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                overflow: 'hidden',
               }}
-            />
-          </div>
+            >
+              {/* Top Panel: Annotations */}
+              <div style={{ flex: 6, minHeight: 0 }}>
+                <AnnotationPanel
+                  annotations={annotations}
+                  taxonomy={taxonomy}
+                  selectedId={selectedAnnotationId}
+                  onSelect={handleSelectAnnotation}
+                  onUpdate={({ id, data }) => updateAnnotationMutation.mutateAsync({ id, data })}
+                  onDelete={(id) => deleteAnnotationMutation.mutate(id)}
+                />
+              </div>
+
+              {/* Bottom Panel: Smart Highlights Suggestions */}
+              <div style={{ flex: 4, minHeight: 0 }}>
+                <SuggestionList
+                  suggestions={suggestions}
+                  isLoading={isSuggestingHighlights}
+                  onAccept={handleAcceptSuggestion}
+                  onReject={handleRejectSuggestion}
+                  onRefresh={handleGenerateHighlights}
+                  onSelect={(sug) => {
+                    setScrollToId(null);
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

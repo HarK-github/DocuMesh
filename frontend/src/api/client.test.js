@@ -42,4 +42,46 @@ describe('API client', () => {
       expect(err.message).toBe('Document not found');
     }
   });
+
+  it('posts chat queries with question and history, returning answer and citations', async () => {
+    const mockChatResponse = {
+      answer: 'According to the text [s1], Turing proposed the test.',
+      citations: [
+        { type: 'sentence', id: 1, start: 0, end: 19 },
+        { type: 'annotation', id: 2, start: 20, end: 68 },
+      ],
+      used_context: true,
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (h) => (h === 'content-type' ? 'application/json' : null),
+      },
+      json: async () => mockChatResponse,
+    });
+
+    const requestBody = {
+      question: 'What test did Turing propose?',
+      history: [{ role: 'user', content: 'Hello' }],
+    };
+
+    const res = await api.post('/documents/1/chat', requestBody);
+
+    expect(res).toEqual(mockChatResponse);
+    expect(res.used_context).toBe(true);
+    expect(res.citations).toHaveLength(2);
+    expect(res.citations[0].type).toBe('sentence');
+    expect(res.citations[1].type).toBe('annotation');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://localhost:8000/documents/1/chat',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(requestBody),
+      })
+    );
+  });
 });

@@ -183,6 +183,7 @@ export default function GraphView({
   relations = [],
   taxonomy = { labels: [], relation_types: [] },
   selectedAnnotationId = null,
+  selectedRelationId = null,
   onSelectAnnotation = () => {},
   onCreateRelation = () => {},
   onUpdateRelation = () => {},
@@ -292,11 +293,14 @@ export default function GraphView({
           }
         }
 
-        const strokeColor = isSuggested
+        const isFocused = rel.id === selectedRelationId;
+        const strokeColor = isFocused
+          ? '#2563eb'
+          : isSuggested
           ? '#f59e0b'
           : rel.type === 'contradicts'
           ? '#ef4444'
-          : '#2563eb';
+          : '#64748b';
 
         return {
           id: `edge-${rel.id}`,
@@ -307,11 +311,11 @@ export default function GraphView({
           type: 'smoothstep',
           pathOptions: { borderRadius: 16 },
           label: rel.type,
-          animated: isSuggested,
+          animated: isSuggested || isFocused,
           style: {
             stroke: strokeColor,
-            strokeWidth: 2,
-            strokeDasharray: isSuggested ? '6,4' : undefined,
+            strokeWidth: isFocused ? 4 : 2,
+            strokeDasharray: isSuggested && !isFocused ? '6,4' : undefined,
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
