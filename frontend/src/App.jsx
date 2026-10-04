@@ -549,6 +549,23 @@ export default function App() {
                 <PdfViewer
                   documentId={selectedDocId}
                   annotationsCount={annotations?.length || 0}
+                  cleanText={textData?.clean_text || ''}
+                  annotations={annotations}
+                  suggestions={suggestions}
+                  taxonomy={taxonomy}
+                  selectedAnnotationId={selectedAnnotationId}
+                  onSelectAnnotation={handleSelectAnnotation}
+                  onCreateAnnotation={(payload) => createAnnotationMutation.mutate(payload)}
+                  onSaveAndFindMore={handleSaveAndFindMore}
+                  onAcceptSuggestion={handleAcceptSuggestion}
+                  onRejectSuggestion={handleRejectSuggestion}
+                  onAcceptAllSuggestions={handleAcceptAllSuggestions}
+                  scrollToAnnotationId={scrollToId}
+                  isMutating={
+                    createAnnotationMutation.isPending ||
+                    suggestHighlightsMutation.isPending ||
+                    acceptAllSuggestionsMutation.isPending
+                  }
                 />
               )}
             </div>
