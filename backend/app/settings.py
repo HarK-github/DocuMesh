@@ -97,6 +97,33 @@ class Settings(BaseSettings):
         description="Cap on annotation pairs checked per relation suggestion run",
     )
 
+    # Graph-aware document chat settings
+    chat_top_k_sentences: int = Field(
+        default=5,
+        alias="CHAT_TOP_K_SENTENCES",
+        description="Top sentence count to retrieve for document chat",
+    )
+    chat_top_k_annotations: int = Field(
+        default=5,
+        alias="CHAT_TOP_K_ANNOTATIONS",
+        description="Top annotation count to retrieve for document chat",
+    )
+    chat_neighbor_hops: int = Field(
+        default=2,
+        alias="CHAT_NEIGHBOR_HOPS",
+        description="Max relation hops to traverse from retrieved annotations",
+    )
+    chat_max_history: int = Field(
+        default=5,
+        alias="CHAT_MAX_HISTORY",
+        description="Max dialogue turns kept in chat history context",
+    )
+    chat_max_context_chars: int = Field(
+        default=3000,
+        alias="CHAT_MAX_CONTEXT_CHARS",
+        description="Max character budget for compacted context passed to LLM",
+    )
+
     # Threading and concurrency
     max_workers: int = Field(
         default=4,
