@@ -3,6 +3,8 @@
 **DocuMesh** is an interactive web application where users upload text-based PDFs, highlight passages, link highlights with typed relationships visualized as an interactive document mesh, and receive smart highlight and relation suggestions.
 ![alt text](image.png)
 ## Key Features
+- **Inline Highlights Reader View**: Native text reader rendering `clean_text` with non-overlapping inline highlight marks (`<mark>`), taxonomy-driven styling, pending suggestion accept/reject controls, DOM `data-start` selection coordinates, bidirectional graph synchronization (click highlight -> select node in graph; select node in graph -> scroll and flash highlight in reader), and view toggle between Reader and original PDF.
+- **Graph-Aware Document Chat**: Answer questions grounded in document text and relationship graph edges (`POST /documents/{id}/chat`), with clickable citation chips that jump/flash in the reader, highlight graph nodes/edges, and allow saving cited sentences as annotations.
 - **PDF Ingestion & Text Extraction**: Extracts clean text, normalizes sentences, and tracks exact character offsets (`POST /documents`, `GET /documents/{id}`, `GET /documents/{id}/text`).
 - **Deduplication & Safety**: Instant SHA-256 deduplication and upload size/page limits.
 - **Background Jobs**: Tracked jobs with progress tracking and failure logging (`GET /jobs/{id}`).
@@ -38,10 +40,26 @@ All settings are configured via environment variables (see `.env.example`):
 | `LLM_MAX_CONCURRENCY` | `3` | Max concurrent LLM requests via Semaphore |
 | `LLM_TIMEOUT_SECONDS` | `30.0` | Timeout per LLM completion call |
 | `MAX_RELATION_PAIRS` | `10` | Maximum candidate annotation pairs evaluated |
+| `CHAT_TOP_K_SENTENCES` | `5` | Top sentence count retrieved for chat context |
+| `CHAT_TOP_K_ANNOTATIONS` | `5` | Top annotation count retrieved for chat context |
+| `CHAT_NEIGHBOR_HOPS` | `2` | Max graph hops traversed from retrieved seed annotations |
+| `CHAT_MAX_HISTORY` | `5` | Max dialogue turns kept in chat history context |
+| `CHAT_MAX_CONTEXT_CHARS` | `3000` | Max character budget for compacted context passed to LLM |
 | `MAX_WORKERS` | `4` | Worker threads in ThreadPoolExecutor for background jobs |
 | `SQLITE_BUSY_TIMEOUT_MS` | `5000` | SQLite WAL busy timeout in milliseconds |
 | `CORS_ORIGINS` | `["http://localhost:5173"]` | Permitted CORS origin origins |
 | `VITE_API_URL` | `http://localhost:8000` | Frontend API base URL |
+
+## How Document Chat Uses the Graph
+
+DocuMesh features a graph-augmented QA pipeline (`POST /documents/{id}/chat`) designed for grounding answers in both raw text and semantic relationships:
+
+1. **Dual Vector Retrieval**: When a question is asked, the query is embedded using the configured embedder (`all-MiniLM-L6-v2` or deterministic fake). It computes cosine similarity across both document sentences (returning top `CHAT_TOP_K_SENTENCES`) and existing annotations (returning top `CHAT_TOP_K_ANNOTATIONS` as seeds).
+2. **In-Memory Graph Expansion**: From each seed annotation, DocuMesh traverses the document's relationship graph in memory up to `CHAT_NEIGHBOR_HOPS` hops. This incorporates neighbor nodes and connecting relations (e.g. `supports`, `refutes`, `defines`), retaining both confirmed and suggested relations.
+3. **Compact Context Budgeting**: Retrieved sentences, annotations, and relations are assigned stable identifiers (`[s..]`, `[a..]`, `[r..]`) and ranked by relevance. They are packed into a compact context string strictly capped at `CHAT_MAX_CONTEXT_CHARS`, dropping lowest-ranked items first.
+4. **Citation Validation**: The LLM is instructed via system prompt to answer strictly from the provided context and cite bracketed IDs (e.g. `[s3]`, `[a1]`, `[r2]`). The server parses all bracketed citations, verifies that they were present in the delivered context, resolves their character offsets, and strips any hallucinated citations while preserving the answer text.
+5. **No-Context Shortcut**: If retrieval yields no context above the minimal relevance threshold (`0.15`), the system returns `"I couldn't find this in the document."` with `used_context: false` immediately, without making an unnecessary LLM call.
+6. **Interactive UI Navigation**: In the frontend chat panel, citations render as clickable chips. Clicking a sentence or annotation citation scrolls the reader directly to the passage and flashes it. For annotations, the corresponding graph node is selected; for relations, the edge in the graph is focused. Sentences can also be saved as new annotations with one click.
 
 ## Quick Start
 
@@ -127,8 +145,22 @@ python backend/load_test.py --url http://127.0.0.1:8000 -n 200 -c 20
 - `POST /suggestions/{id}/reject` - Reject suggestion (idempotent).
 - `POST /documents/{id}/suggest-relations` - Launch background LLM relation discovery across annotation pairs. Returns `{"job_id": "..."}`. Returns `503` if LLM is unconfigured.
 
+### Graph-Aware Document Chat
+- `POST /documents/{id}/chat` - Query document and relationship mesh with grounded citations.
+  - **Request**: `{"question": "string", "history": [{"role": "user", "content": "..."}]}` (history is trimmed to `CHAT_MAX_HISTORY` turns).
+  - **Response**: `{"answer": "string", "citations": [{"type": "sentence" | "annotation" | "relation", "id": 1, "start": 0, "end": 20}], "used_context": true}`.
+  - **Status codes**: `200` on success (including `used_context: false` on no-context shortcut), `404` for unknown document, `422` for empty question, `503` if LLM service is unconfigured.
+
 ### Jobs
 - `GET /jobs/{id}` - Retrieve job execution status (`queued`, `running`, `done`, `failed`), progress (0-100), result, and error.
+
+## Demo Script
+
+A dedicated graph-aware chat demonstration script is included at `scripts/demo_chat.py`. It tests three questions exploring definitions, support chains, and contradiction relations on `sample.pdf`:
+
+```bash
+python scripts/demo_chat.py
+```
 
 ## Free Hosting & Deployment
 
