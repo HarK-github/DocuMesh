@@ -324,9 +324,9 @@ export default function GraphView({
       rels = rels.filter((r) => r.type === filterRelType);
     }
 
-    // Hide similar_to edges by default unless toggled on
+    // Hide confirmed similar_to edges by default unless toggled on, but keep suggested ghost edges visible
     if (!showSimilarTo) {
-      rels = rels.filter((r) => r.type !== 'similar_to');
+      rels = rels.filter((r) => r.type !== 'similar_to' || r.status === 'suggested');
     }
 
     // Filter neighbors of selected node
@@ -639,7 +639,7 @@ export default function GraphView({
             checked={showSimilarTo}
             onChange={(e) => setShowSimilarTo(e.target.checked)}
           />
-          <span>Show similar_to</span>
+          <span>Show accepted similar_to</span>
         </label>
 
         <button
