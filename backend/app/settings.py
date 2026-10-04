@@ -123,9 +123,9 @@ class Settings(BaseSettings):
         description="OpenAI-compatible router endpoint for Hugging Face inference",
     )
     hf_provider: str = Field(
-        default="featherless-ai",
+        default="",
         alias="HF_PROVIDER",
-        description="Provider identifier for Hugging Face serverless inference (e.g. featherless-ai)",
+        description="Provider identifier for Hugging Face serverless inference (empty for default HF serverless)",
     )
     llm_max_concurrency: int = Field(
         default=3,
