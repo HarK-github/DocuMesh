@@ -20,7 +20,7 @@ def _build_prompt(ann1: Dict[str, Any], ann2: Dict[str, Any], valid_types: List[
     q2 = ann2.get("quote", "")
     l2 = ann2.get("label", "")
 
-    # Exclude technical/structural relation types like similar_to from semantic extraction prompt
+    # Exclude technical relation types like similar_to from semantic extraction prompt
     semantic_types = [t for t in valid_types if t != "similar_to"]
     if not semantic_types:
         semantic_types = valid_types
@@ -37,20 +37,21 @@ Label: {l2}
 
 Permitted relation types: {semantic_types}
 
-Relation Type Guidance:
-- "supports": Passage 1 provides evidence, rationale, or proof supporting Passage 2 (or vice versa).
-- "refutes": Passage 1 contradicts, counters, or questions Passage 2.
-- "defines": Passage 1 defines, names, or specifies a concept/term used in Passage 2.
-- "elaborates": Passage 1 provides further detail, depth, or context for Passage 2.
-- "causes": Passage 1 directly leads to, causes, or influences Passage 2.
-- "relates_to": Passages share a clear conceptual or topical relationship.
+Label-Aware Dynamic Rules:
+- Problem <-> Solution: MUST use "solves" if one passage resolves, addresses, or proposes a solution to the other.
+- Claim <-> Evidence: MUST use "supports" (if evidence justifies the claim) or "refutes" (if evidence contradicts it).
+- Definition <-> any passage: MUST use "defines" if one passage defines or names a concept used in the other.
+- Method <-> Result: MUST use "causes" or "supports".
+- Claim <-> Claim: use "similar_to" (if they make the same claim), "supports", "refutes", or "elaborates".
+- Problem <-> Problem: use "similar_to" (if they ask or pose the same underlying question/problem).
+- NOTE: "relates_to" is STRICTLY A LAST RESORT FALLBACK. Never use "relates_to" if "solves", "supports", "refutes", "defines", "causes", "similar_to", or "elaborates" applies!
 
 Instructions:
-1. Determine if a typed relationship exists between these two passages.
-2. If a relationship exists, specify "type" (one of the permitted relation types), "direction" ("forward" if Passage 1 relates to Passage 2, or "reverse" if Passage 2 relates to Passage 1), and a 1-2 sentence "reason".
-3. If no clear relationship exists, set "type" to null.
+1. Examine the labels and text of both passages. Determine their dynamic typed relationship.
+2. Specify "type" (one of the permitted types), "direction" ("forward" if Passage 1 relates to Passage 2, or "reverse" if Passage 2 relates to Passage 1), and a 1-2 sentence "reason".
+3. If no relationship exists, set "type" to null.
 
-You MUST reply with a JSON object in this format:
+You MUST reply with ONLY a JSON object in this format:
 {{
   "type": "one_of_the_permitted_types_or_null",
   "direction": "forward",
@@ -217,7 +218,7 @@ def process_suggest_relations_job(
                 prompt = _build_prompt(a1, a2, taxonomy_types)
                 data = llm.complete_json(prompt)
 
-                rel_type = data.get("type")
+                rel_type = data.get("type") or data.get("relation")
                 reason = data.get("reason", "")
                 direction = data.get("direction", "forward")
 

@@ -103,12 +103,12 @@ def generate_highlight_suggestions(
 
     # Determine target label and seed ID
     if seed_ann:
-        target_label = seed_ann.label
         seed_id = seed_ann.id
         scope = payload.scope if payload else "passage"
+        target_label = payload.target_label if (payload and payload.target_label) else seed_ann.label
     else:
         default_label = db.query(Label).first()
-        target_label = default_label.name if default_label else "Claim"
+        target_label = (payload.target_label if payload and payload.target_label else (default_label.name if default_label else "Claim"))
         seed_id = None
         scope = "passage"
 
@@ -354,9 +354,38 @@ def generate_highlight_suggestions(
     return results
 
 
+def infer_dynamic_relation(
+    seed_label: Optional[str],
+    target_label: Optional[str],
+    seed_id: int,
+    target_id: int,
+) -> tuple[int, int, str]:
+    """Dynamically determine typed relationship and direction based on annotation labels."""
+    s = (seed_label or "").lower()
+    t = (target_label or "").lower()
+
+    if (s == "problem" and t == "solution") or (s == "solution" and t == "problem"):
+        src = target_id if s == "problem" else seed_id
+        tgt = seed_id if s == "problem" else target_id
+        return src, tgt, "solves"
+    if (s == "claim" and t == "evidence") or (s == "evidence" and t == "claim"):
+        src = target_id if s == "claim" else seed_id
+        tgt = seed_id if s == "claim" else target_id
+        return src, tgt, "supports"
+    if s == "definition":
+        return seed_id, target_id, "defines"
+    if t == "definition":
+        return target_id, seed_id, "defines"
+    if s == "method" and t == "result":
+        return seed_id, target_id, "causes"
+    if s == "result" and t == "method":
+        return target_id, seed_id, "causes"
+    return seed_id, target_id, "similar_to"
+
+
 @router.post("/suggestions/{suggestion_id}/accept", response_model=SuggestionResponse)
 def accept_suggestion(suggestion_id: int, db: Session = Depends(get_db)) -> SuggestionResponse:
-    """Accept a suggestion: create annotation and confirmed similar_to relation in one transaction (idempotent)."""
+    """Accept a suggestion: create annotation and confirmed dynamic relation in one transaction (idempotent)."""
     sug = db.query(Suggestion).filter(Suggestion.id == suggestion_id).first()
     if not sug:
         raise HTTPException(status_code=404, detail="Suggestion not found")
@@ -398,22 +427,31 @@ def accept_suggestion(suggestion_id: int, db: Session = Depends(get_db)) -> Sugg
             db.flush()
 
         if sug.seed_annotation_id and sug.seed_annotation_id != ann.id:
+            seed_ann = (
+                sug.seed_annotation
+                or db.query(Annotation).filter(Annotation.id == sug.seed_annotation_id).first()
+            )
+            seed_label = seed_ann.label if seed_ann else None
+            src_id, tgt_id, dynamic_type = infer_dynamic_relation(
+                seed_label, ann.label, sug.seed_annotation_id, ann.id
+            )
+
             rel = (
                 db.query(Relation)
                 .filter(
                     Relation.document_id == doc.id,
-                    Relation.source_id == sug.seed_annotation_id,
-                    Relation.target_id == ann.id,
-                    Relation.type == "similar_to",
+                    Relation.source_id == src_id,
+                    Relation.target_id == tgt_id,
+                    Relation.type == dynamic_type,
                 )
                 .first()
             )
             if not rel:
                 rel = Relation(
                     document_id=doc.id,
-                    source_id=sug.seed_annotation_id,
-                    target_id=ann.id,
-                    type="similar_to",
+                    source_id=src_id,
+                    target_id=tgt_id,
+                    type=dynamic_type,
                     status="confirmed",
                     reason=str(round(sug.score, 4)),
                     version=1,

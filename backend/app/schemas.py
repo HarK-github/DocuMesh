@@ -148,6 +148,7 @@ class SuggestHighlightsRequest(BaseModel):
     """Payload to request scoped highlight suggestions."""
     seed_annotation_id: Optional[int] = None
     scope: Optional[str] = "passage"  # 'passage' | 'category'
+    target_label: Optional[str] = None
 
 
 class SuggestionResponse(BaseModel):

@@ -247,12 +247,18 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
         nodes.append(ghost_node)
 
         if sug.seed_annotation_id:
+            from backend.app.routes.suggestions import infer_dynamic_relation
+            seed_ann = db.query(Annotation).filter(Annotation.id == sug.seed_annotation_id).first()
+            seed_label = seed_ann.label if seed_ann else None
+            _, _, dynamic_type = infer_dynamic_relation(
+                seed_label, sug.label, sug.seed_annotation_id, sug.id
+            )
             ghost_edge = RelationResponse(
                 id=-(sug.id),
                 document_id=document_id,
                 source_id=sug.id,
                 target_id=sug.seed_annotation_id,
-                type="similar_to",
+                type=dynamic_type,
                 status="suggested",
                 reason=str(round(sug.score, 4)),
                 version=1,

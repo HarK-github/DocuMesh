@@ -465,3 +465,55 @@ def test_graph_includes_ghost_nodes_and_excludes_rejected(scoped_setup) -> None:
     # sug_to_keep is still present
     assert any(n["id"] == sug_to_keep["id"] for n in ghost_nodes2)
     assert any(e["source_id"] == sug_to_keep["id"] and e["target_id"] == ann1_id for e in ghost_edges2)
+
+
+def test_dynamic_relation_inference_on_accept(scoped_setup) -> None:
+    """Verify that accepting suggestions between different categories dynamically assigns typed relations."""
+    client, doc_id, _, _, _, TestingSession = scoped_setup
+
+    # Create a Problem annotation and a Solution suggestion
+    with TestingSession() as session:
+        prob = Annotation(
+            document_id=doc_id,
+            start=0,
+            end=10,
+            quote="Problem statement here",
+            label="Problem",
+            version=1,
+        )
+        session.add(prob)
+        session.commit()
+        prob_id = prob.id
+
+        sent = session.query(Sentence).filter(Sentence.document_id == doc_id).first()
+        sug = Suggestion(
+            document_id=doc_id,
+            sentence_id=sent.id,
+            seed_annotation_id=prob_id,
+            label="Solution",
+            scope="passage",
+            score=0.91,
+            status="pending",
+        )
+        session.add(sug)
+        session.commit()
+        sug_id = sug.id
+
+    # Accept the Solution suggestion
+    res = client.post(f"/suggestions/{sug_id}/accept")
+    assert res.status_code == 200
+
+    # Verify that the created relation has type "solves"
+    with TestingSession() as session:
+        rel = (
+            session.query(Relation)
+            .filter(
+                Relation.document_id == doc_id,
+                Relation.target_id == prob_id,
+                Relation.type == "solves",
+            )
+            .first()
+        )
+        assert rel is not None
+        assert rel.status == "confirmed"
+
