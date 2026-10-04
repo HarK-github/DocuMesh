@@ -28,6 +28,7 @@ import {
 } from './hooks/useApi';
 import { useHealth } from './hooks/useHealth';
 import { api } from './api/client';
+import ReaderView from './components/ReaderView';
 import PdfViewer from './components/PdfViewer';
 import GraphView from './components/GraphView';
 import AnnotationPanel from './components/AnnotationPanel';
@@ -36,8 +37,10 @@ import SuggestionList from './components/SuggestionList';
 export default function App() {
   const [selectedDocId, setSelectedDocId] = useState(1);
   const [activeTab, setActiveTab] = useState('both'); // 'viewer' | 'graph' | 'both'
+  const [docViewMode, setDocViewMode] = useState('reader'); // 'reader' | 'pdf'
   const [selectedAnnotationId, setSelectedAnnotationId] = useState(null);
   const [scrollToId, setScrollToId] = useState(null);
+  const [flashRange, setFlashRange] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
   const [uploadError, setUploadError] = useState(null);
@@ -430,28 +433,92 @@ export default function App() {
           gap: '12px',
         }}
       >
-        {/* Left Column: PDF Viewer */}
+        {/* Left Column: Reader / Document View */}
         {(activeTab === 'viewer' || activeTab === 'both') && (
           <div
             style={{
               flex: activeTab === 'both' ? 5 : 1,
               height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
               overflow: 'hidden',
+              gap: '6px',
             }}
           >
-            <PdfViewer
-              documentId={selectedDocId}
-              cleanText={textData?.clean_text || ''}
-              annotations={annotations}
-              suggestions={suggestions}
-              taxonomy={taxonomy}
-              selectedAnnotationId={selectedAnnotationId}
-              onSelectAnnotation={handleSelectAnnotation}
-              onCreateAnnotation={(payload) => createAnnotationMutation.mutate(payload)}
-              onAcceptSuggestion={handleAcceptSuggestion}
-              onRejectSuggestion={handleRejectSuggestion}
-              scrollToAnnotationId={scrollToId}
-            />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 4px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  background: '#e2e8f0',
+                  padding: '2px',
+                  borderRadius: '6px',
+                  gap: '2px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setDocViewMode('reader')}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: docViewMode === 'reader' ? '#ffffff' : 'transparent',
+                    color: docViewMode === 'reader' ? '#2563eb' : '#64748b',
+                    boxShadow: docViewMode === 'reader' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  }}
+                >
+                  Reader View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDocViewMode('pdf')}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: docViewMode === 'pdf' ? '#ffffff' : 'transparent',
+                    color: docViewMode === 'pdf' ? '#2563eb' : '#64748b',
+                    boxShadow: docViewMode === 'pdf' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  }}
+                >
+                  Raw PDF
+                </button>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
+              {docViewMode === 'reader' ? (
+                <ReaderView
+                  documentId={selectedDocId}
+                  cleanText={textData?.clean_text || ''}
+                  annotations={annotations}
+                  suggestions={suggestions}
+                  taxonomy={taxonomy}
+                  selectedAnnotationId={selectedAnnotationId}
+                  onSelectAnnotation={handleSelectAnnotation}
+                  onCreateAnnotation={(payload) => createAnnotationMutation.mutate(payload)}
+                  onAcceptSuggestion={handleAcceptSuggestion}
+                  onRejectSuggestion={handleRejectSuggestion}
+                  scrollToAnnotationId={scrollToId}
+                  flashRange={flashRange}
+                />
+              ) : (
+                <PdfViewer documentId={selectedDocId} />
+              )}
+            </div>
           </div>
         )}
 

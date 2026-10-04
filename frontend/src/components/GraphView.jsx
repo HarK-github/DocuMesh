@@ -19,17 +19,10 @@ import {
   Check,
   Sparkles,
 } from 'lucide-react';
+import { getLabelStyle } from '../lib/colors';
 
 const NODE_WIDTH = 240;
 const NODE_HEIGHT = 100;
-
-const LABEL_THEMES = {
-  Problem: { bg: '#fef2f2', border: '#f87171', text: '#991b1b', badge: '#fee2e2' },
-  Claim: { bg: '#eff6ff', border: '#60a5fa', text: '#1e40af', badge: '#dbeafe' },
-  Evidence: { bg: '#ecfdf5', border: '#34d399', text: '#065f46', badge: '#d1fae5' },
-  Solution: { bg: '#f5f3ff', border: '#a78bfa', text: '#5b21b6', badge: '#ede9fe' },
-  Method: { bg: '#fffbeb', border: '#fbbf24', text: '#92400e', badge: '#fef3c7' },
-};
 
 /**
  * Custom React Flow Node with prominent handles on all 4 borders.
@@ -39,12 +32,7 @@ function AnnotationNode({ _id, data, selected }) {
   const ann = data?.annotation;
   if (!ann) return null;
 
-  const theme = LABEL_THEMES[ann.label] || {
-    bg: '#ffffff',
-    border: '#cbd5e1',
-    text: '#334155',
-    badge: '#f1f5f9',
-  };
+  const theme = getLabelStyle(ann.label);
 
   return (
     <div

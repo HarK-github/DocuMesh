@@ -76,3 +76,21 @@ html, body, #root {
   user-select: none !important;
 }
 
+@keyframes highlightFlash {
+  0% {
+    background-color: #fef08a !important;
+    box-shadow: 0 0 0 4px #eab308 !important;
+  }
+  50% {
+    background-color: #fef9c3 !important;
+    box-shadow: 0 0 0 2px #ca8a04 !important;
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+.flash-highlight {
+  animation: highlightFlash 1.6s ease-out forwards;
+}
+

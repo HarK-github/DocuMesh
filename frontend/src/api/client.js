@@ -60,4 +60,4 @@ export const api = {
   upload: (endpoint, formData, options) => request(endpoint, { ...options, method: 'POST', body: formData }),
 };
 
-export { ApiError };
+export { API_BASE, ApiError };
