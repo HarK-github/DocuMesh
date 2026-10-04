@@ -25,6 +25,11 @@ import {
   useUpdateRelation,
   useDeleteRelation,
   useJob,
+  useSuggestions,
+  useSuggestHighlights,
+  useAcceptSuggestion,
+  useRejectSuggestion,
+  useAcceptAllSuggestions,
 } from './hooks/useApi';
 import { useHealth } from './hooks/useHealth';
 import { api } from './api/client';
@@ -47,8 +52,6 @@ export default function App() {
   const [activeJobId, setActiveJobId] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
   const [uploadError, setUploadError] = useState(null);
-  const [suggestions, setSuggestions] = useState([]);
-  const [isSuggestingHighlights, setIsSuggestingHighlights] = useState(false);
   const queryClient = useQueryClient();
 
   // Health and taxonomy
@@ -61,6 +64,7 @@ export default function App() {
   const { data: annotations = [] } = useAnnotations(selectedDocId);
   const { data: relations = [] } = useRelations(selectedDocId);
   const { data: graphData } = useGraph(selectedDocId);
+  const { data: suggestions = [] } = useSuggestions(selectedDocId);
 
   // Job tracking
   const { data: jobData } = useJob(activeJobId);
@@ -72,6 +76,10 @@ export default function App() {
   const createRelationMutation = useCreateRelation(selectedDocId);
   const updateRelationMutation = useUpdateRelation(selectedDocId);
   const deleteRelationMutation = useDeleteRelation(selectedDocId);
+  const suggestHighlightsMutation = useSuggestHighlights(selectedDocId);
+  const acceptSuggestionMutation = useAcceptSuggestion(selectedDocId);
+  const rejectSuggestionMutation = useRejectSuggestion(selectedDocId);
+  const acceptAllSuggestionsMutation = useAcceptAllSuggestions(selectedDocId);
 
   // Clear completed job after a delay and invalidate queries
   useEffect(() => {
@@ -90,21 +98,6 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [jobData?.status, selectedDocId, queryClient]);
-
-  // Load existing suggestions for document
-  const fetchSuggestions = async () => {
-    if (!selectedDocId) return;
-    try {
-      const res = await api.get(`/documents/${selectedDocId}/suggestions`);
-      setSuggestions(res || []);
-    } catch {
-      // Ignored
-    }
-  };
-
-  useEffect(() => {
-    fetchSuggestions();
-  }, [selectedDocId]);
 
   // Handle document file upload
   const handleFileUpload = async (e) => {
@@ -127,44 +120,55 @@ export default function App() {
     }
   };
 
-  // Generate smart highlights
+  // Generate smart highlights (default re-rank)
   const handleGenerateHighlights = async () => {
     if (!selectedDocId) return;
-    setIsSuggestingHighlights(true);
     try {
-      const res = await api.post(`/documents/${selectedDocId}/suggest-highlights`);
-      setSuggestions(res || []);
+      await suggestHighlightsMutation.mutateAsync({});
     } catch (err) {
       alert(`Could not suggest highlights: ${err.message}`);
-    } finally {
-      setIsSuggestingHighlights(false);
+    }
+  };
+
+  // Save annotation + find more like this
+  const handleSaveAndFindMore = async (payload) => {
+    try {
+      const { scope, ...annPayload } = payload;
+      const newAnn = await createAnnotationMutation.mutateAsync(annPayload);
+      if (newAnn?.id) {
+        await suggestHighlightsMutation.mutateAsync({
+          seed_annotation_id: newAnn.id,
+          scope: scope || 'passage',
+        });
+      }
+    } catch (err) {
+      alert(`Could not create annotation and find similar passages: ${err.message}`);
+    }
+  };
+
+  // Find more from existing annotation
+  const handleFindMore = async ({ seed_annotation_id, scope }) => {
+    try {
+      await suggestHighlightsMutation.mutateAsync({ seed_annotation_id, scope });
+    } catch (err) {
+      alert(`Could not find similar passages: ${err.message}`);
     }
   };
 
   // Accept smart highlight
-  const handleAcceptSuggestion = async (sugId) => {
-    try {
-      await api.post(`/suggestions/${sugId}/accept`);
-      await fetchSuggestions();
-      queryClient.invalidateQueries({ queryKey: queryKeys.annotations(selectedDocId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.relations(selectedDocId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.graph(selectedDocId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(selectedDocId) });
-    } catch (err) {
-      alert(`Failed to accept suggestion: ${err.message}`);
-    }
+  const handleAcceptSuggestion = (sugId) => {
+    acceptSuggestionMutation.mutate(sugId);
   };
 
   // Reject smart highlight
-  const handleRejectSuggestion = async (sugId) => {
-    try {
-      await api.post(`/suggestions/${sugId}/reject`);
-      await fetchSuggestions();
-      queryClient.invalidateQueries({ queryKey: queryKeys.graph(selectedDocId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(selectedDocId) });
-    } catch (err) {
-      alert(`Failed to reject suggestion: ${err.message}`);
-    }
+  const handleRejectSuggestion = (sugId) => {
+    rejectSuggestionMutation.mutate(sugId);
+  };
+
+  // Accept all visible suggestions
+  const handleAcceptAllSuggestions = (sugIds) => {
+    if (!sugIds || sugIds.length === 0) return;
+    acceptAllSuggestionsMutation.mutate(sugIds);
   };
 
   // Trigger LLM relation inference
@@ -517,10 +521,17 @@ export default function App() {
                   selectedAnnotationId={selectedAnnotationId}
                   onSelectAnnotation={handleSelectAnnotation}
                   onCreateAnnotation={(payload) => createAnnotationMutation.mutate(payload)}
+                  onSaveAndFindMore={handleSaveAndFindMore}
                   onAcceptSuggestion={handleAcceptSuggestion}
                   onRejectSuggestion={handleRejectSuggestion}
+                  onAcceptAllSuggestions={handleAcceptAllSuggestions}
                   scrollToAnnotationId={scrollToId}
                   flashRange={flashRange}
+                  isMutating={
+                    createAnnotationMutation.isPending ||
+                    suggestHighlightsMutation.isPending ||
+                    acceptAllSuggestionsMutation.isPending
+                  }
                 />
               ) : (
                 <PdfViewer
@@ -657,6 +668,8 @@ export default function App() {
                   onSelect={handleSelectAnnotation}
                   onUpdate={({ id, data }) => updateAnnotationMutation.mutateAsync({ id, data })}
                   onDelete={(id) => deleteAnnotationMutation.mutate(id)}
+                  onFindMore={handleFindMore}
+                  isFindingMore={suggestHighlightsMutation.isPending}
                 />
               </div>
 
@@ -664,9 +677,10 @@ export default function App() {
               <div style={{ flex: 4, minHeight: 0 }}>
                 <SuggestionList
                   suggestions={suggestions}
-                  isLoading={isSuggestingHighlights}
+                  isLoading={suggestHighlightsMutation.isPending || acceptAllSuggestionsMutation.isPending}
                   onAccept={handleAcceptSuggestion}
                   onReject={handleRejectSuggestion}
+                  onAcceptAll={handleAcceptAllSuggestions}
                   onRefresh={handleGenerateHighlights}
                   onSelect={(sug) => {
                     setScrollToId(null);

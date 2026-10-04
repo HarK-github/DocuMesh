@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Tag, Edit2, Trash2, Check, X, AlertCircle, Bookmark, Layers } from 'lucide-react';
+import { Tag, Edit2, Trash2, Check, X, AlertCircle, Bookmark, Layers, Sparkles } from 'lucide-react';
+import { getDefaultSuggestionScope } from '../config';
 
 const LABEL_BADGES = {
   Claim: { bg: '#eff6ff', text: '#1d4ed8' },
@@ -18,11 +19,14 @@ export default function AnnotationPanel({
   onSelect = () => {},
   onUpdate = () => {},
   onDelete = () => {},
+  onFindMore = () => {},
+  isFindingMore = false,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [editLabel, setEditLabel] = useState('');
   const [editNote, setEditNote] = useState('');
   const [staleError, setStaleError] = useState(null);
+  const [findMoreScopes, setFindMoreScopes] = useState({});
 
   const startEdit = (ann, e) => {
     e.stopPropagation();
@@ -390,6 +394,91 @@ export default function AnnotationPanel({
                                   </button>
                                 ))}
                               </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Find more like this */}
+                        {(() => {
+                          const defaultScope = getDefaultSuggestionScope(ann.label, annotations);
+                          const currentScope = findMoreScopes[ann.id] || defaultScope;
+                          return (
+                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>
+                                  Find Similar Passages:
+                                </span>
+                                <div style={{ display: 'flex', gap: '2px', background: '#f1f5f9', padding: '2px', borderRadius: '4px' }}>
+                                  <button
+                                    type="button"
+                                    data-testid={`panel-scope-passage-${ann.id}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setFindMoreScopes((prev) => ({ ...prev, [ann.id]: 'passage' }));
+                                    }}
+                                    style={{
+                                      padding: '2px 6px',
+                                      fontSize: '0.68rem',
+                                      fontWeight: currentScope === 'passage' ? 600 : 400,
+                                      borderRadius: '3px',
+                                      border: 'none',
+                                      background: currentScope === 'passage' ? '#ffffff' : 'transparent',
+                                      color: currentScope === 'passage' ? '#1e293b' : '#64748b',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Passage
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-testid={`panel-scope-category-${ann.id}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setFindMoreScopes((prev) => ({ ...prev, [ann.id]: 'category' }));
+                                    }}
+                                    style={{
+                                      padding: '2px 6px',
+                                      fontSize: '0.68rem',
+                                      fontWeight: currentScope === 'category' ? 600 : 400,
+                                      borderRadius: '3px',
+                                      border: 'none',
+                                      background: currentScope === 'category' ? '#ffffff' : 'transparent',
+                                      color: currentScope === 'category' ? '#1e293b' : '#64748b',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Category
+                                  </button>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                data-testid={`find-more-btn-${ann.id}`}
+                                disabled={isFindingMore}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onFindMore({ seed_annotation_id: ann.id, scope: currentScope });
+                                }}
+                                style={{
+                                  width: '100%',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '4px',
+                                  padding: '5px 10px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #bfdbfe',
+                                  background: '#eff6ff',
+                                  color: '#1d4ed8',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  cursor: isFindingMore ? 'not-allowed' : 'pointer',
+                                  opacity: isFindingMore ? 0.6 : 1,
+                                }}
+                              >
+                                <Sparkles size={12} />
+                                {isFindingMore ? 'Finding similar...' : 'Find more like this'}
+                              </button>
                             </div>
                           );
                         })()}

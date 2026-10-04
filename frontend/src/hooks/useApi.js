@@ -167,3 +167,66 @@ export function useChat(documentId) {
       api.post(`/documents/${documentId}/chat`, { question, history }),
   });
 }
+
+export function useSuggestions(documentId) {
+  return useQuery({
+    queryKey: queryKeys.suggestions(documentId),
+    queryFn: () => api.get(`/documents/${documentId}/suggestions`),
+    enabled: Boolean(documentId),
+  });
+}
+
+export function useSuggestHighlights(documentId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ seed_annotation_id, scope }) =>
+      api.post(`/documents/${documentId}/suggest-highlights`, { seed_annotation_id, scope }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(documentId) });
+    },
+  });
+}
+
+export function useAcceptSuggestion(documentId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sugId) => api.post(`/suggestions/${sugId}/accept`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.annotations(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.relations(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(documentId) });
+    },
+  });
+}
+
+export function useRejectSuggestion(documentId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sugId) => api.post(`/suggestions/${sugId}/reject`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(documentId) });
+    },
+  });
+}
+
+export function useAcceptAllSuggestions(documentId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (sugIds) => {
+      const results = [];
+      for (const id of sugIds) {
+        results.push(await api.post(`/suggestions/${id}/accept`));
+      }
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.annotations(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.relations(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(documentId) });
+    },
+  });
+}

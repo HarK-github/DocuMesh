@@ -1,15 +1,23 @@
 import React from 'react';
-import { Sparkles, Check, X, RefreshCw } from 'lucide-react';
+import { Sparkles, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
 
 export default function SuggestionList({
   suggestions = [],
   isLoading = false,
+  pendingCapMessage = null,
   onAccept = () => {},
   onReject = () => {},
+  onAcceptAll = () => {},
   onRefresh = () => {},
   onSelect = () => {},
 }) {
   const pendingSuggestions = suggestions.filter((s) => s.status === 'pending');
+  const capMsg =
+    pendingCapMessage ||
+    suggestions.find((s) => s.message)?.message ||
+    (pendingSuggestions.length >= 10
+      ? 'Maximum pending suggestions reached for this seed (10). Please accept or reject existing suggestions.'
+      : null);
 
   return (
     <div
@@ -40,35 +48,93 @@ export default function SuggestionList({
           </h3>
         </div>
 
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={isLoading}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {pendingSuggestions.length > 0 && (
+            <button
+              type="button"
+              data-testid="accept-all-shown-btn"
+              onClick={() => onAcceptAll(pendingSuggestions.map((s) => s.id))}
+              disabled={isLoading}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                border: 'none',
+                background: '#16a34a',
+                color: '#ffffff',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.6 : 1,
+              }}
+              title="Accept all currently shown suggestions"
+            >
+              <Check size={12} />
+              <span>Accept all shown</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isLoading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              background: '#ffffff',
+              fontSize: '0.75rem',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              color: '#475569',
+            }}
+            title="Compute and re-rank suggestions based on current annotations"
+          >
+            <RefreshCw size={12} className={isLoading ? 'spin' : ''} />
+            <span>{isLoading ? 'Ranking...' : 'Re-rank'}</span>
+          </button>
+        </div>
+      </div>
+
+      {capMsg && (
+        <div
+          data-testid="pending-cap-message"
           style={{
+            margin: '8px 14px 0 14px',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            background: '#fff7ed',
+            border: '1px solid #fed7aa',
+            color: '#c2410c',
+            fontSize: '0.78rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            padding: '4px 8px',
-            borderRadius: '6px',
-            border: '1px solid #cbd5e1',
-            background: '#ffffff',
-            fontSize: '0.75rem',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            color: '#475569',
+            gap: '6px',
           }}
-          title="Compute and re-rank suggestions based on current annotations"
         >
-          <RefreshCw size={12} className={isLoading ? 'spin' : ''} />
-          <span>{isLoading ? 'Ranking...' : 'Re-rank'}</span>
-        </button>
-      </div>
+          <AlertCircle size={14} />
+          <span>{capMsg}</span>
+        </div>
+      )}
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {pendingSuggestions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}>
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>No pending suggestions.</p>
+          <div
+            data-testid="empty-suggestions-state"
+            style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}
+          >
+            <p
+              data-testid="empty-suggestions-message"
+              style={{ margin: 0, fontSize: '0.9rem', fontWeight: 500, color: '#64748b' }}
+            >
+              No more similar passages found
+            </p>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem' }}>
-              Click "Re-rank" to discover similar passages based on your annotations.
+              Select text to create an annotation, then click "Save + find more like this" to discover similar passages.
             </p>
           </div>
         ) : (
