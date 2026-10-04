@@ -129,3 +129,54 @@ def test_get_job_status_and_404(client_and_db) -> None:
 
     missing_job = client.get("/jobs/nonexistent-job-uuid")
     assert missing_job.status_code == 404
+
+
+def test_get_document_pdf_inline_and_highlighted(client_and_db) -> None:
+    """Verify that /documents/{id}/pdf returns inline content-disposition and valid PDF bytes."""
+    client, _ = client_and_db
+    sample_pdf = Path("sample/sample.pdf")
+    with open(sample_pdf, "rb") as f:
+        res = client.post("/documents", files={"file": ("sample.pdf", f, "application/pdf")})
+    doc_id = res.json()["document_id"]
+
+    # Wait briefly for background ingestion
+    for _ in range(30):
+        time.sleep(0.1)
+        doc_res = client.get(f"/documents/{doc_id}")
+        if doc_res.json()["status"] == "ready":
+            break
+
+    # 1. Fetch raw unannotated PDF
+    raw_res = client.get(f"/documents/{doc_id}/pdf?annotated=false")
+    assert raw_res.status_code == 200
+    assert "application/pdf" in raw_res.headers["content-type"]
+    assert "inline" in raw_res.headers["content-disposition"]
+    assert len(raw_res.content) > 0
+
+    # 2. Add an annotation matching exact text offsets
+    clean_text = client.get(f"/documents/{doc_id}/text").json()["clean_text"]
+    quote = "Can machines think?"
+    st = clean_text.find(quote)
+    assert st != -1
+    en = st + len(quote)
+
+    ann_res = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={
+            "start": st,
+            "end": en,
+            "label": "Problem",
+            "quote": quote,
+            "note": "Turing query",
+        },
+    )
+    assert ann_res.status_code == 201
+
+    # 3. Fetch default annotated PDF
+    annotated_res = client.get(f"/documents/{doc_id}/pdf")
+    assert annotated_res.status_code == 200
+    assert "application/pdf" in annotated_res.headers["content-type"]
+    assert "inline" in annotated_res.headers["content-disposition"]
+    # Highlighted PDF contains additional annotations markup
+    assert len(annotated_res.content) > len(raw_res.content)
+

@@ -5,9 +5,10 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+import pymupdf
 from backend.app.settings import get_settings
 from backend.app.db import get_db
-from backend.app.models import Document
+from backend.app.models import Document, Annotation
 from backend.app.schemas import (
     DocumentResponse,
     DocumentUploadResponse,
@@ -112,8 +113,12 @@ def get_document_text(document_id: int, db: Session = Depends(get_db)) -> Docume
 
 
 @router.get("/{document_id}/pdf")
-def get_document_pdf(document_id: int, db: Session = Depends(get_db)):
-    """Serve the raw PDF file for rendering in the browser PDF viewer."""
+def get_document_pdf(
+    document_id: int,
+    annotated: bool = True,
+    db: Session = Depends(get_db),
+):
+    """Serve the PDF file for browser rendering with optional highlight annotations."""
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -121,8 +126,60 @@ def get_document_pdf(document_id: int, db: Session = Depends(get_db)):
     pdf_path = Path(settings.upload_dir) / f"{doc.file_hash}.pdf"
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail="PDF file not found on disk")
-    return FileResponse(
-        str(pdf_path),
-        media_type="application/pdf",
-        filename=doc.filename,
-    )
+
+    if not annotated:
+        return FileResponse(
+            str(pdf_path),
+            media_type="application/pdf",
+            content_disposition_type="inline",
+            filename=doc.filename,
+        )
+
+    anns = db.query(Annotation).filter(Annotation.document_id == document_id).all()
+    if not anns:
+        return FileResponse(
+            str(pdf_path),
+            media_type="application/pdf",
+            content_disposition_type="inline",
+            filename=doc.filename,
+        )
+
+    try:
+        pdf_doc = pymupdf.open(str(pdf_path))
+        color_map = {
+            "Problem": (0.95, 0.4, 0.4),      # light red
+            "Solution": (0.3, 0.8, 0.4),     # light green
+            "Claim": (0.95, 0.7, 0.2),       # warm amber
+            "Evidence": (0.3, 0.6, 0.95),    # soft blue
+            "Method": (0.7, 0.4, 0.9),       # soft purple
+            "Assumption": (0.6, 0.6, 0.7),   # slate gray
+        }
+        for a in anns:
+            if not a.quote or not a.quote.strip():
+                continue
+            stroke_col = color_map.get(a.label, (0.95, 0.85, 0.3))
+            for page in pdf_doc:
+                rects = page.search_for(a.quote)
+                if rects:
+                    h_annot = page.add_highlight_annot(rects)
+                    h_annot.set_colors(stroke=stroke_col)
+                    h_annot.set_info(title=a.label, content=a.note or a.label)
+                    h_annot.update()
+                    break
+
+        out_bytes = pdf_doc.tobytes()
+        pdf_doc.close()
+        return Response(
+            content=out_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{doc.filename}"',
+            },
+        )
+    except Exception:
+        return FileResponse(
+            str(pdf_path),
+            media_type="application/pdf",
+            content_disposition_type="inline",
+            filename=doc.filename,
+        )

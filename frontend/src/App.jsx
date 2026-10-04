@@ -497,7 +497,7 @@ export default function App() {
                     boxShadow: docViewMode === 'pdf' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
                   }}
                 >
-                  Raw PDF
+                  PDF View
                 </button>
               </div>
             </div>
@@ -519,7 +519,10 @@ export default function App() {
                   flashRange={flashRange}
                 />
               ) : (
-                <PdfViewer documentId={selectedDocId} />
+                <PdfViewer
+                  documentId={selectedDocId}
+                  annotationsCount={annotations?.length || 0}
+                />
               )}
             </div>
           </div>
