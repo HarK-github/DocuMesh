@@ -13,6 +13,7 @@ from sqlalchemy import (
     LargeBinary,
     JSON,
     CheckConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -87,6 +88,7 @@ class Annotation(Base):
     }
     __table_args__ = (
         CheckConstraint("start < end", name="check_annotation_start_lt_end"),
+        UniqueConstraint("document_id", "start", "end", "label", name="uq_annotations_doc_start_end_label"),
     )
 
 
@@ -124,11 +126,16 @@ class Suggestion(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
     sentence_id = Column(Integer, ForeignKey("sentences.id", ondelete="CASCADE"), nullable=False, index=True)
+    seed_annotation_id = Column(Integer, ForeignKey("annotations.id", ondelete="SET NULL"), nullable=True, index=True)
+    label = Column(String(64), nullable=True)
+    scope = Column(String(32), default="passage", nullable=True)
     score = Column(Float, nullable=False)
     status = Column(String(32), default="pending", nullable=False)
 
     document = relationship("Document", back_populates="suggestions")
     sentence = relationship("Sentence", back_populates="suggestions")
+    seed_annotation = relationship("Annotation", foreign_keys=[seed_annotation_id])
+
 
 
 class Job(Base):

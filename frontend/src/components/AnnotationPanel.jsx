@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Edit2, Trash2, Check, X, AlertCircle, Bookmark } from 'lucide-react';
+import { Tag, Edit2, Trash2, Check, X, AlertCircle, Bookmark, Layers } from 'lucide-react';
 
 const LABEL_BADGES = {
   Claim: { bg: '#eff6ff', text: '#1d4ed8' },
@@ -284,6 +284,116 @@ export default function AnnotationPanel({
                       <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>
                         <span style={{ fontWeight: 500 }}>Note:</span> {ann.note}
                       </p>
+                    )}
+
+                    {/* Adjust Boundaries & Overlapping Layers for selected annotation */}
+                    {isSelected && (
+                      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
+                        {/* Adjust Controls */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>
+                            Adjust Boundaries:
+                          </span>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#475569' }}>
+                              <span>Start ({ann.start}):</span>
+                              <button
+                                type="button"
+                                title="Nudge start left"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdate({ id: ann.id, data: { start: Math.max(0, ann.start - 1), version: ann.version } });
+                                }}
+                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                              >
+                                -
+                              </button>
+                              <button
+                                type="button"
+                                title="Nudge start right"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (ann.start + 1 < ann.end) {
+                                    onUpdate({ id: ann.id, data: { start: ann.start + 1, version: ann.version } });
+                                  }
+                                }}
+                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#475569' }}>
+                              <span>End ({ann.end}):</span>
+                              <button
+                                type="button"
+                                title="Nudge end left"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (ann.end - 1 > ann.start) {
+                                    onUpdate({ id: ann.id, data: { end: ann.end - 1, version: ann.version } });
+                                  }
+                                }}
+                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                              >
+                                -
+                              </button>
+                              <button
+                                type="button"
+                                title="Nudge end right"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdate({ id: ann.id, data: { end: ann.end + 1, version: ann.version } });
+                                }}
+                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Overlapping layers */}
+                        {(() => {
+                          const overlapping = annotations.filter(
+                            (other) =>
+                              other.id !== ann.id &&
+                              Math.max(other.start, ann.start) < Math.min(other.end, ann.end)
+                          );
+                          if (overlapping.length === 0) return null;
+                          return (
+                            <div style={{ marginTop: '6px', padding: '6px 8px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Layers size={10} />
+                                <span>Other overlapping layers ({overlapping.length}):</span>
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                {overlapping.map((oa) => (
+                                  <button
+                                    key={oa.id}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onSelect(oa.id);
+                                    }}
+                                    style={{
+                                      padding: '2px 6px',
+                                      fontSize: '0.7rem',
+                                      borderRadius: '4px',
+                                      border: '1px solid #cbd5e1',
+                                      background: '#ffffff',
+                                      cursor: 'pointer',
+                                      color: '#1e293b',
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    {oa.label} (#{oa.id})
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     )}
                   </>
                 )}

@@ -106,9 +106,31 @@ def seed_taxonomy(db: Session, config_path: str = None) -> None:
 
 
 def init_db(engine_override=None, config_path: str = None) -> None:
-    """Create all database tables and seed taxonomy."""
+    """Create all database tables, run incremental migrations, and seed taxonomy."""
     target_engine = engine_override or get_engine()
     Base.metadata.create_all(bind=target_engine)
+
+    # Migrate suggestions table with new columns if needed
+    try:
+        with target_engine.connect() as conn:
+            res = conn.exec_driver_sql("PRAGMA table_info(suggestions)").fetchall()
+            existing_cols = {row[1] for row in res}
+            if existing_cols:
+                if "seed_annotation_id" not in existing_cols:
+                    conn.exec_driver_sql(
+                        "ALTER TABLE suggestions ADD COLUMN seed_annotation_id INTEGER REFERENCES annotations(id) ON DELETE SET NULL"
+                    )
+                if "label" not in existing_cols:
+                    conn.exec_driver_sql(
+                        "ALTER TABLE suggestions ADD COLUMN label VARCHAR(64)"
+                    )
+                if "scope" not in existing_cols:
+                    conn.exec_driver_sql(
+                        "ALTER TABLE suggestions ADD COLUMN scope VARCHAR(32) DEFAULT 'passage'"
+                    )
+                conn.commit()
+    except Exception:
+        pass
 
     session_factory = get_session_factory(target_engine)
     with session_factory() as session:

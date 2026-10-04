@@ -4,6 +4,7 @@ import {
   normalizeWhitespace,
   mapOffsetsToSpans,
   mapAnnotationToPages,
+  snapToWordBoundaries,
 } from './offsets';
 
 describe('offsets library', () => {
@@ -78,4 +79,39 @@ describe('offsets library', () => {
     expect(crossMatch[0]).toEqual({ page: 1, start: 80, end: 100 });
     expect(crossMatch[1]).toEqual({ page: 2, start: 102, end: 150 });
   });
+
+  describe('snapToWordBoundaries', () => {
+    const text = 'The quick brown fox jumps';
+    // 'The': [0, 3]
+    // 'quick': [4, 9]
+    // 'brown': [10, 15]
+    // 'fox': [16, 19]
+    // 'jumps': [20, 25]
+
+    it('snaps mid-word start to the word start', () => {
+      // start at 6 ('ick' in 'quick' [4:9]), end at 15 ('brown')
+      const res = snapToWordBoundaries(text, 6, 15);
+      expect(res).toEqual({ start: 4, end: 15 });
+      expect(text.slice(res.start, res.end)).toBe('quick brown');
+    });
+
+    it('snaps mid-word end to the word end', () => {
+      // start at 4 ('quick'), end at 13 ('bro' in 'brown' [10:15])
+      const res = snapToWordBoundaries(text, 4, 13);
+      expect(res).toEqual({ start: 4, end: 15 });
+      expect(text.slice(res.start, res.end)).toBe('quick brown');
+    });
+
+    it('leaves offsets unchanged if already on word boundaries', () => {
+      const res = snapToWordBoundaries(text, 4, 15);
+      expect(res).toEqual({ start: 4, end: 15 });
+      expect(text.slice(res.start, res.end)).toBe('quick brown');
+    });
+
+    it('trims whitespace if start or end lands on whitespace', () => {
+      const res = snapToWordBoundaries(text, 3, 16);
+      expect(res).toEqual({ start: 4, end: 15 });
+    });
+  });
 });
+

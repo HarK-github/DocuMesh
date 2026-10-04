@@ -128,3 +128,71 @@ export function mapAnnotationToPages(start, end, pages) {
 
   return matched;
 }
+
+/**
+ * Adjust start and end character offsets to the nearest word boundaries in text.
+ *
+ * @param {string} text - Clean text.
+ * @param {number} start - Start offset.
+ * @param {number} end - End offset.
+ * @returns {{ start: number, end: number }} Snapped offsets.
+ */
+export function snapToWordBoundaries(text, start, end) {
+  if (!text || start >= end) return { start, end };
+
+  let s = Math.max(0, Math.min(start, text.length));
+  let e = Math.max(0, Math.min(end, text.length));
+  if (s >= e) return { start: s, end: e };
+
+  const wordRegex = /\w+/g;
+  let match;
+  const words = [];
+  while ((match = wordRegex.exec(text)) !== null) {
+    words.push({ start: match.index, end: match.index + match[0].length });
+  }
+
+  if (words.length === 0) return { start: s, end: e };
+
+  let newStart = s;
+  let newEnd = e;
+
+  for (const w of words) {
+    if (w.start < s && s < w.end) {
+      if (s - w.start <= w.end - s) {
+        newStart = w.start;
+      } else {
+        newStart = w.end;
+      }
+      break;
+    } else if (s === w.start || s === w.end) {
+      newStart = s;
+      break;
+    }
+  }
+
+  for (const w of words) {
+    if (w.start < e && e < w.end) {
+      if (w.end - e <= e - w.start) {
+        newEnd = w.end;
+      } else {
+        newEnd = w.start;
+      }
+      break;
+    } else if (e === w.start || e === w.end) {
+      newEnd = e;
+      break;
+    }
+  }
+
+  while (newStart < newEnd && /\s/.test(text[newStart])) {
+    newStart++;
+  }
+  while (newEnd > newStart && /\s/.test(text[newEnd - 1])) {
+    newEnd--;
+  }
+
+  if (newStart >= newEnd) return { start: s, end: e };
+
+  return { start: newStart, end: newEnd };
+}
+

@@ -23,19 +23,25 @@ def _serialize_embedding(arr: np.ndarray) -> bytes:
     return np.asarray(arr, dtype=np.float32).tobytes()
 
 
+from typing import List, Optional
+
+
 @router.get("/documents/{document_id}/suggestions", response_model=List[SuggestionResponse])
-def list_suggestions(document_id: int, db: Session = Depends(get_db)) -> List[SuggestionResponse]:
-    """Retrieve all highlight suggestions for a document."""
+def list_suggestions(
+    document_id: int,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+) -> List[SuggestionResponse]:
+    """Retrieve all highlight suggestions for a document, optionally filtered by status."""
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    suggestions = (
-        db.query(Suggestion)
-        .filter(Suggestion.document_id == document_id)
-        .order_by(Suggestion.score.desc())
-        .all()
-    )
+    query = db.query(Suggestion).filter(Suggestion.document_id == document_id)
+    if status is not None:
+        query = query.filter(Suggestion.status == status)
+
+    suggestions = query.order_by(Suggestion.score.desc()).all()
 
     results = []
     for sug in suggestions:
@@ -46,6 +52,9 @@ def list_suggestions(document_id: int, db: Session = Depends(get_db)) -> List[Su
                 id=sug.id,
                 document_id=sug.document_id,
                 sentence_id=sug.sentence_id,
+                seed_annotation_id=sug.seed_annotation_id,
+                label=sug.label,
+                scope=sug.scope,
                 score=sug.score,
                 status=sug.status,
                 start=sent.start,

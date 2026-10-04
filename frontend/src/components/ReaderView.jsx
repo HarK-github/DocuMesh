@@ -250,7 +250,11 @@ export default function ReaderView({
 
                 // 2. Annotation highlight
                 if (hasAnns) {
-                  const primaryAnn = seg.annotations[0];
+                  // Select the innermost (smallest) annotation for click handling
+                  const sortedAnns = [...seg.annotations].sort(
+                    (a, b) => (a.end - a.start) - (b.end - b.start)
+                  );
+                  const primaryAnn = sortedAnns[0];
                   const isMulti = seg.annotations.length > 1;
                   const labelStyle = getLabelStyle(primaryAnn?.label);
 

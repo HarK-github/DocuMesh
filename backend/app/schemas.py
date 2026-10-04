@@ -66,6 +66,9 @@ class AnnotationCreate(BaseModel):
 
 class AnnotationUpdate(BaseModel):
     """Payload to update an annotation."""
+    start: Optional[int] = None
+    end: Optional[int] = None
+    quote: Optional[str] = None
     label: Optional[str] = None
     note: Optional[str] = None
     x: Optional[float] = None
@@ -82,10 +85,13 @@ class AnnotationResponse(BaseModel):
     quote: str
     label: str
     note: Optional[str] = None
-    x: float
-    y: float
-    version: int
-    created_at: datetime
+    x: float = 0.0
+    y: float = 0.0
+    version: int = 1
+    created_at: Optional[datetime] = None
+    status: Optional[str] = "confirmed"
+    score: Optional[float] = None
+    sentence_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
 
@@ -117,7 +123,8 @@ class RelationResponse(BaseModel):
     type: str
     status: str
     reason: Optional[str] = None
-    version: int
+    version: int = 1
+    score: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -131,17 +138,28 @@ class GraphResponse(BaseModel):
 
 
 # Suggestion Schemas
+class SuggestHighlightsRequest(BaseModel):
+    """Payload to request scoped highlight suggestions."""
+    seed_annotation_id: int
+    scope: str = "passage"  # 'passage' | 'category'
+
+
 class SuggestionResponse(BaseModel):
     """Smart highlight suggestion item."""
     id: int
     document_id: int
     sentence_id: int
+    seed_annotation_id: Optional[int] = None
+    label: Optional[str] = None
+    scope: Optional[str] = "passage"
     score: float
     status: str
     start: int
     end: int
     quote: str
     page: int
+    message: Optional[str] = None
+
 
 
 # Job Schemas

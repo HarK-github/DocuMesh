@@ -1,7 +1,7 @@
 """Text cleaning and normalization pipeline for extracted PDF text."""
 
 import re
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Tuple
 
 
 def remove_page_numbers(text: str) -> str:
@@ -84,3 +84,59 @@ def clean_extracted_pages(pages: List[Dict[str, Union[int, str]]]) -> List[Dict[
             "text": clean_page_text(cleaned),
         })
     return results
+
+
+def snap_to_word_boundaries(text: str, start: int, end: int) -> Tuple[int, int]:
+    """Adjust start and end character offsets to the nearest word boundaries in text."""
+    if not text or start >= end:
+        return start, end
+
+    start = max(0, min(start, len(text)))
+    end = max(0, min(end, len(text)))
+    if start >= end:
+        return start, end
+
+    words = list(re.finditer(r'\w+', text))
+    if not words:
+        return start, end
+
+    new_start = start
+    new_end = end
+
+    # Snap start: if inside a word, choose the closer boundary (start or end of word)
+    for w in words:
+        w_s, w_e = w.start(), w.end()
+        if w_s < start < w_e:
+            if (start - w_s) <= (w_e - start):
+                new_start = w_s
+            else:
+                new_start = w_e
+            break
+        elif start == w_s or start == w_e:
+            new_start = start
+            break
+
+    # Snap end: if inside a word, choose the closer boundary (end or start of word)
+    for w in words:
+        w_s, w_e = w.start(), w.end()
+        if w_s < end < w_e:
+            if (w_e - end) <= (end - w_s):
+                new_end = w_e
+            else:
+                new_end = w_s
+            break
+        elif end == w_s or end == w_e:
+            new_end = end
+            break
+
+    # Strip any leading or trailing whitespace so highlights never start/end on whitespace
+    while new_start < new_end and text[new_start].isspace():
+        new_start += 1
+    while new_end > new_start and text[new_end - 1].isspace():
+        new_end -= 1
+
+    if new_start >= new_end:
+        return start, end
+
+    return new_start, new_end
+

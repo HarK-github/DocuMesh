@@ -1,12 +1,13 @@
 """Annotation CRUD endpoints with offset, quote, taxonomy, and version validation."""
 
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 from backend.app.db import get_db
-from backend.app.models import Document, Annotation, Relation, Label
+from backend.app.models import Document, Annotation, Relation, Label, Suggestion
 from backend.app.schemas import AnnotationCreate, AnnotationUpdate, AnnotationResponse
+from backend.app.services.clean import snap_to_word_boundaries
 
 router = APIRouter(tags=["Annotations"])
 
@@ -28,9 +29,10 @@ def list_annotations(document_id: int, db: Session = Depends(get_db)) -> List[An
 def create_annotation(
     document_id: int,
     payload: AnnotationCreate,
+    response: Response,
     db: Session = Depends(get_db),
 ) -> AnnotationResponse:
-    """Create a new text annotation validating quote match and taxonomy."""
+    """Create a new text annotation validating quote match, snapping boundaries, and taxonomy."""
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -44,12 +46,30 @@ def create_annotation(
     if payload.end > len(doc.clean_text) or payload.start < 0:
         raise HTTPException(status_code=422, detail="Offsets exceed document clean_text boundaries")
 
-    expected_quote = doc.clean_text[payload.start:payload.end]
-    if payload.quote != expected_quote:
+    # 1. Snap start and end to nearest word boundaries
+    snapped_start, snapped_end = snap_to_word_boundaries(doc.clean_text, payload.start, payload.end)
+    expected_quote = doc.clean_text[snapped_start:snapped_end]
+
+    if payload.quote != expected_quote and payload.quote != doc.clean_text[payload.start:payload.end]:
         raise HTTPException(
             status_code=422,
             detail=f"Quote mismatch: expected '{expected_quote}', received '{payload.quote}'",
         )
+
+    # 2. Check for duplicate: (document_id, start, end, label)
+    existing = (
+        db.query(Annotation)
+        .filter(
+            Annotation.document_id == document_id,
+            Annotation.start == snapped_start,
+            Annotation.end == snapped_end,
+            Annotation.label == payload.label,
+        )
+        .first()
+    )
+    if existing:
+        response.status_code = status.HTTP_200_OK
+        return existing
 
     # Validate label against taxonomy
     label_obj = db.query(Label).filter(Label.name == payload.label).first()
@@ -58,9 +78,9 @@ def create_annotation(
 
     annotation = Annotation(
         document_id=document_id,
-        start=payload.start,
-        end=payload.end,
-        quote=payload.quote,
+        start=snapped_start,
+        end=snapped_end,
+        quote=expected_quote,
         label=payload.label,
         note=payload.note,
         x=payload.x or 0.0,
@@ -68,6 +88,21 @@ def create_annotation(
         version=1,
     )
     db.add(annotation)
+
+    # 3. Mark overlapping pending suggestions as superseded
+    pending_sugs = (
+        db.query(Suggestion)
+        .filter(
+            Suggestion.document_id == document_id,
+            Suggestion.status == "pending",
+        )
+        .all()
+    )
+    for sug in pending_sugs:
+        if sug.sentence:
+            if max(sug.sentence.start, snapped_start) < min(sug.sentence.end, snapped_end):
+                sug.status = "superseded"
+
     db.commit()
     db.refresh(annotation)
     return annotation
@@ -89,6 +124,40 @@ def update_annotation(
             status_code=409,
             detail="Stale edit: annotation has been modified by another process",
         )
+
+    doc = annotation.document
+
+    # Adjust start and end boundaries if provided
+    new_start = payload.start if payload.start is not None else annotation.start
+    new_end = payload.end if payload.end is not None else annotation.end
+
+    if payload.start is not None or payload.end is not None:
+        if new_start >= new_end:
+            raise HTTPException(status_code=422, detail="start offset must be strictly less than end offset")
+        if doc and doc.clean_text:
+            if new_start < 0 or new_end > len(doc.clean_text):
+                raise HTTPException(status_code=422, detail="Offsets exceed document clean_text boundaries")
+            snapped_start, snapped_end = snap_to_word_boundaries(doc.clean_text, new_start, new_end)
+            annotation.start = snapped_start
+            annotation.end = snapped_end
+            annotation.quote = doc.clean_text[snapped_start:snapped_end]
+        else:
+            annotation.start = new_start
+            annotation.end = new_end
+
+        # Mark overlapping pending suggestions as superseded
+        pending_sugs = (
+            db.query(Suggestion)
+            .filter(
+                Suggestion.document_id == annotation.document_id,
+                Suggestion.status == "pending",
+            )
+            .all()
+        )
+        for sug in pending_sugs:
+            if sug.sentence:
+                if max(sug.sentence.start, annotation.start) < min(sug.sentence.end, annotation.end):
+                    sug.status = "superseded"
 
     if payload.label is not None:
         label_obj = db.query(Label).filter(Label.name == payload.label).first()
@@ -114,6 +183,7 @@ def update_annotation(
         )
 
     return annotation
+
 
 
 @router.delete("/annotations/{annotation_id}", status_code=status.HTTP_204_NO_CONTENT)
