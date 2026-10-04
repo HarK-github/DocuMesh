@@ -1,6 +1,6 @@
-# PDF Annotation and Relationship Graph
+# DocuMesh
 
-A web application where users upload text-based PDFs, highlight passages, link highlights with typed relationships visualized as an interactive knowledge graph, and receive smart highlight and relation suggestions.
+**DocuMesh** is an interactive web application where users upload text-based PDFs, highlight passages, link highlights with typed relationships visualized as an interactive document mesh, and receive smart highlight and relation suggestions.
 
 ## Key Features
 - **PDF Ingestion & Text Extraction**: Extracts clean text, normalizes sentences, and tracks exact character offsets (`POST /documents`, `GET /documents/{id}`, `GET /documents/{id}/text`).

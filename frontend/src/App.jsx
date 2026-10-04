@@ -219,8 +219,11 @@ export default function App() {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
-              PDF Annotation &amp; Knowledge Graph
+              DocuMesh
             </h1>
+            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+              Interactive Document &amp; Relationship Mesh
+            </span>
           </div>
         </div>
 

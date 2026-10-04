@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
     """Construct and configure the FastAPI application instance."""
     settings = get_settings()
     app = FastAPI(
-        title="PDF Annotation & Knowledge Graph API",
+        title="DocuMesh API",
         version="0.1.0",
         lifespan=lifespan,
     )
