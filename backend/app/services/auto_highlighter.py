@@ -11,6 +11,7 @@ from backend.app.services.jobs import update_job_status
 from backend.app.services.llm import get_llm_client, LLMNotConfiguredError
 from backend.app.services.embedder import get_embedder
 from backend.app.services.relation_suggester import process_suggest_relations_job
+from backend.app.services.ranker import intervals_overlap
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +25,6 @@ LABEL_PROTOTYPES = {
     "Problem": "A major open problem, challenge, limitation, difficulty, or research gap remains unresolved.",
     "Solution": "We propose a novel framework, architectural solution, and algorithm that effectively solves this issue.",
 }
-
-
-def _intervals_overlap(s1: int, e1: int, s2: int, e2: int) -> bool:
-    """Return True if two intervals overlap."""
-    return max(s1, s2) < min(e1, e2)
 
 
 def process_auto_highlight_job(
@@ -72,7 +68,7 @@ def process_auto_highlight_job(
         sentences_to_process = []
         for s in sentence_rows:
             # Skip if overlapping existing annotation
-            if any(_intervals_overlap(s.start, s.end, es, ee) for es, ee in existing_intervals):
+            if any(intervals_overlap(s.start, s.end, es, ee) for es, ee in existing_intervals):
                 continue
             s_quote = clean_text[s.start:s.end].strip()
             # Skip very short fragments (< 15 chars)
@@ -276,7 +272,7 @@ Sentences to classify:
                         )
                         for sug in overlapping_sugs:
                             if sug.sentence:
-                                if _intervals_overlap(sug.sentence.start, sug.sentence.end, snapped_s, snapped_e):
+                                if intervals_overlap(sug.sentence.start, sug.sentence.end, snapped_s, snapped_e):
                                     sug.status = "superseded"
 
                 session.commit()
