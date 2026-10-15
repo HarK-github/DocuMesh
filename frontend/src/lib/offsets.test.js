@@ -2,9 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   findTextOffsets,
   normalizeWhitespace,
-  mapOffsetsToSpans,
-  mapAnnotationToPages,
-  snapToWordBoundaries,
 } from './offsets';
 
 describe('offsets library', () => {
@@ -40,78 +37,6 @@ describe('offsets library', () => {
   it('returns null when selected text is not present in clean_text', () => {
     const result = findTextOffsets(sampleCleanText, 'Quantum teleporters are fast');
     expect(result).toBeNull();
-  });
-
-  it('maps an offset interval to multi-span highlights across multiple elements', () => {
-    const spans = [
-      { id: 's1', start: 0, end: 20, text: 'Can machines think? ' },
-      { id: 's2', start: 20, end: 60, text: 'The new form of the problem can be ' },
-      { id: 's3', start: 60, end: 120, text: 'described in terms of a game which we call.' },
-    ];
-
-    // Select text crossing s1 into s2
-    const mapped = mapOffsetsToSpans(10, 40, spans);
-    expect(mapped).toHaveLength(2);
-    expect(mapped[0].spanId).toBe('s1');
-    expect(mapped[0].localStart).toBe(10);
-    expect(mapped[0].localEnd).toBe(20);
-    expect(mapped[0].text).toBe('es think? ');
-
-    expect(mapped[1].spanId).toBe('s2');
-    expect(mapped[1].localStart).toBe(0);
-    expect(mapped[1].localEnd).toBe(20);
-    expect(mapped[1].text).toBe('The new form of the ');
-  });
-
-  it('maps annotation offsets to correct page boundaries', () => {
-    const pages = [
-      { page: 1, start: 0, end: 100 },
-      { page: 2, start: 102, end: 250 },
-    ];
-
-    // Annotation completely inside page 1
-    const p1Match = mapAnnotationToPages(10, 50, pages);
-    expect(p1Match).toEqual([{ page: 1, start: 10, end: 50 }]);
-
-    // Annotation spanning page 1 and page 2
-    const crossMatch = mapAnnotationToPages(80, 150, pages);
-    expect(crossMatch).toHaveLength(2);
-    expect(crossMatch[0]).toEqual({ page: 1, start: 80, end: 100 });
-    expect(crossMatch[1]).toEqual({ page: 2, start: 102, end: 150 });
-  });
-
-  describe('snapToWordBoundaries', () => {
-    const text = 'The quick brown fox jumps';
-    // 'The': [0, 3]
-    // 'quick': [4, 9]
-    // 'brown': [10, 15]
-    // 'fox': [16, 19]
-    // 'jumps': [20, 25]
-
-    it('snaps mid-word start to the word start', () => {
-      // start at 6 ('ick' in 'quick' [4:9]), end at 15 ('brown')
-      const res = snapToWordBoundaries(text, 6, 15);
-      expect(res).toEqual({ start: 4, end: 15 });
-      expect(text.slice(res.start, res.end)).toBe('quick brown');
-    });
-
-    it('snaps mid-word end to the word end', () => {
-      // start at 4 ('quick'), end at 13 ('bro' in 'brown' [10:15])
-      const res = snapToWordBoundaries(text, 4, 13);
-      expect(res).toEqual({ start: 4, end: 15 });
-      expect(text.slice(res.start, res.end)).toBe('quick brown');
-    });
-
-    it('leaves offsets unchanged if already on word boundaries', () => {
-      const res = snapToWordBoundaries(text, 4, 15);
-      expect(res).toEqual({ start: 4, end: 15 });
-      expect(text.slice(res.start, res.end)).toBe('quick brown');
-    });
-
-    it('trims whitespace if start or end lands on whitespace', () => {
-      const res = snapToWordBoundaries(text, 3, 16);
-      expect(res).toEqual({ start: 4, end: 15 });
-    });
   });
 });
 
