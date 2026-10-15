@@ -167,49 +167,6 @@ JSON Response Format:
 """
 
 
-def _build_prompt(ann1: Dict[str, Any], ann2: Dict[str, Any], valid_types: List[str]) -> str:
-    """Construct single-pair prompt for relation inference (kept for direct compatibility)."""
-    q1 = ann1.get("quote", "")
-    l1 = ann1.get("label", "")
-    q2 = ann2.get("quote", "")
-    l2 = ann2.get("label", "")
-
-    return f"""Given two passages annotated in a document:
-
-Passage 1:
-Quote: "{q1}"
-Label: {l1}
-
-Passage 2:
-Quote: "{q2}"
-Label: {l2}
-
-Permitted relation types: {valid_types}
-
-Label-Aware Dynamic Rules:
-- Problem <-> Solution: MUST use "solves" if one passage resolves, addresses, or proposes a solution to the other.
-- Claim <-> Evidence: MUST use "supports" (if evidence justifies the claim) or "refutes" (if evidence contradicts it).
-- Definition <-> any passage: MUST use "defines" if one passage defines or names a concept used in the other.
-- Method <-> Result: MUST use "causes" or "supports".
-- Claim <-> Claim / Problem <-> Problem: use "similar_to" (if identical claim/problem), "contrasts_with", or "elaborates".
-- Contrasting ideas: use "contrasts_with" when passages express opposing views without direct refutation.
-- Conditions / Prerequisites: use "conditional_on" when one passage depends on or assumes the other.
-- Sequential / Temporal: use "precedes" when one event/step occurs before another.
-- NOTE: "relates_to" is STRICTLY A LAST RESORT FALLBACK. Never use "relates_to" if a more specific relation type applies.
-
-Instructions:
-1. Examine the labels and text of both passages. Determine their dynamic typed relationship.
-2. Specify "type" (one of the permitted types), "direction" ("forward" if Passage 1 relates to Passage 2, or "reverse" if Passage 2 relates to Passage 1), and a 1-2 sentence "reason".
-3. If no relationship exists, set "type" to null.
-
-You MUST reply with ONLY a JSON object in this format:
-{{
-  "type": "one_of_the_permitted_types_or_null",
-  "direction": "forward",
-  "reason": "1-2 sentence explanation justifying the relation"
-}}
-"""
-
 
 def select_candidate_pairs(
     annotations: List[Dict[str, Any]],
