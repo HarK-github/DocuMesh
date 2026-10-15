@@ -30,15 +30,8 @@ async function request(endpoint, options = {}) {
   let response;
   try {
     response = await fetch(url, { ...options, headers });
-  } catch (err) {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('app:server-offline', { detail: { error: err } }));
-    }
+  } catch {
     throw new ApiError('Server unreachable. Retrying...', 0, null);
-  }
-
-  if (typeof window !== 'undefined' && response.ok) {
-    window.dispatchEvent(new CustomEvent('app:server-online'));
   }
 
   if (!response.ok) {
@@ -49,9 +42,6 @@ async function request(endpoint, options = {}) {
       errorData = await response.text();
     }
     const message = (errorData && errorData.detail) || `Request failed with status ${response.status}`;
-    if (response.status >= 502 && response.status <= 504 && typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('app:server-offline', { detail: { status: response.status } }));
-    }
     throw new ApiError(message, response.status, errorData);
   }
 

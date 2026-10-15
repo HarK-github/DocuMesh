@@ -85,50 +85,9 @@ describe('API client', () => {
     );
   });
 
-  it('dispatches app:server-offline event when network fetch fails completely', async () => {
-    const target = new EventTarget();
-    global.window = target;
-    global.CustomEvent = class CustomEvent extends Event {
-      constructor(type, init) {
-        super(type, init);
-        this.detail = init?.detail;
-      }
-    };
-    const offlineHandler = vi.fn();
-    target.addEventListener('app:server-offline', offlineHandler);
-
+  it('throws ApiError when network fetch fails completely', async () => {
     global.fetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
 
-    await expect(api.get('/health')).rejects.toThrow('Server unreachable');
-    expect(offlineHandler).toHaveBeenCalled();
-
-    delete global.window;
-    delete global.CustomEvent;
-  });
-
-  it('dispatches app:server-online event when a request succeeds', async () => {
-    const target = new EventTarget();
-    global.window = target;
-    global.CustomEvent = class CustomEvent extends Event {
-      constructor(type, init) {
-        super(type, init);
-        this.detail = init?.detail;
-      }
-    };
-    const onlineHandler = vi.fn();
-    target.addEventListener('app:server-online', onlineHandler);
-
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      headers: { get: () => 'application/json' },
-      json: async () => ({ status: 'ok' }),
-    });
-
-    await api.get('/health');
-    expect(onlineHandler).toHaveBeenCalled();
-
-    delete global.window;
-    delete global.CustomEvent;
+    await expect(api.get('/health')).rejects.toThrow('Server unreachable. Retrying...');
   });
 });

@@ -29,7 +29,6 @@ import {
   useRejectSuggestion,
   useAcceptAllSuggestions,
   useAutoHighlight,
-  useServerConnection,
 } from './hooks/useApi';
 import { useHealth } from './hooks/useHealth';
 import { api } from './api/client';
@@ -56,8 +55,7 @@ export default function App() {
   const queryClient = useQueryClient();
 
   // Health, taxonomy, and live server connection
-  const { isOnline, isReconnecting, reconnect } = useServerConnection();
-  const { isError: healthError } = useHealth();
+  const { isOnline, isReconnecting, reconnect } = useHealth();
   const { data: taxonomy } = useTaxonomy();
 
   // Document queries
@@ -512,17 +510,17 @@ export default function App() {
                 width: '6px',
                 height: '6px',
                 borderRadius: 0,
-                background: (!isOnline || healthError) ? '#737373' : '#000000',
+                background: !isOnline ? '#737373' : '#000000',
                 border: '1px solid #000000',
               }}
             />
-            <span>{(!isOnline || healthError) ? (isReconnecting ? 'Reconnecting...' : 'API Offline') : 'Connected'}</span>
+            <span>{!isOnline ? (isReconnecting ? 'Reconnecting...' : 'API Offline') : 'Connected'}</span>
           </div>
         </div>
       </header>
 
       {/* Auto-Reconnection Persistent Banner */}
-      {(!isOnline || healthError) && (
+      {!isOnline && (
         <div
           data-testid="reconnect-banner"
           style={{
