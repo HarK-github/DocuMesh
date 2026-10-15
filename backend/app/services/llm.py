@@ -103,10 +103,7 @@ class FakeLLMClient(BaseLLMClient):
         raw_ids = re.findall(r"\[([sar]\d+)\]", combined)
 
         # Keep ordered unique IDs
-        unique_ids = []
-        for cid in raw_ids:
-            if cid not in unique_ids:
-                unique_ids.append(cid)
+        unique_ids = list(dict.fromkeys(raw_ids))
 
         if not unique_ids:
             return "Based on the provided document, I could not find information regarding this question."

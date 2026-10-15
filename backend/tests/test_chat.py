@@ -417,3 +417,13 @@ def test_end_to_end_chat_with_deterministic_citations(chat_test_setup):
         if cit["type"] in ("sentence", "annotation"):
             assert cit["start"] is not None
             assert cit["end"] is not None
+
+
+def test_fake_llm_citation_ordering_and_deduplication() -> None:
+    """Verify FakeLLMClient.complete preserves first appearance order and deduplicates IDs."""
+    client = FakeLLMClient()
+    messages = [
+        {"role": "user", "content": "Context with [s3] and [s1] and [s3] and [a2] and [s1]"}
+    ]
+    resp = client.complete(messages)
+    assert "[s3] [s1] [a2]" in resp
