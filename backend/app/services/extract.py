@@ -5,35 +5,26 @@ from pathlib import Path
 import pymupdf
 
 
+def _open(pdf_source: Union[str, Path, bytes]) -> pymupdf.Document:
+    if isinstance(pdf_source, (str, Path)):
+        return pymupdf.open(str(pdf_source))
+    return pymupdf.open(stream=pdf_source, filetype="pdf")
+
+
 def extract_pages(pdf_source: Union[str, Path, bytes]) -> List[Dict[str, Union[int, str]]]:
     """Extract plain text from each page of a PDF document."""
-    if isinstance(pdf_source, (str, Path)):
-        doc = pymupdf.open(str(pdf_source))
-    else:
-        doc = pymupdf.open(stream=pdf_source, filetype="pdf")
-
-    pages = []
-    try:
-        for page_idx in range(len(doc)):
-            page = doc[page_idx]
-            text = page.get_text("text")
-            pages.append({
+    with _open(pdf_source) as doc:
+        return [
+            {
                 "page": page_idx + 1,
-                "text": text,
-            })
-    finally:
-        doc.close()
-
-    return pages
+                "text": doc[page_idx].get_text("text"),
+            }
+            for page_idx in range(len(doc))
+        ]
 
 
 def get_pdf_page_count(pdf_source: Union[str, Path, bytes]) -> int:
     """Return the total number of pages in a PDF document."""
-    if isinstance(pdf_source, (str, Path)):
-        doc = pymupdf.open(str(pdf_source))
-    else:
-        doc = pymupdf.open(stream=pdf_source, filetype="pdf")
-    try:
+    with _open(pdf_source) as doc:
         return len(doc)
-    finally:
-        doc.close()
+
