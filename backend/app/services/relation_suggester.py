@@ -9,7 +9,8 @@ import numpy as np
 from sqlalchemy.orm import Session
 from backend.app.settings import get_settings
 from backend.app.db import get_session_factory
-from backend.app.models import Annotation, Relation, RelationType, RelationCache, RejectedPair
+from backend.app.models import Annotation, Relation, RelationCache, RejectedPair
+from backend.app.taxonomy import TAXONOMY_RELATION_TYPES
 from backend.app.services.llm import get_llm_client, LLMNotConfiguredError
 from backend.app.services.jobs import update_job_status
 from backend.app.services.embedder import get_embedder
@@ -339,7 +340,7 @@ def process_suggest_relations_job(
             .all()
         )
         rejected_pairs = {(r.ann_id_min, r.ann_id_max) for r in rejected_rows}
-        taxonomy_types = [r.name for r in session.query(RelationType).all()]
+        taxonomy_types = TAXONOMY_RELATION_TYPES
 
     if len(annotations) < 2:
         return {"suggested_count": 0, "message": "At least 2 annotations are required to infer relations."}

@@ -1,13 +1,19 @@
-"""Test database initialization and taxonomy seeding."""
+"""Test database initialization and static taxonomy configuration."""
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.app.db import init_db
-from backend.app.models import Label, RelationType, Document
+from backend.app.models import Document, Annotation, Relation, Sentence
+from backend.app.taxonomy import (
+    TAXONOMY_LABELS,
+    TAXONOMY_RELATION_TYPES,
+    is_valid_label,
+    is_valid_relation_type,
+)
 
 
-def test_init_db_creates_tables_and_seeds(tmp_path) -> None:
-    """Verify schema creation and taxonomy seeding in a temporary SQLite DB."""
+def test_init_db_creates_tables(tmp_path) -> None:
+    """Verify schema creation in a temporary SQLite DB."""
     db_file = tmp_path / "test.db"
     test_url = f"sqlite:///{db_file}"
     engine = create_engine(test_url)
@@ -16,18 +22,22 @@ def test_init_db_creates_tables_and_seeds(tmp_path) -> None:
 
     Session = sessionmaker(bind=engine)
     with Session() as session:
-        # Check taxonomy seeded
-        labels = session.query(Label).all()
-        assert len(labels) > 0
-        label_names = [l.name for l in labels]
-        assert "Claim" in label_names
-        assert "Evidence" in label_names
+        # Check tables exist and are queryable
+        assert session.query(Document).count() == 0
+        assert session.query(Sentence).count() == 0
+        assert session.query(Annotation).count() == 0
+        assert session.query(Relation).count() == 0
 
-        rel_types = session.query(RelationType).all()
-        assert len(rel_types) > 0
-        rel_names = [r.name for r in rel_types]
-        assert "supports" in rel_names
 
-        # Check document table exists and is queryable
-        docs = session.query(Document).all()
-        assert len(docs) == 0
+def test_taxonomy_configuration() -> None:
+    """Verify static taxonomy labels and relation types."""
+    assert "Claim" in TAXONOMY_LABELS
+    assert "Evidence" in TAXONOMY_LABELS
+    assert "supports" in TAXONOMY_RELATION_TYPES
+    assert "refutes" in TAXONOMY_RELATION_TYPES
+
+    assert is_valid_label("Claim") is True
+    assert is_valid_label("InvalidLabel") is False
+    assert is_valid_relation_type("supports") is True
+    assert is_valid_relation_type("invalid_rel") is False
+

@@ -3,7 +3,8 @@ import numpy as np
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.db import get_db
-from backend.app.models import Document, Sentence, Annotation, Suggestion, Label, Relation
+from backend.app.models import Document, Sentence, Annotation, Suggestion, Relation
+from backend.app.taxonomy import DEFAULT_LABEL
 from backend.app.schemas import SuggestionResponse, SuggestHighlightsRequest
 from backend.app.services.embedder import get_embedder
 from backend.app.services.clean import snap_to_word_boundaries
@@ -106,8 +107,7 @@ def generate_highlight_suggestions(
         scope = payload.scope if payload else "passage"
         target_label = payload.target_label if (payload and payload.target_label) else seed_ann.label
     else:
-        default_label = db.query(Label).first()
-        target_label = (payload.target_label if payload and payload.target_label else (default_label.name if default_label else "Claim"))
+        target_label = payload.target_label if (payload and payload.target_label) else DEFAULT_LABEL
         seed_id = None
         scope = "passage"
 

@@ -185,19 +185,4 @@ class Job(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
 
 
-class Label(Base):
-    """Valid annotation label name from taxonomy."""
 
-    __tablename__ = "labels"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(64), unique=True, nullable=False)
-
-
-class RelationType(Base):
-    """Valid relationship type from taxonomy."""
-
-    __tablename__ = "relation_types"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(64), unique=True, nullable=False)

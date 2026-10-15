@@ -7,7 +7,7 @@ from typing import Generator
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
 from backend.app.settings import get_settings
-from backend.app.models import Base, Label, RelationType
+from backend.app.models import Base
 
 _engine = None
 _SessionLocal = None
@@ -79,34 +79,8 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def seed_taxonomy(db: Session, config_path: str = None) -> None:
-    """Seed taxonomy labels and relation types from config/taxonomy.json."""
-    if config_path is None:
-        # Resolve config/taxonomy.json relative to repo root
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        config_path = str(repo_root / "config" / "taxonomy.json")
-
-    if not os.path.exists(config_path):
-        return
-
-    with open(config_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    labels = data.get("labels", [])
-    for label_name in labels:
-        if not db.query(Label).filter(Label.name == label_name).first():
-            db.add(Label(name=label_name))
-
-    relation_types = data.get("relation_types", [])
-    for rel_name in relation_types:
-        if not db.query(RelationType).filter(RelationType.name == rel_name).first():
-            db.add(RelationType(name=rel_name))
-
-    db.commit()
-
-
 def init_db(engine_override=None, config_path: str = None) -> None:
-    """Create all database tables, run incremental migrations, and seed taxonomy."""
+    """Create all database tables and run incremental migrations."""
     target_engine = engine_override or get_engine()
     Base.metadata.create_all(bind=target_engine)
 
@@ -139,6 +113,3 @@ def init_db(engine_override=None, config_path: str = None) -> None:
     except Exception:
         pass
 
-    session_factory = get_session_factory(target_engine)
-    with session_factory() as session:
-        seed_taxonomy(session, config_path=config_path)

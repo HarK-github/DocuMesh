@@ -5,9 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 from backend.app.db import get_db
-from backend.app.models import Document, Annotation, Relation, Label, Suggestion
+from backend.app.models import Document, Annotation, Relation, Suggestion
 from backend.app.schemas import AnnotationCreate, AnnotationUpdate, AnnotationResponse
 from backend.app.services.clean import snap_to_word_boundaries
+from backend.app.taxonomy import is_valid_label
 
 router = APIRouter(tags=["Annotations"])
 
@@ -106,8 +107,7 @@ def create_annotation(
         return existing
 
     # Validate label against taxonomy
-    label_obj = db.query(Label).filter(Label.name == payload.label).first()
-    if not label_obj:
+    if not is_valid_label(payload.label):
         raise HTTPException(status_code=422, detail=f"Label '{payload.label}' is not in the taxonomy")
 
     annotation = Annotation(
@@ -194,8 +194,7 @@ def update_annotation(
                     sug.status = "superseded"
 
     if payload.label is not None:
-        label_obj = db.query(Label).filter(Label.name == payload.label).first()
-        if not label_obj:
+        if not is_valid_label(payload.label):
             raise HTTPException(status_code=422, detail=f"Label '{payload.label}' is not in the taxonomy")
         annotation.label = payload.label
 

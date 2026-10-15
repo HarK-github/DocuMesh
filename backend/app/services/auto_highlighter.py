@@ -5,7 +5,8 @@ from typing import Dict, Any, List, Optional
 import numpy as np
 from backend.app.settings import get_settings
 from backend.app.db import get_session_factory
-from backend.app.models import Document, Sentence, Annotation, Label, Suggestion
+from backend.app.models import Document, Sentence, Annotation, Suggestion
+from backend.app.taxonomy import TAXONOMY_LABELS
 from backend.app.services.clean import snap_to_word_boundaries
 from backend.app.services.jobs import update_job_status
 from backend.app.services.llm import get_llm_client, LLMNotConfiguredError
@@ -46,9 +47,7 @@ def process_auto_highlight_job(
             raise ValueError(f"Document {document_id} clean_text is empty or not yet processed")
 
         clean_text = doc.clean_text
-        labels = [l.name for l in session.query(Label).all()]
-        if not labels:
-            labels = ["Claim", "Evidence", "Definition", "Method", "Result", "Problem", "Solution"]
+        labels = TAXONOMY_LABELS
 
         # 1. Existing annotations to skip covered ranges
         existing_anns = (

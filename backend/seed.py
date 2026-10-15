@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from backend.app.settings import get_settings
 from backend.app.db import get_engine, init_db, get_session_factory
-from backend.app.models import Document, Annotation, Relation, Label, RelationType
+from backend.app.models import Document, Annotation, Relation
 from backend.app.services.ingest import process_document
 
 

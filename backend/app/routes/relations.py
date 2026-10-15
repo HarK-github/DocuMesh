@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 from backend.app.db import get_db
-from backend.app.models import Document, Annotation, Relation, RelationType, Suggestion, RejectedPair
+from backend.app.models import Document, Annotation, Relation, Suggestion, RejectedPair
+from backend.app.taxonomy import is_valid_relation_type
 from backend.app.schemas import (
     RelationCreate,
     RelationUpdate,
@@ -99,8 +100,7 @@ def create_relation(
         raise HTTPException(status_code=404, detail="Target annotation not found in this document")
 
     # Validate relation type against taxonomy
-    rel_type_obj = db.query(RelationType).filter(RelationType.name == payload.type).first()
-    if not rel_type_obj:
+    if not is_valid_relation_type(payload.type):
         raise HTTPException(status_code=422, detail=f"Relation type '{payload.type}' is not in the taxonomy")
 
     relation = Relation(
@@ -137,8 +137,7 @@ def update_relation(
         )
 
     if payload.type is not None:
-        rel_type_obj = db.query(RelationType).filter(RelationType.name == payload.type).first()
-        if not rel_type_obj:
+        if not is_valid_relation_type(payload.type):
             raise HTTPException(status_code=422, detail=f"Relation type '{payload.type}' is not in the taxonomy")
         relation.type = payload.type
 
