@@ -46,6 +46,28 @@ def test_remove_repeated_headers_footers() -> None:
     assert "Content of page two." in cleaned_pages[1]
 
 
+def test_remove_repeated_headers_footers_characterization() -> None:
+    """Verify edge cases: blank lines, differing headers, single page."""
+    # Blank lines around headers/footers
+    p1 = "\n\n  Header Title  \nBody text A\nFooter Note\n  \n"
+    p2 = "  Header Title  \nBody text B\nFooter Note"
+    p3 = "Different Header\nBody text C\nFooter Note"
+    cleaned = remove_repeated_headers_footers([p1, p2, p3])
+    # Header Title appears in p1 and p2 (count 2) -> stripped
+    assert "Header Title" not in cleaned[0]
+    assert "Header Title" not in cleaned[1]
+    # Footer Note appears in all 3 -> stripped
+    assert "Footer Note" not in cleaned[0]
+    assert "Footer Note" not in cleaned[1]
+    assert "Footer Note" not in cleaned[2]
+    # Unique header in p3 is retained
+    assert "Different Header" in cleaned[2]
+    # Body texts retained
+    assert "Body text A" in cleaned[0]
+    assert "Body text B" in cleaned[1]
+    assert "Body text C" in cleaned[2]
+
+
 def test_clean_extracted_pages() -> None:
     """Verify clean_extracted_pages applies all cleaning steps."""
     pages = [

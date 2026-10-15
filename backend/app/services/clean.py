@@ -1,5 +1,6 @@
 """Text cleaning and normalization pipeline for extracted PDF text."""
 
+from collections import Counter
 import re
 from typing import List, Dict, Union, Tuple
 
@@ -37,19 +38,16 @@ def remove_repeated_headers_footers(page_texts: List[str]) -> List[str]:
         return page_texts
 
     # Gather first and last non-empty lines from each page
-    header_counts: Dict[str, int] = {}
-    footer_counts: Dict[str, int] = {}
-
+    top_lines = []
+    bot_lines = []
     for pt in page_texts:
-        lines = [l.strip() for l in pt.splitlines() if l.strip()]
-        if lines:
-            top_line = lines[0]
-            header_counts[top_line] = header_counts.get(top_line, 0) + 1
-            bot_line = lines[-1]
-            footer_counts[bot_line] = footer_counts.get(bot_line, 0) + 1
+        non_empty = [l.strip() for l in pt.splitlines() if l.strip()]
+        if non_empty:
+            top_lines.append(non_empty[0])
+            bot_lines.append(non_empty[-1])
 
-    repeated_headers = {k for k, count in header_counts.items() if count >= 2}
-    repeated_footers = {k for k, count in footer_counts.items() if count >= 2}
+    repeated_headers = {line for line, count in Counter(top_lines).items() if count >= 2}
+    repeated_footers = {line for line, count in Counter(bot_lines).items() if count >= 2}
 
     cleaned_pages = []
     for pt in page_texts:
