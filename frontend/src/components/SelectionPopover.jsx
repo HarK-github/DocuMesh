@@ -25,37 +25,41 @@ export default function SelectionPopover({
         position: 'absolute',
         top: popoverPos ? `${popoverPos.top}px` : '0px',
         left: popoverPos ? `${popoverPos.left}px` : '0px',
-        zIndex: 50,
+        zIndex: 1000,
         background: '#ffffff',
-        borderRadius: '10px',
-        boxShadow:
-          '0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)',
-        border: '1px solid #e2e8f0',
-        padding: '12px 14px',
-        width: '290px',
-        animation: 'fadeIn 0.15s ease-out',
+        border: '2px solid #000000',
+        padding: '14px 16px',
+        width: '310px',
+        boxShadow: 'none',
+        borderRadius: 0,
       }}
       onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '8px',
+          marginBottom: '12px',
+          borderBottom: '1px solid #000000',
+          paddingBottom: '8px',
         }}
       >
         <span
           style={{
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            color: '#334155',
+            fontFamily: '"Playfair Display", Georgia, serif',
+            fontSize: '0.9rem',
+            fontWeight: 700,
+            color: '#000000',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
+            gap: '6px',
+            letterSpacing: '-0.01em',
           }}
         >
-          <Bookmark size={13} color="#2563eb" /> New Annotation
+          <Bookmark size={14} strokeWidth={1.5} color="#000000" /> New Annotation
         </span>
         <button
           onClick={onClose}
@@ -65,10 +69,13 @@ export default function SelectionPopover({
             border: 'none',
             background: 'transparent',
             cursor: 'pointer',
-            color: '#94a3b8',
+            color: '#000000',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
-          <X size={14} />
+          <X size={15} strokeWidth={1.5} />
         </button>
       </div>
 
@@ -78,14 +85,17 @@ export default function SelectionPopover({
           onSave(e);
         }}
       >
-        <div style={{ marginBottom: '8px' }}>
+        <div style={{ marginBottom: '10px' }}>
           <label
             style={{
               display: 'block',
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              color: '#64748b',
-              marginBottom: '3px',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: '#525252',
+              marginBottom: '4px',
             }}
           >
             Category
@@ -96,11 +106,13 @@ export default function SelectionPopover({
             onChange={(e) => onLabelChange(e.target.value)}
             style={{
               width: '100%',
-              padding: '5px 8px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.85rem',
-              background: '#f8fafc',
+              padding: '6px 8px',
+              border: '1.5px solid #000000',
+              borderRadius: 0,
+              fontSize: '0.82rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              background: '#ffffff',
+              color: '#000000',
             }}
           >
             {taxonomy?.labels?.map((lbl) => (
@@ -111,14 +123,17 @@ export default function SelectionPopover({
           </select>
         </div>
 
-        <div style={{ marginBottom: '10px' }}>
+        <div style={{ marginBottom: '12px' }}>
           <label
             style={{
               display: 'block',
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              color: '#64748b',
-              marginBottom: '3px',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: '#525252',
+              marginBottom: '4px',
             }}
           >
             Note (optional)
@@ -128,26 +143,32 @@ export default function SelectionPopover({
             data-testid="popup-note-input"
             value={note}
             onChange={(e) => onNoteChange(e.target.value)}
-            placeholder="Brief explanation..."
+            placeholder="Brief editorial note..."
             style={{
               width: '100%',
-              padding: '5px 8px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.85rem',
+              padding: '6px 8px',
+              border: '1.5px solid #000000',
+              borderRadius: 0,
+              fontSize: '0.82rem',
+              fontFamily: '"Source Serif 4", Georgia, serif',
               boxSizing: 'border-box',
+              background: '#ffffff',
+              color: '#000000',
             }}
           />
         </div>
 
         {/* Scope toggle for find more */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '14px' }}>
           <label
             style={{
               display: 'block',
-              fontSize: '0.72rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.7rem',
               fontWeight: 600,
-              color: '#64748b',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: '#525252',
               marginBottom: '4px',
             }}
           >
@@ -156,10 +177,8 @@ export default function SelectionPopover({
           <div
             style={{
               display: 'flex',
-              gap: '4px',
-              background: '#f1f5f9',
-              padding: '3px',
-              borderRadius: '6px',
+              border: '1px solid #000000',
+              background: '#ffffff',
             }}
           >
             <button
@@ -168,15 +187,16 @@ export default function SelectionPopover({
               onClick={() => onScopeChange('passage')}
               style={{
                 flex: 1,
-                padding: '4px 6px',
+                padding: '6px 8px',
+                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
-                fontWeight: scope === 'passage' ? 600 : 400,
-                borderRadius: '4px',
+                fontWeight: scope === 'passage' ? 700 : 400,
                 border: 'none',
-                background: scope === 'passage' ? '#ffffff' : 'transparent',
-                color: scope === 'passage' ? '#1e293b' : '#64748b',
-                boxShadow: scope === 'passage' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                borderRadius: 0,
+                background: scope === 'passage' ? '#000000' : '#ffffff',
+                color: scope === 'passage' ? '#ffffff' : '#000000',
                 cursor: 'pointer',
+                transition: 'none',
               }}
             >
               This passage
@@ -187,15 +207,17 @@ export default function SelectionPopover({
               onClick={() => onScopeChange('category')}
               style={{
                 flex: 1,
-                padding: '4px 6px',
+                padding: '6px 8px',
+                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
-                fontWeight: scope === 'category' ? 600 : 400,
-                borderRadius: '4px',
+                fontWeight: scope === 'category' ? 700 : 400,
                 border: 'none',
-                background: scope === 'category' ? '#ffffff' : 'transparent',
-                color: scope === 'category' ? '#1e293b' : '#64748b',
-                boxShadow: scope === 'category' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                borderLeft: '1px solid #000000',
+                borderRadius: 0,
+                background: scope === 'category' ? '#000000' : '#ffffff',
+                color: scope === 'category' ? '#ffffff' : '#000000',
                 cursor: 'pointer',
+                transition: 'none',
               }}
             >
               This category
@@ -203,22 +225,26 @@ export default function SelectionPopover({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
           <button
             type="button"
             data-testid="popup-save-btn"
             disabled={isMutating}
             onClick={onSave}
             style={{
-              padding: '5px 12px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
+              padding: '6px 14px',
+              borderRadius: 0,
+              border: '1.5px solid #000000',
               background: '#ffffff',
-              color: '#334155',
-              fontSize: '0.78rem',
-              fontWeight: 500,
+              color: '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
               cursor: isMutating ? 'not-allowed' : 'pointer',
               opacity: isMutating ? 0.6 : 1,
+              transition: 'none',
             }}
           >
             Save
@@ -229,21 +255,25 @@ export default function SelectionPopover({
             disabled={isMutating}
             onClick={onSaveAndFindMore}
             style={{
-              padding: '5px 12px',
-              borderRadius: '6px',
-              border: 'none',
-              background: '#2563eb',
+              padding: '6px 14px',
+              borderRadius: 0,
+              border: '1.5px solid #000000',
+              background: '#000000',
               color: '#ffffff',
-              fontSize: '0.78rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.75rem',
               fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
               cursor: isMutating ? 'not-allowed' : 'pointer',
               opacity: isMutating ? 0.6 : 1,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '6px',
+              transition: 'none',
             }}
           >
-            <Sparkles size={12} />
+            <Sparkles size={12} strokeWidth={1.5} color="#ffffff" />
             Save + find more like this
           </button>
         </div>

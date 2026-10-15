@@ -103,6 +103,7 @@ class Relation(Base):
     target_id = Column(Integer, ForeignKey("annotations.id", ondelete="CASCADE"), nullable=False, index=True)
     type = Column(String(64), nullable=False)
     status = Column(String(32), default="confirmed", nullable=False)
+    cos_score = Column(Float, nullable=True)
     reason = Column(Text, nullable=True)
     version = Column(Integer, default=1, nullable=False)
 
@@ -110,11 +111,42 @@ class Relation(Base):
     source = relationship("Annotation", foreign_keys=[source_id])
     target = relationship("Annotation", foreign_keys=[target_id])
 
+    @property
+    def score(self) -> Any:
+        return self.cos_score
+
     __mapper_args__ = {
         "version_id_col": version,
     }
     __table_args__ = (
         CheckConstraint("source_id != target_id", name="check_no_self_link"),
+    )
+
+
+class RelationCache(Base):
+    """Cached relation inference result for an annotation text pair."""
+
+    __tablename__ = "relation_cache"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cache_key = Column(String(64), unique=True, index=True, nullable=False)
+    result_json = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+
+
+class RejectedPair(Base):
+    """User-rejected or deleted candidate annotation pair to prevent re-suggesting."""
+
+    __tablename__ = "rejected_pairs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    ann_id_min = Column(Integer, nullable=False)
+    ann_id_max = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("document_id", "ann_id_min", "ann_id_max", name="uq_rejected_pairs_doc_ann_pair"),
     )
 
 

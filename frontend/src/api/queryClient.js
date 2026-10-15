@@ -9,9 +9,17 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      staleTime: 30000,
-      refetchOnWindowFocus: false,
+      retry: (failureCount, error) => {
+        // Do not retry permanent client errors
+        if (error?.status === 404 || error?.status === 422 || error?.status === 409) {
+          return false;
+        }
+        return failureCount < 4;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
+      staleTime: 15000,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
     },
   },
 });

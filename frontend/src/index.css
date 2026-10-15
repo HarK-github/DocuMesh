@@ -1,7 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
+:root {
+  /* Minimalist Monochrome Design Tokens */
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --muted: #F5F5F5;
+  --muted-foreground: #525252;
+  --accent: #000000;
+  --accent-foreground: #FFFFFF;
+  --border: #000000;
+  --border-light: #E5E5E5;
+  --card: #FFFFFF;
+  --card-foreground: #000000;
+  --ring: #000000;
+
+  /* Typography Stacks */
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Source Serif 4", Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Border line tokens */
+  --line-hairline: 1px solid #E5E5E5;
+  --line-thin: 1px solid #000000;
+  --line-medium: 2px solid #000000;
+  --line-thick: 4px solid #000000;
+  --line-ultra: 8px solid #000000;
+
+  /* Zero border radius everywhere */
+  --radius: 0px;
+}
 
 * {
   box-sizing: border-box;
+  border-radius: 0 !important; /* Strict 0px geometric discipline */
 }
 
 html, body, #root {
@@ -10,13 +41,165 @@ html, body, #root {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
+/* Subtle editorial paper noise texture */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Subtle horizontal lined editorial texture */
+.texture-lines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    #000000 1px,
+    #000000 2px
+  );
+  background-size: 100% 4px;
+}
+
+/* Subtle editorial grid */
+.texture-grid {
+  background-image:
+    linear-gradient(#0000000d 1px, transparent 1px),
+    linear-gradient(90deg, #0000000d 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Inverted subtle texture for dark sections */
+.texture-inverted-lines {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 1px,
+    #ffffff 1px,
+    #ffffff 2px
+  );
+  background-size: 4px 100%;
+  opacity: 0.04;
+}
+
+/* Typography Utility Classes */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Micro-interaction & Buttons */
+.btn-mono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 8px 16px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  transition: all 100ms linear;
+  user-select: none;
+}
+
+.btn-mono:focus-visible {
+  outline: 3px solid #000000;
+  outline-offset: 2px;
+}
+
+.btn-mono:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn-mono-primary {
+  background: var(--foreground);
+  color: var(--background);
+  border: 1px solid var(--foreground);
+}
+
+.btn-mono-primary:hover:not(:disabled) {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--foreground);
+}
+
+.btn-mono-secondary {
+  background: transparent;
+  color: var(--foreground);
+  border: 1.5px solid var(--foreground);
+}
+
+.btn-mono-secondary:hover:not(:disabled) {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.btn-mono-ghost {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid transparent;
+}
+
+.btn-mono-ghost:hover:not(:disabled) {
+  border-bottom: 1.5px solid var(--foreground);
+}
+
+/* Monochrome Input Elements */
+input[type="text"],
+input[type="search"],
+textarea,
+select {
+  font-family: var(--font-mono);
+  border-radius: 0 !important;
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1.5px solid var(--border);
+  padding: 8px 10px;
+  transition: border-width 50ms linear;
+}
+
+input[type="text"]::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: inset 0 0 0 1px #000000;
+}
+
+/* Animations */
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -30,39 +213,48 @@ html, body, #root {
   animation: spin 1s linear infinite;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
+@keyframes highlightFlashMonochrome {
+  0% {
+    background-color: #000000;
+    color: #ffffff;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  50% {
+    background-color: #525252;
+    color: #ffffff;
+  }
+  100% {
+    background-color: transparent;
+    color: inherit;
   }
 }
 
-/* React Flow custom handles styling */
+.flash-highlight {
+  animation: highlightFlashMonochrome 1.4s cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
+/* React Flow custom handles styling: sharp architectural squares */
 .react-flow__handle {
-  width: 10px !important;
-  height: 10px !important;
-  background-color: #3b82f6 !important;
-  border: 2px solid #ffffff !important;
-  border-radius: 50% !important;
-  box-shadow: 0 0 0 1px #93c5fd, 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+  width: 9px !important;
+  height: 9px !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #ffffff !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 0 1px #000000 !important;
+  transition: transform 0.08s linear !important;
   z-index: 20 !important;
   cursor: crosshair !important;
 }
 
 .react-flow__handle:hover {
   transform: scale(1.4) !important;
-  background-color: #1d4ed8 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4) !important;
+  background-color: #ffffff !important;
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2px #000000 !important;
 }
 
 .react-flow__handle.connecting {
-  background-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4) !important;
+  background-color: #000000 !important;
+  box-shadow: 0 0 0 3px #000000 !important;
 }
 
 /* React Flow edge label styling */
@@ -71,31 +263,28 @@ html, body, #root {
 }
 
 .react-flow__edge-text {
+  font-family: var(--font-mono) !important;
   font-weight: 600 !important;
   font-size: 11px !important;
   user-select: none !important;
+  fill: #000000 !important;
 }
 
-@keyframes highlightFlash {
-  0% {
-    background-color: #fef08a !important;
-    box-shadow: 0 0 0 4px #eab308 !important;
-  }
-  50% {
-    background-color: #fef9c3 !important;
-    box-shadow: 0 0 0 2px #ca8a04 !important;
-  }
-  100% {
-    box-shadow: none;
-  }
+.react-flow__edge-path {
+  stroke: #000000 !important;
+  stroke-width: 1.5px !important;
 }
 
-.flash-highlight {
-  animation: highlightFlash 1.6s ease-out forwards;
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #000000 !important;
+  stroke-width: 3px !important;
 }
 
 /* PDF.js textLayer styling for interactive selection */
 .textLayer {
+  --scale-factor: 1;
+  --total-scale-factor: 1;
+  --min-font-size: 1;
   position: absolute;
   top: 0;
   left: 0;
@@ -104,10 +293,13 @@ html, body, #root {
   overflow: clip;
   opacity: 1;
   line-height: 1;
+  -webkit-text-size-adjust: none;
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
   z-index: 2;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .textLayer :is(span, br) {
@@ -119,6 +311,21 @@ html, body, #root {
 }
 
 .textLayer ::selection {
-  background: rgba(59, 130, 246, 0.35) !important;
+  background: rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Editorial Boxed Drop Cap */
+.reader-first-para::first-letter {
+  font-family: var(--font-display);
+  font-size: 3.2rem;
+  float: left;
+  line-height: 0.85;
+  padding: 6px 10px 4px 10px;
+  margin-right: 12px;
+  margin-bottom: 4px;
+  border: 2px solid #000000;
+  font-weight: 700;
+  background: #ffffff;
+  color: #000000;
 }
 

@@ -128,7 +128,14 @@ def init_db(engine_override=None, config_path: str = None) -> None:
                     conn.exec_driver_sql(
                         "ALTER TABLE suggestions ADD COLUMN scope VARCHAR(32) DEFAULT 'passage'"
                     )
-                conn.commit()
+
+            # Migrate relations table with cos_score if needed
+            res_rel = conn.exec_driver_sql("PRAGMA table_info(relations)").fetchall()
+            rel_cols = {row[1] for row in res_rel}
+            if rel_cols and "cos_score" not in rel_cols:
+                conn.exec_driver_sql("ALTER TABLE relations ADD COLUMN cos_score REAL")
+
+            conn.commit()
     except Exception:
         pass
 

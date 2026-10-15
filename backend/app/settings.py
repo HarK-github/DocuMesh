@@ -142,6 +142,26 @@ class Settings(BaseSettings):
         alias="MAX_RELATION_PAIRS",
         description="Cap on annotation pairs checked per relation suggestion run",
     )
+    min_relation_cos_sim: float = Field(
+        default=0.25,
+        alias="MIN_RELATION_COS_SIM",
+        description="Minimum cosine similarity floor for candidate relation pairs",
+    )
+    auto_highlight_batch_size: int = Field(
+        default=20,
+        alias="AUTO_HIGHLIGHT_BATCH_SIZE",
+        description="Batch size for sequential sentence classification in auto-highlight",
+    )
+    auto_highlight_max_pairs: int = Field(
+        default=100,
+        alias="AUTO_HIGHLIGHT_MAX_PAIRS",
+        description="Cap on annotation pairs evaluated for full graph construction in auto-highlight",
+    )
+    auto_highlight_proto_threshold: float = Field(
+        default=0.18,
+        alias="AUTO_HIGHLIGHT_PROTO_THRESHOLD",
+        description="Cosine similarity floor for prototype sentence classification in auto-highlight",
+    )
 
     # Graph-aware document chat settings
     chat_top_k_sentences: int = Field(

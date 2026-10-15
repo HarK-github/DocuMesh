@@ -22,12 +22,13 @@ import {
 } from 'lucide-react';
 import { getLabelStyle } from '../lib/colors';
 
-const NODE_WIDTH = 240;
-const NODE_HEIGHT = 100;
+const NODE_WIDTH = 250;
+const NODE_HEIGHT = 110;
 
 /**
  * Custom React Flow Node with prominent handles on all 4 borders.
- * Allows easy drag-to-connect from any side.
+ * Formatted strictly according to Minimalist Monochrome principles:
+ * 0px border-radius, pure black/white palette, stark typographic contrast.
  */
 export function AnnotationNode({ _id, data, selected }) {
   const ann = data?.annotation;
@@ -43,21 +44,19 @@ export function AnnotationNode({ _id, data, selected }) {
       style={{
         width: NODE_WIDTH,
         minHeight: NODE_HEIGHT,
-        borderRadius: '10px',
+        borderRadius: 0,
         border: selected
-          ? '2.5px solid #2563eb'
+          ? '3px solid #000000'
           : isSuggested
-          ? `2px dashed ${theme.border}`
-          : `1.5px solid ${theme.border}`,
-        background: selected ? '#ffffff' : theme.bg,
+          ? '1.5px dashed #000000'
+          : '1.5px solid #000000',
+        background: '#ffffff',
         opacity: isSuggested ? 0.72 : 1,
-        boxShadow: selected
-          ? '0 6px 20px rgba(37, 99, 235, 0.25)'
-          : '0 2px 8px rgba(0, 0, 0, 0.06)',
+        boxShadow: 'none',
         padding: '10px 12px',
         position: 'relative',
         cursor: 'grab',
-        transition: 'border 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
+        transition: 'border 0.08s linear, opacity 0.08s linear',
         boxSizing: 'border-box',
       }}
     >
@@ -94,19 +93,23 @@ export function AnnotationNode({ _id, data, selected }) {
           alignItems: 'center',
           justifyContent: 'space-between',
           marginBottom: '6px',
+          borderBottom: '1px solid #000000',
+          paddingBottom: '4px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span
             style={{
+              fontFamily: '"JetBrains Mono", monospace',
               fontWeight: 700,
-              color: theme.text,
-              background: theme.badge,
-              padding: '2px 8px',
-              borderRadius: '4px',
+              color: theme.badgeText || '#ffffff',
+              background: theme.badge || '#000000',
+              padding: '1px 6px',
+              borderRadius: 0,
+              border: '1px solid #000000',
               textTransform: 'uppercase',
-              fontSize: '0.68rem',
-              letterSpacing: '0.04em',
+              fontSize: '0.65rem',
+              letterSpacing: '0.06em',
             }}
           >
             {ann.label}
@@ -114,30 +117,47 @@ export function AnnotationNode({ _id, data, selected }) {
           {isSuggested && (
             <span
               style={{
+                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
                 fontWeight: 700,
-                padding: '2px 5px',
-                borderRadius: '4px',
-                background: '#fef3c7',
-                color: '#92400e',
-                border: '1px solid #fde047',
+                padding: '1px 5px',
+                borderRadius: 0,
+                background: '#ffffff',
+                color: '#000000',
+                border: '1px solid #000000',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '2px',
+                letterSpacing: '0.04em',
               }}
               title={`Similarity score: ${Math.round((ann.score || 0) * 100)}%`}
             >
-              <Sparkles size={9} />
+              <Sparkles size={8} strokeWidth={1.5} color="#000000" />
               {ann.score ? `${Math.round(ann.score * 100)}%` : 'SUGGESTED'}
             </span>
           )}
         </div>
         {!isSuggested ? (
-          <span style={{ color: '#94a3b8', fontSize: '0.65rem', fontWeight: 600 }}>
+          <span
+            style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              color: '#525252',
+              fontSize: '0.65rem',
+              fontWeight: 600,
+            }}
+          >
             v{ann.version}
           </span>
         ) : (
-          <span style={{ color: '#ca8a04', fontSize: '0.65rem', fontWeight: 700 }}>
+          <span
+            style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              color: '#000000',
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+            }}
+          >
             ghost
           </span>
         )}
@@ -146,8 +166,9 @@ export function AnnotationNode({ _id, data, selected }) {
       {/* Quote Preview */}
       <div
         style={{
+          fontFamily: '"Source Serif 4", Georgia, serif',
           fontStyle: 'italic',
-          color: '#1e293b',
+          color: '#000000',
           fontSize: '0.78rem',
           lineHeight: 1.35,
           maxHeight: '42px',
@@ -166,9 +187,10 @@ export function AnnotationNode({ _id, data, selected }) {
       {ann.note && (
         <div
           style={{
-            marginTop: '6px',
+            marginTop: '4px',
+            fontFamily: '"Source Serif 4", Georgia, serif',
             fontSize: '0.7rem',
-            color: '#64748b',
+            color: '#525252',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -198,10 +220,11 @@ export function AnnotationNode({ _id, data, selected }) {
               data?.onAccept?.(ann.id);
             }}
             style={{
-              border: 'none',
-              borderRadius: '4px',
-              background: '#16a34a',
+              border: '1px solid #000000',
+              borderRadius: 0,
+              background: '#000000',
               color: '#ffffff',
+              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.68rem',
               fontWeight: 600,
               padding: '2px 8px',
@@ -209,10 +232,11 @@ export function AnnotationNode({ _id, data, selected }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '3px',
+              transition: 'none',
             }}
             title="Accept suggestion as confirmed highlight"
           >
-            <Check size={11} /> Accept
+            <Check size={11} strokeWidth={1.5} color="#ffffff" /> Accept
           </button>
           <button
             type="button"
@@ -222,10 +246,11 @@ export function AnnotationNode({ _id, data, selected }) {
               data?.onReject?.(ann.id);
             }}
             style={{
-              border: '1px solid #cbd5e1',
-              borderRadius: '4px',
+              border: '1px solid #000000',
+              borderRadius: 0,
               background: '#ffffff',
-              color: '#dc2626',
+              color: '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.68rem',
               fontWeight: 600,
               padding: '2px 8px',
@@ -233,10 +258,11 @@ export function AnnotationNode({ _id, data, selected }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '3px',
+              transition: 'none',
             }}
             title="Reject suggestion"
           >
-            <X size={11} /> Reject
+            <X size={11} strokeWidth={1.5} color="#000000" /> Reject
           </button>
         </div>
       )}
@@ -343,7 +369,7 @@ export default function GraphView({
     return { filteredAnnotations: anns, filteredRelations: rels };
   }, [annotations, relations, filterLabel, filterRelType, showSimilarTo, showNeighborsOnly, selectedAnnotationId]);
 
-  // Transform annotations to React Flow nodes (using unique keys for suggested ghost nodes)
+  // Transform annotations to React Flow nodes
   const initialNodes = useMemo(() => {
     return filteredAnnotations.map((ann, idx) => {
       const isSuggested = ann.status === 'suggested';
@@ -365,7 +391,7 @@ export default function GraphView({
     });
   }, [filteredAnnotations, selectedAnnotationId, onAcceptSuggestion, onRejectSuggestion]);
 
-  // Transform relations to React Flow edges with optimal handles and badges
+  // Transform relations to React Flow edges
   const initialEdges = useMemo(() => {
     const annKeyMap = new Map();
     filteredAnnotations.forEach((a) => {
@@ -375,8 +401,8 @@ export default function GraphView({
 
     return filteredRelations
       .map((rel) => {
-        const isSuggested = rel.status === 'suggested';
-        const sourceKey = isSuggested ? `sug-${rel.source_id}` : String(rel.source_id);
+        const isGhost = rel.id < 0 && annKeyMap.has(`sug-${rel.source_id}`);
+        const sourceKey = isGhost ? `sug-${rel.source_id}` : String(rel.source_id);
         const targetKey = String(rel.target_id);
 
         if (!annKeyMap.has(sourceKey) || !annKeyMap.has(targetKey)) {
@@ -386,7 +412,6 @@ export default function GraphView({
         const srcAnn = annKeyMap.get(sourceKey);
         const tgtAnn = annKeyMap.get(targetKey);
 
-        // Smart handle alignment based on relative coordinates
         let sourceHandle = 'bottom';
         let targetHandle = 'top';
 
@@ -413,21 +438,24 @@ export default function GraphView({
           }
         }
 
+        const isSuggested = rel.status === 'suggested';
+        const isImplied = rel.status === 'implied';
         const isFocused = rel.id === selectedRelationId;
-        const strokeColor = isFocused
-          ? '#2563eb'
-          : isSuggested
-          ? '#f59e0b'
-          : rel.type === 'contradicts'
-          ? '#ef4444'
-          : rel.type === 'similar_to'
-          ? '#ca8a04'
-          : '#64748b';
+        const strokeColor = isImplied ? '#737373' : '#000000';
 
-        const edgeLabel =
-          rel.type === 'similar_to' && rel.score
-            ? `similar_to (${Math.round(rel.score * 100)}%)`
-            : rel.type;
+        let edgeLabel = rel.type;
+        if (isImplied) {
+          edgeLabel = `${rel.type} (implied)`;
+        } else if (rel.type === 'similar_to' && rel.score) {
+          edgeLabel = `similar_to (${Math.round(rel.score * 100)}%)`;
+        }
+
+        let dashArray = undefined;
+        if (isImplied) {
+          dashArray = '3,3';
+        } else if (isSuggested || (rel.type === 'similar_to' && !isFocused)) {
+          dashArray = '6,4';
+        }
 
         return {
           id: `edge-${rel.id}`,
@@ -436,35 +464,36 @@ export default function GraphView({
           sourceHandle,
           targetHandle,
           type: 'smoothstep',
-          pathOptions: { borderRadius: 16 },
+          pathOptions: { borderRadius: 0 },
           label: edgeLabel,
-          animated: isSuggested || isFocused,
+          animated: (isSuggested || isFocused) && !isImplied,
           style: {
             stroke: strokeColor,
-            strokeWidth: isFocused ? 4 : 2,
-            strokeDasharray: isSuggested || (rel.type === 'similar_to' && !isFocused) ? '6,4' : undefined,
+            strokeWidth: isFocused ? 3.5 : (isImplied ? 1.2 : 1.5),
+            strokeDasharray: dashArray,
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            width: 20,
-            height: 20,
+            width: 16,
+            height: 16,
             color: strokeColor,
           },
           labelStyle: {
-            fill: isSuggested ? '#92400e' : '#1e40af',
+            fill: '#000000',
+            fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 10,
           },
           labelBgStyle: {
-            fill: isSuggested ? '#fef3c7' : '#eff6ff',
-            fillOpacity: 0.96,
-            stroke: isSuggested ? '#f59e0b' : '#93c5fd',
-            strokeWidth: 1.5,
-            rx: 6,
-            ry: 6,
+            fill: '#ffffff',
+            fillOpacity: 1,
+            stroke: '#000000',
+            strokeWidth: 1,
+            rx: 0,
+            ry: 0,
           },
-          labelBgPadding: [6, 4],
-          labelBgBorderRadius: 6,
+          labelBgPadding: [6, 3],
+          labelBgBorderRadius: 0,
           data: { relation: rel },
         };
       })
@@ -474,7 +503,6 @@ export default function GraphView({
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
 
-  // Sync state when props or filtered inputs change
   useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
@@ -521,7 +549,6 @@ export default function GraphView({
     const layouted = getLayoutedElements(nodes, edges, 'LR');
     setNodes(layouted.nodes);
     setEdges(layouted.edges);
-    // Persist new layout positions to the database
     layouted.nodes.forEach((n) => {
       const ann = n.data?.annotation;
       if (ann) {
@@ -564,9 +591,9 @@ export default function GraphView({
         position: 'relative',
         height: '100%',
         width: '100%',
-        background: '#f8fafc',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
+        background: '#ffffff',
+        borderRadius: 0,
+        border: '1px solid #000000',
         overflow: 'clip',
         minHeight: 0,
         minWidth: 0,
@@ -580,27 +607,43 @@ export default function GraphView({
           left: 12,
           right: 12,
           zIndex: 10,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(8px)',
-          borderRadius: '8px',
+          background: '#ffffff',
+          borderRadius: 0,
           padding: '8px 12px',
-          border: '1px solid #e2e8f0',
+          border: '1.5px solid #000000',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          fontSize: '0.8rem',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+          fontSize: '0.78rem',
+          boxShadow: 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b' }}>
-          <Filter size={14} />
-          <span style={{ fontWeight: 600 }}>Filter:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#000000' }}>
+          <Filter size={13} strokeWidth={1.5} />
+          <span
+            style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            Filter:
+          </span>
         </div>
 
         <select
           value={filterLabel}
           onChange={(e) => setFilterLabel(e.target.value)}
-          style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem' }}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 0,
+            border: '1px solid #000000',
+            fontSize: '0.75rem',
+            fontFamily: '"JetBrains Mono", monospace',
+            background: '#ffffff',
+            color: '#000000',
+          }}
         >
           <option value="ALL">All Labels</option>
           {taxonomy?.labels?.map((lbl) => (
@@ -613,7 +656,15 @@ export default function GraphView({
         <select
           value={filterRelType}
           onChange={(e) => setFilterRelType(e.target.value)}
-          style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.75rem' }}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 0,
+            border: '1px solid #000000',
+            fontSize: '0.75rem',
+            fontFamily: '"JetBrains Mono", monospace',
+            background: '#ffffff',
+            color: '#000000',
+          }}
         >
           <option value="ALL">All Relation Types</option>
           {taxonomy?.relation_types?.map((rel) => (
@@ -623,21 +674,43 @@ export default function GraphView({
           ))}
         </select>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#475569', fontSize: '0.75rem' }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            color: '#000000',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.72rem',
+          }}
+        >
           <input
             type="checkbox"
             checked={showNeighborsOnly}
             onChange={(e) => setShowNeighborsOnly(e.target.checked)}
+            style={{ accentColor: '#000000' }}
           />
           <span>Neighbors only</span>
         </label>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#475569', fontSize: '0.75rem' }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            color: '#000000',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.72rem',
+          }}
+        >
           <input
             type="checkbox"
             data-testid="toggle-similar-to"
             checked={showSimilarTo}
             onChange={(e) => setShowSimilarTo(e.target.checked)}
+            style={{ accentColor: '#000000' }}
           />
           <span>Show accepted similar_to</span>
         </label>
@@ -649,19 +722,23 @@ export default function GraphView({
             marginLeft: 'auto',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            padding: '5px 10px',
-            borderRadius: '6px',
-            border: '1px solid #cbd5e1',
-            background: '#ffffff',
-            fontSize: '0.75rem',
-            fontWeight: 500,
+            gap: '6px',
+            padding: '5px 12px',
+            borderRadius: 0,
+            border: '1.5px solid #000000',
+            background: '#000000',
+            color: '#ffffff',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
             cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            transition: 'none',
           }}
           title="Auto arrange nodes with Dagre layout"
         >
-          <Layers size={13} />
+          <Layers size={13} strokeWidth={1.5} color="#ffffff" />
           <span>Auto Layout</span>
         </button>
       </div>
@@ -680,7 +757,7 @@ export default function GraphView({
         onEdgeClick={handleEdgeClick}
         fitView
       >
-        <Background color="#cbd5e1" gap={16} />
+        <Background color="#000000" gap={24} size={1} />
         <Controls />
       </ReactFlow>
 
@@ -693,18 +770,33 @@ export default function GraphView({
             left: '50%',
             transform: 'translate(-50%, -50%)',
             background: '#ffffff',
-            borderRadius: '10px',
-            padding: '18px 22px',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
-            border: '1px solid #e2e8f0',
+            borderRadius: 0,
+            padding: '20px 24px',
+            boxShadow: 'none',
+            border: '2px solid #000000',
             zIndex: 100,
-            width: '300px',
+            width: '320px',
           }}
         >
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#0f172a', fontWeight: 600 }}>
+          <h4
+            style={{
+              margin: '0 0 10px 0',
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontSize: '1.1rem',
+              color: '#000000',
+              fontWeight: 700,
+            }}
+          >
             Create Relationship
           </h4>
-          <p style={{ margin: '0 0 12px 0', fontSize: '0.78rem', color: '#64748b' }}>
+          <p
+            style={{
+              margin: '0 0 14px 0',
+              fontFamily: '"Source Serif 4", Georgia, serif',
+              fontSize: '0.82rem',
+              color: '#525252',
+            }}
+          >
             Choose the relationship type to connect these two annotations:
           </p>
           <select
@@ -713,10 +805,13 @@ export default function GraphView({
             style={{
               width: '100%',
               padding: '7px 10px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.85rem',
+              borderRadius: 0,
+              border: '1.5px solid #000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.82rem',
               marginBottom: '16px',
+              background: '#ffffff',
+              color: '#000000',
             }}
           >
             {taxonomy?.relation_types?.map((rel) => (
@@ -730,11 +825,15 @@ export default function GraphView({
               type="button"
               onClick={() => setPendingConnection(null)}
               style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                background: '#fff',
-                fontSize: '0.8rem',
+                padding: '6px 14px',
+                borderRadius: 0,
+                border: '1.5px solid #000000',
+                background: '#ffffff',
+                color: '#000000',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
                 cursor: 'pointer',
               }}
             >
@@ -745,12 +844,15 @@ export default function GraphView({
               onClick={confirmCreateRelation}
               style={{
                 padding: '6px 14px',
-                borderRadius: '6px',
-                border: 'none',
-                background: '#2563eb',
-                color: '#fff',
-                fontSize: '0.8rem',
+                borderRadius: 0,
+                border: '1.5px solid #000000',
+                background: '#000000',
+                color: '#ffffff',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
                 fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
                 cursor: 'pointer',
               }}
             >
@@ -769,34 +871,54 @@ export default function GraphView({
             left: '50%',
             transform: 'translate(-50%, -50%)',
             background: '#ffffff',
-            borderRadius: '10px',
-            padding: '18px 22px',
-            boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
-            border: '1px solid #e2e8f0',
+            borderRadius: 0,
+            padding: '20px 24px',
+            boxShadow: 'none',
+            border: '2px solid #000000',
             zIndex: 100,
-            width: '320px',
+            width: '340px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px',
+              borderBottom: '1px solid #000000',
+              paddingBottom: '8px',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {inspectedEdge.status === 'suggested' ? (
-                <Sparkles size={16} color="#d97706" />
+                <Sparkles size={16} strokeWidth={1.5} color="#000000" />
               ) : (
-                <CheckCircle2 size={16} color="#2563eb" />
+                <CheckCircle2 size={16} strokeWidth={1.5} color="#000000" />
               )}
-              <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a', fontWeight: 600 }}>
+              <h4
+                style={{
+                  margin: 0,
+                  fontFamily: '"Playfair Display", Georgia, serif',
+                  fontSize: '1rem',
+                  color: '#000000',
+                  fontWeight: 700,
+                }}
+              >
                 {inspectedEdge.type}
               </h4>
             </div>
             <span
               style={{
-                fontSize: '0.7rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.68rem',
                 padding: '2px 6px',
-                borderRadius: '4px',
-                fontWeight: 600,
+                borderRadius: 0,
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                background: inspectedEdge.status === 'suggested' ? '#fef3c7' : '#dbeafe',
-                color: inspectedEdge.status === 'suggested' ? '#b45309' : '#1e40af',
+                border: '1px solid #000000',
+                background: inspectedEdge.status === 'suggested' ? '#ffffff' : '#000000',
+                color: inspectedEdge.status === 'suggested' ? '#000000' : '#ffffff',
+                letterSpacing: '0.05em',
               }}
             >
               {inspectedEdge.status}
@@ -804,12 +926,20 @@ export default function GraphView({
           </div>
 
           {inspectedEdge.reason && (
-            <p style={{ margin: '0 0 14px 0', fontSize: '0.78rem', color: '#475569', lineHeight: 1.4 }}>
-              <strong>AI Reasoning:</strong> {inspectedEdge.reason}
+            <p
+              style={{
+                margin: '0 0 16px 0',
+                fontFamily: '"Source Serif 4", Georgia, serif',
+                fontSize: '0.82rem',
+                color: '#000000',
+                lineHeight: 1.45,
+              }}
+            >
+              <strong style={{ fontFamily: '"JetBrains Mono", monospace' }}>AI Reasoning:</strong> {inspectedEdge.reason}
             </p>
           )}
 
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '14px' }}>
             <button
               type="button"
               onClick={handleDeleteInspectedRelation}
@@ -817,17 +947,19 @@ export default function GraphView({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                padding: '6px 10px',
-                borderRadius: '6px',
-                border: '1px solid #fecaca',
-                background: '#fef2f2',
-                color: '#dc2626',
-                fontSize: '0.78rem',
-                fontWeight: 500,
+                padding: '6px 12px',
+                borderRadius: 0,
+                border: '1.5px solid #000000',
+                background: '#ffffff',
+                color: '#000000',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
                 cursor: 'pointer',
               }}
             >
-              <Trash2 size={13} />
+              <Trash2 size={13} strokeWidth={1.5} />
               <span>Delete</span>
             </button>
 
@@ -839,17 +971,20 @@ export default function GraphView({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: '#16a34a',
-                  color: '#fff',
-                  fontSize: '0.78rem',
+                  padding: '6px 14px',
+                  borderRadius: 0,
+                  border: '1.5px solid #000000',
+                  background: '#000000',
+                  color: '#ffffff',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.75rem',
                   fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
                   cursor: 'pointer',
                 }}
               >
-                <Check size={14} />
+                <Check size={14} strokeWidth={1.5} />
                 <span>Confirm</span>
               </button>
             )}
@@ -858,11 +993,15 @@ export default function GraphView({
               type="button"
               onClick={() => setInspectedEdge(null)}
               style={{
-                padding: '6px 10px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                background: '#fff',
-                fontSize: '0.78rem',
+                padding: '6px 12px',
+                borderRadius: 0,
+                border: '1.5px solid #000000',
+                background: '#ffffff',
+                color: '#000000',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
                 cursor: 'pointer',
               }}
             >

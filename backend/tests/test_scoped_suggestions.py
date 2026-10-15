@@ -1,4 +1,5 @@
 """Comprehensive tests for Part C: scoped suggestions, pure scoring, MMR diversity, pending cap, atomic accept, and idempotency."""
+"""Comprehensive tests for Part C: scoped suggestions, pure scoring, pending cap, atomic accept, and idempotency."""
 
 import pytest
 import numpy as np
@@ -21,6 +22,7 @@ from backend.app.settings import get_settings
 
 # ---------------------------------------------------------------------------
 # Unit tests for pure scoring and MMR
+# Unit tests for pure scoring
 # ---------------------------------------------------------------------------
 
 def test_compute_candidate_score_with_known_vectors() -> None:

@@ -297,6 +297,7 @@ def generate_highlight_suggestions(
     scored_candidates.sort(key=lambda x: x["score"], reverse=True)
 
     # 5. Diversity loop with MMR
+    # 5. Top candidates selection
     batch_limit = min(settings.suggestion_count, remaining_slots)
     if batch_limit <= 0:
         return []
@@ -308,10 +309,13 @@ def generate_highlight_suggestions(
     )
 
     if not diverse_batch:
+    top_candidates = scored_candidates[:batch_limit]
+    if not top_candidates:
         return []
 
     new_suggestions = []
     for cand in diverse_batch:
+    for cand in top_candidates:
         sug = Suggestion(
             document_id=document_id,
             sentence_id=cand["sentence_id"],

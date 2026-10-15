@@ -1,130 +1,138 @@
 # DocuMesh
 
-**DocuMesh** is an interactive web application where users upload text-based PDFs, highlight passages, link highlights with typed relationships visualized as an interactive document mesh, and receive smart highlight and relation suggestions.
-![alt text](image.png)
+**DocuMesh** transforms static text PDFs into structured, interactive relational knowledge graphs. Instead of passively reading linear text, users can highlight concepts, map directional relationships across passages, receive active-learning highlight suggestions, automatically annotate entire documents top-down, and query the document using graph-augmented chat.
+
+![DocuMesh Interface](image.png)
+
+---
+
+## Architecture & Design
+
+DocuMesh is designed around a single guiding principle: **the graph is a live, typed view over raw document text**, not an isolated or synthetic structure.
+
+```mermaid
+flowchart TD
+    PDF["Uploaded PDF"] --> Ingest["Ingestion Pipeline (PyMuPDF + pysbd)"]
+    Ingest --> CleanText["Clean Text & Sentence Offsets"]
+    
+    subgraph DataLayer ["Data & Storage Layer"]
+        SQLite[("SQLite WAL (Source of Truth)\nDocuments · Sentences · Annotations · Relations")]
+        Chroma[("Chroma Vector Store\nRebuildable Index for Sentence Embeddings")]
+    end
+    CleanText --> SQLite
+    CleanText --> Chroma
+
+    subgraph UserInterface ["Interactive Interface"]
+        Reader["Synchronized Text & PDF Reader"]
+        Graph["React Flow Knowledge Graph"]
+    end
+    SQLite <--> Reader
+    SQLite <--> Graph
+    Reader <-->|Bidirectional Focus Sync| Graph
+
+    subgraph Intelligence ["Intelligence & Discovery Engines"]
+        AutoAnnotate["Top-Down Auto-Highlighter\n(Taxonomy Classifier + Graph Builder)"]
+        SmartHighlights["Active-Learning Smart Highlights\n(Human Feedback + MMR Diversity)"]
+        SmartHighlights["Active-Learning Smart Highlights\n(Human Feedback Scoring)"]
+        GraphChat["Graph-Aware Document Chat\n(Dual Vector Retrieval + Multi-Hop Expansion)"]
+    end
+    SQLite <--> AutoAnnotate
+    Chroma <--> SmartHighlights
+    SQLite <--> SmartHighlights
+    SQLite <--> GraphChat
+    Chroma <--> GraphChat
+```
+
+### Core Design Principles
+1. **Verbatim Text Grounding**: Every node in the knowledge graph maps to exact character start and end offsets (`start`, `end`) in the cleaned document text. Quotes are automatically snapped to word boundaries and verified against document text.
+2. **SQLite as the Authoritative Core**: All annotations, relations, and embeddings are stored durably in SQLite. Vector databases (Chroma) act as disposable, rebuildable acceleration indices.
+3. **Human-in-the-Loop Active Learning**: Suggested highlights are never hallucinated. The recommendation engine scores verbatim document sentences against user seeds, incorporates negative feedback from rejections, and maintains diversity using Maximal Marginal Relevance (MMR).
+3. **Human-in-the-Loop Active Learning**: Suggested highlights are never hallucinated. The recommendation engine scores verbatim document sentences against user seeds and incorporates negative feedback from rejections.
+4. **Optimistic Locking & Concurrency**: Annotations and relations utilize version-tracked optimistic locking (`version_id_col`), returning `409 Conflict` on concurrent or stale edits.
+5. **Resilient Reconnection**: The frontend includes automatic health polling and query backoff, seamlessly reconnecting when the backend restarts without losing local state.
+
+---
+
 ## Key Features
-- **Inline Highlights Reader View**: Native text reader rendering `clean_text` with non-overlapping inline highlight marks (`<mark>`), taxonomy-driven styling, pending suggestion accept/reject controls, DOM `data-start` selection coordinates, bidirectional graph synchronization (click highlight -> select node in graph; select node in graph -> scroll and flash highlight in reader), and view toggle between Reader and original PDF.
-- **Graph-Aware Document Chat**: Answer questions grounded in document text and relationship graph edges (`POST /documents/{id}/chat`), with clickable citation chips that jump/flash in the reader, highlight graph nodes/edges, and allow saving cited sentences as annotations.
-- **PDF Ingestion & Text Extraction**: Extracts clean text, normalizes sentences, and tracks exact character offsets (`POST /documents`, `GET /documents/{id}`, `GET /documents/{id}/text`).
-- **Deduplication & Safety**: Instant SHA-256 deduplication and upload size/page limits.
-- **Background Jobs**: Tracked jobs with progress tracking and failure logging (`GET /jobs/{id}`).
-- **Interactive Annotation**: Full CRUD for annotations with offset verification and quote matching (`GET|POST /documents/{id}/annotations`, `PATCH|DELETE /annotations/{id}`).
-- **Relationship Knowledge Graph**: Typed relations and unified graph view with cycle and taxonomy checks (`GET|POST /documents/{id}/relations`, `PATCH|DELETE /relations/{id}`, `GET /documents/{id}/graph`).
-- **Taxonomy Management**: Seeded taxonomy labels and relation types (`GET /taxonomy`).
-- **Smart Highlights**: Vector embedding similarity to suggest relevant passages based on current annotations and user feedback (`POST /documents/{id}/suggest-highlights`, `POST /suggestions/{id}/accept`, `POST /suggestions/{id}/reject`).
-- **Suggested Relations**: LLM-assisted relationship suggestions between annotations (`POST /documents/{id}/suggest-relations`).
-- **Job Tracking & Robust Concurrency**: Background job processing with progress tracking, SQLite WAL, and versioned optimistic locking (`409` conflict on stale edits).
 
-## Stack
-- **Backend**: Python 3.12+, FastAPI, SQLite (SQLAlchemy WAL mode with optimistic locking), PyMuPDF, pysbd, sentence-transformers, numpy.
-- **Frontend**: React 19, Vite, React Flow (`reactflow`), dagre, TanStack Query (`@tanstack/react-query`), lucide-react.
+### 1. Interactive Document Mesh (Knowledge Graph)
+- **Visual Canvas**: Powered by React Flow and Dagre layout, rendering annotations as concept cards and relations as directed semantic arrows.
+- **Taxonomy Driven**: Seeded taxonomy categories (`Claim`, `Evidence`, `Definition`, `Method`, `Result`, `Problem`, `Solution`) and relationship types (`supports`, `refutes`, `defines`, `elaborates`, `causes`, `solves`, `similar_to`, `contrasts_with`, `conditional_on`, `precedes`).
+- **Ghost Suggestion Nodes**: Pending AI suggestions render as semi-transparent "ghost nodes" directly in the graph canvas with inline match scores and one-click Accept/Reject controls.
+- **Relational Integrity**: Enforces strict cycle prevention, disallows self-referential links, and cascades edge deletion when an annotation is deleted.
 
-## Environment Variables
+### 2. Dual-View Synchronized Reader
+- **Inline Highlighting**: Renders non-overlapping inline `<mark>` tags styled with high-contrast taxonomy badges directly over the text.
+- **Bidirectional Graph Synchronization**:
+  - Clicking any highlight in the reader centers and selects its node in the graph view.
+  - Clicking a node in the graph view scrolls the reader smoothly to the exact passage and flashes the highlight.
+- **Multi-Layering & Overlaps**: Fully supports overlapping character spans, allowing users to toggle between overlapping annotations in the details drawer.
+- **PDF Mode Toggle**: Instantly switch between the native structured text reader and the original rendered PDF canvas.
 
-All settings are configured via environment variables (see `.env.example`):
+### 3. Top-Down Full Document Auto-Highlighting
+- **End-to-End Extraction**: Sweeps through an entire PDF in document order to construct an end-to-end knowledge graph with a single click.
+- **Batch Classification**: Analyzes sentence chunks against the project taxonomy using either an LLM or local zero-shot prototype vector embeddings.
+- **Calibrated Prototype Fallback**: If an LLM is offline or uncredited, the engine automatically falls back to embedding prototype classification with calibrated similarity scoring (`AUTO_HIGHLIGHT_PROTO_THRESHOLD = 0.18`), ensuring highlights are generated without API dependencies.
+- **Automated Relational Pairing**: Automatically pairs and types relationships (`solves`, `supports`, `defines`, `causes`) across discovered concepts.
+- **Background Job Tracking**: Runs asynchronously with live percentage progress tracking (`GET /jobs/{id}`) and non-blocking background workers.
 
-| Variable | Default | Description |
-|---|---|---|
-| `DATABASE_URL` | `sqlite:///./data/app.db` | SQLAlchemy connection string |
-| `DB_PATH` | `./data/app.db` | Path to SQLite database file |
-| `UPLOAD_DIR` | `./uploads` | Directory for uploaded PDF files |
-| `MAX_UPLOAD_MB` | `15` | Maximum allowed upload size in megabytes |
-| `MAX_PDF_PAGES` | `50` | Maximum allowed page count per document |
-| `EMBEDDING_MODEL_NAME` | `all-MiniLM-L6-v2` | Sentence transformer model or `fake` |
-| `EMBED_BATCH_SIZE` | `32` | Batch size for sentence embedding |
-| `SIMILARITY_THRESHOLD` | `0.35` | Minimum cosine similarity score for suggestions |
-| `SUGGESTION_COUNT` | `5` | Maximum number of suggestions returned per request |
-| `VECTOR_STORE` | `chroma` | Vector store backend: `chroma` or `fake` |
-| `VECTOR_STORE_PATH` | `./data/chroma` | Persistent directory for Chroma vector store |
-| `CANDIDATE_POOL_SIZE` | `30` | Number of candidate sentence vectors retrieved before MMR |
-| `NEG_WEIGHT` | `0.5` | Penalty multiplier for rejected suggestions of the same label |
-| `MMR_LAMBDA` | `0.7` | MMR diversity balance (0 = maximum diversity, 1 = maximum relevance) |
-| `MAX_PENDING_PER_SEED` | `10` | Maximum pending suggestions allowed per seed annotation |
-| `LLM_PROVIDER` | `fake` | Provider: `fake`, `huggingface`, or `openai` |
-| `LLM_MODEL` | `meta-llama/Llama-3.2-1B-Instruct` | Model identifier (e.g. `meta-llama/Llama-3.2-1B-Instruct`, `Qwen/Qwen2.5-1.5B-Instruct`, `gpt-4o-mini`) |
-| `HF_TOKEN` | `""` | Hugging Face User Access Token (for `LLM_PROVIDER=huggingface`) |
-| `LLM_API_KEY` | `""` | API key (required if provider is `openai`, or fallback for `huggingface`) |
-| `HF_ENDPOINT` | `https://router.huggingface.co/hf-inference/v1/chat/completions` | Hugging Face OpenAI-compatible inference router |
-| `LLM_MAX_CONCURRENCY` | `3` | Max concurrent LLM requests via Semaphore |
-| `LLM_TIMEOUT_SECONDS` | `30.0` | Timeout per LLM completion call |
-| `MAX_RELATION_PAIRS` | `10` | Maximum candidate annotation pairs evaluated |
-| `CHAT_TOP_K_SENTENCES` | `5` | Top sentence count retrieved for chat context |
-| `CHAT_TOP_K_ANNOTATIONS` | `5` | Top annotation count retrieved for chat context |
-| `CHAT_NEIGHBOR_HOPS` | `2` | Max graph hops traversed from retrieved seed annotations |
-| `CHAT_MAX_HISTORY` | `5` | Max dialogue turns kept in chat history context |
-| `CHAT_MAX_CONTEXT_CHARS` | `3000` | Max character budget for compacted context passed to LLM |
-| `MAX_WORKERS` | `4` | Worker threads in ThreadPoolExecutor for background jobs |
-| `SQLITE_BUSY_TIMEOUT_MS` | `5000` | SQLite WAL busy timeout in milliseconds |
-| `CORS_ORIGINS` | `["http://localhost:5173"]` | Permitted CORS origin origins |
-| `VITE_API_URL` | `http://localhost:8000` | Frontend API base URL |
+### 4. Scoped Smart Highlights (Active Learning)
+- **Context-Aware Scoping**:
+  - **This passage**: Recommends sentences semantically similar to a specific selected annotation.
+  - **This category**: Recommends sentences matching the conceptual label across the entire document.
+- **Negative Feedback Loop**: Rejecting a suggestion penalizes similar candidates under that category (`NEG_WEIGHT = 0.5`) without penalizing other labels.
+- **MMR Diversity**: Uses Maximal Marginal Relevance (`MMR_LAMBDA = 0.7`) to prune redundant sentences and surface diverse, high-value highlights.
+- **Atomic Acceptance**: Accepting a suggestion promotes it to a confirmed annotation and links it to the seed node in a single database transaction.
 
-> [!NOTE]
-> **Architecture Distinction**: **Smart Highlights** is an embedding retrieval system with human feedback (active learning loop), not generative RAG. The system never generates hallucinated text; it scores and ranks verbatim document sentences against user seeds. **Document Chat** is the graph-augmented RAG feature that uses an LLM to answer questions and ground claims in graph relations.
+### 5. Graph-Aware Document Chat
+- **Topological Grounding**: Combines text sentence retrieval with knowledge graph traversal up to $N$ neighbor hops (`CHAT_NEIGHBOR_HOPS = 2`).
+- **Strict Citation Validation**: The LLM must cite its findings using bracketed tokens (`[s1]` for sentences, `[a2]` for annotations, `[r3]` for relations). The server verifies each citation against the context budget before returning the response.
+- **Interactive Citation Chips**: Citations in chat messages appear as clickable chips. Clicking a citation jumps directly to the text in the reader and focuses the corresponding node or edge in the graph.
+- **One-Click Promotion**: Save any sentence cited during chat as a new permanent annotation with one click.
 
-## Scoped Smart Highlights & Vector Store
+---
 
-DocuMesh features an active-learning highlight discovery loop designed around human agency:
+## Technology Stack
 
-1. **Rebuildable Vector Store Index**:
-   - SQLite remains the authoritative source of truth. Sentence vectors are stored in SQLite as raw byte BLOBs.
-   - Chroma (`chromadb`, cosine distance) acts as a high-performance rebuildable index.
-   - On server startup (`main.py`), DocuMesh inspects all documents in `ready` state. If the vector store collection is missing or empty for a document, it immediately rebuilds the index from the SQLite BLOBs without re-running the embedding model.
-   - When running tests, the system seamlessly uses an in-memory `FakeVectorStore` selected via `VECTOR_STORE=fake`.
+| Layer | Technologies |
+|---|---|
+| **Backend** | Python 3.12+, FastAPI, SQLAlchemy (SQLite WAL mode), PyMuPDF (`fitz`), `pysbd`, `sentence-transformers`, `fastembed`, `numpy` |
+| **Vector Index** | Chroma (`chromadb`) with rebuildable SQLite vector BLOB backup |
+| **Frontend** | React 19, Vite, React Flow (`reactflow`), Dagre, TanStack Query (`@tanstack/react-query`), Lucide Icons |
+| **LLM Services** | Hugging Face Serverless (`huggingface_hub`), OpenAI API, or Deterministic Fake Client |
+| **Testing** | `pytest` (Backend - 80 tests), `vitest` (Frontend - 54 tests) |
 
-2. **Highlight Rules & Boundary Hygiene**:
-   - **Word Boundary Snapping**: Selection offsets automatically snap outward to the nearest word boundary via `snap_to_word_boundaries`, shared between client (`offsets.js`) and server (`clean.py`).
-   - **Idempotent Duplicates**: A composite unique constraint on `(document_id, start, end, label)` ensures duplicate creation attempts return the existing annotation (`200 OK`) instead of erroring, protecting against double-clicks and retries.
-   - **Overlaps & Multi-Layering**: Multiple annotations over overlapping or nested character spans are fully supported. Clicking overlapping text selects the innermost (most specific) annotation, and a layers indicator allows switching between overlapping annotations in the details panel.
-   - **Boundary Adjustments**: Start and end boundaries can be nudged directly in the details panel via `PATCH /annotations/{id}`, guarded by optimistic version locking (`409 Conflict` on concurrent edits).
-   - **Superseded Suggestions**: When a confirmed annotation is created over a pending suggestion's range, that suggestion is marked `superseded` and excluded from pending views.
-
-3. **Scoped Suggestions & Diversity Loop**:
-   - Triggered from the reader popup or annotation panel with scope selection:
-     - **This passage**: Positives are restricted to the seed annotation's vector.
-     - **This category**: Positives include all annotations sharing the seed's label.
-     - **Default Scope Rule**: Automatically defaults to *This category* if the label already has $\ge 3$ confirmed annotations, or *This passage* otherwise.
-   - **Negative Feedback**: Rejected suggestions under the same label serve as negative vectors ($\text{NEG\_WEIGHT} = 0.5$). Rejections under one label do not penalize suggestions under other labels.
-   - **Maximal Marginal Relevance (MMR)**: Candidates retrieved from Chroma are scored and re-ranked with greedy MMR ($\text{MMR\_LAMBDA} = 0.7$) to prevent redundant near-duplicate suggestions.
-   - **Pending Cap & Thresholding**: Enforces `SIMILARITY_THRESHOLD = 0.35` (returns "No more similar passages found" if no candidate clears) and `MAX_PENDING_PER_SEED = 10` (returns a cap warning without bloating the graph).
-   - **Atomic Acceptance**: Accepting a suggestion creates the confirmed annotation and a `similar_to` relation back to the seed annotation in a single atomic database transaction. Accepting twice is idempotent.
-   - **AI Safety Rule**: The AI never continues or seeds from its own unconfirmed suggestions; only confirmed annotations can be seeds.
-
-4. **Graph Ghost Nodes**:
-   - Pending suggestions are returned in `GET /documents/{id}/graph` as nodes with `status = "suggested"`.
-   - Ghost nodes render with dashed borders, faded opacity (0.72), match score percentages, and inline Accept/Reject buttons.
-   - A dashed `similar_to` edge connects the ghost node to its seed annotation.
-   - `similar_to` edges are hidden by default to prevent visual hub-and-spoke clutter, with an interactive toolbar switch to toggle their visibility.
-   - Selecting a ghost node scrolls the reader to its faded highlight, and vice versa.
-
-## How Document Chat Uses the Graph
-
-DocuMesh features a graph-augmented QA pipeline (`POST /documents/{id}/chat`) designed for grounding answers in both raw text and semantic relationships:
-
-1. **Dual Vector Retrieval**: When a question is asked, the query is embedded using the configured embedder (`all-MiniLM-L6-v2` or deterministic fake). It computes cosine similarity across both document sentences (returning top `CHAT_TOP_K_SENTENCES`) and existing annotations (returning top `CHAT_TOP_K_ANNOTATIONS` as seeds).
-2. **In-Memory Graph Expansion**: From each seed annotation, DocuMesh traverses the document's relationship graph in memory up to `CHAT_NEIGHBOR_HOPS` hops. This incorporates neighbor nodes and connecting relations (e.g. `supports`, `refutes`, `defines`), retaining both confirmed and suggested relations.
-3. **Compact Context Budgeting**: Retrieved sentences, annotations, and relations are assigned stable identifiers (`[s..]`, `[a..]`, `[r..]`) and ranked by relevance. They are packed into a compact context string strictly capped at `CHAT_MAX_CONTEXT_CHARS`, dropping lowest-ranked items first.
-4. **Citation Validation**: The LLM is instructed via system prompt to answer strictly from the provided context and cite bracketed IDs (e.g. `[s3]`, `[a1]`, `[r2]`). The server parses all bracketed citations, verifies that they were present in the delivered context, resolves their character offsets, and strips any hallucinated citations while preserving the answer text.
-5. **No-Context Shortcut**: If retrieval yields no context above the minimal relevance threshold (`0.15`), the system returns `"I couldn't find this in the document."` with `used_context: false` immediately, without making an unnecessary LLM call.
-6. **Interactive UI Navigation**: In the frontend chat panel, citations render as clickable chips. Clicking a sentence or annotation citation scrolls the reader directly to the passage and flashes it. For annotations, the corresponding graph node is selected; for relations, the edge in the graph is focused. Sentences can also be saved as new annotations with one click.
+---
 
 ## Quick Start
 
-### 1. Backend Setup
+### Prerequisites
+- Python 3.12+
+- Node.js 18+ and `npm`
+
+### 1. Clone & Configure
 ```bash
+git clone https://github.com/your-username/documesh.git
+cd documesh
+cp .env.example .env
+```
+
+### 2. Backend Setup
+```bash
+# Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
+
+# Install dependencies
 pip install -r backend/requirements.txt
-cp .env.example .env
+
+# Start backend server
 uvicorn backend.app.main:app --port 8000 --reload
 ```
-
-### 2. Seed Sample Data
-To ingest the sample PDF (`sample/sample.pdf`) and seed example annotations and relations:
-```bash
-python backend/seed.py
-```
+The API documentation is available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ### 3. Frontend Setup
+In a new terminal window:
 ```bash
 cd frontend
 npm install
@@ -132,117 +140,123 @@ npm run dev
 ```
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## Running Tests
+### 4. Seed Demo Data (Optional)
+To pre-populate a sample document with annotations and relations:
+```bash
+python backend/seed.py
+```
 
-All tests run cleanly with one command per side:
+---
 
-- **Backend tests** (includes ingestion, cleaning, offsets, ranking, concurrency, jobs, stale edits):
-  ```bash
-  pytest
-  ```
-- **Frontend tests** (includes offset mapping, multi-span selections, and API client):
-  ```bash
-  npm --prefix frontend test
-  ```
+## Configuration Reference
 
-## Performance & Load Testing
+All application parameters are configured via environment variables in `.env`:
 
-A concurrent benchmark script is included in `backend/load_test.py`:
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `sqlite:///./data/app.db` | SQLAlchemy database connection string |
+| `DB_PATH` | `./data/app.db` | SQLite database file location |
+| `UPLOAD_DIR` | `./uploads` | Storage directory for uploaded PDF files |
+| `MAX_UPLOAD_MB` | `15` | Maximum PDF file upload size limit (MB) |
+| `MAX_PDF_PAGES` | `50` | Maximum page count allowed per document |
+| `EMBEDDING_MODEL_NAME` | `all-MiniLM-L6-v2` | Sentence-transformers model identifier |
+| `VECTOR_STORE` | `chroma` | Vector index implementation (`chroma` or `fake`) |
+| `VECTOR_STORE_PATH` | `./data/chroma` | Persistent Chroma storage directory |
+| `SIMILARITY_THRESHOLD` | `0.35` | Minimum cosine similarity score for suggestions |
+| `SUGGESTION_COUNT` | `5` | Maximum suggestions returned per recommendation run |
+| `NEG_WEIGHT` | `0.5` | Penalty factor for rejected suggestions |
+| `MMR_LAMBDA` | `0.7` | MMR balance (0 = maximum diversity, 1 = maximum relevance) |
+| `AUTO_HIGHLIGHT_BATCH_SIZE` | `20` | Sentence chunk batch size during auto-highlighting |
+| `AUTO_HIGHLIGHT_MAX_PAIRS` | `100` | Max candidate pairs evaluated for full graph building |
+| `AUTO_HIGHLIGHT_PROTO_THRESHOLD` | `0.18` | Minimum similarity floor for zero-shot prototype fallback |
+| `LLM_PROVIDER` | `fake` | LLM client backend: `fake`, `huggingface`, or `openai` |
+| `LLM_MODEL` | `meta-llama/Llama-3.2-1B-Instruct` | Model identifier for relations and chat |
+| `HF_TOKEN` | `""` | Hugging Face API token (if using `huggingface`) |
+| `LLM_API_KEY` | `""` | OpenAI API key (if using `openai`) |
+| `CHAT_TOP_K_SENTENCES` | `5` | Sentences retrieved for document chat context |
+| `CHAT_TOP_K_ANNOTATIONS` | `5` | Seed annotations retrieved for document chat |
+| `CHAT_NEIGHBOR_HOPS` | `2` | Graph edge hops traversed for chat context |
+| `CHAT_MAX_CONTEXT_CHARS` | `3000` | Maximum character budget for LLM chat context |
+| `SQLITE_BUSY_TIMEOUT_MS` | `5000` | SQLite WAL busy timeout in milliseconds |
+| `VITE_API_URL` | `http://localhost:8000` | Frontend backend API URL |
+
+---
+
+## REST API Overview
+
+### Documents & Ingestion
+- `POST /documents`: Upload PDF (`multipart/form-data`). Instant SHA-256 deduplication returns existing documents immediately.
+- `GET /documents/{id}`: Fetch document metadata and processing status (`processing`, `ready`, `failed`).
+- `GET /documents/{id}/text`: Retrieve clean, segmented text with sentence index mapping.
+- `GET /documents/{id}/pdf`: Stream raw PDF binary for the embedded viewer.
+
+### Annotations (Graph Nodes)
+- `GET /documents/{id}/annotations`: List all confirmed annotations for a document.
+- `POST /documents/{id}/annotations`: Create an annotation. Verifies exact quote substring matching and snaps to word boundaries.
+- `PATCH /annotations/{id}`: Update label, note, or coordinates. Enforces optimistic locking (`version`).
+- `DELETE /annotations/{id}`: Delete annotation and cascade delete attached relations.
+
+### Relations (Graph Edges)
+- `GET /documents/{id}/relations`: List all directional relations for a document.
+- `POST /documents/{id}/relations`: Create typed relation between two annotations. Validates taxonomy and blocks self-links.
+- `PATCH /relations/{id}`: Update relation type or status.
+- `DELETE /relations/{id}`: Remove relation edge.
+- `GET /documents/{id}/graph`: Unified endpoint returning both nodes (annotations + ghost suggestions) and edges.
+
+### Automation & Intelligence
+- `POST /documents/{id}/auto-highlight`: Trigger asynchronous top-down sequential document annotation and full knowledge graph building.
+- `POST /documents/{id}/suggest-highlights`: Discover similar passages via scoped active learning and MMR.
+- `POST /documents/{id}/suggest-highlights`: Discover similar passages via scoped active learning and embedding similarity.
+- `GET /documents/{id}/suggestions`: Fetch pending, accepted, and rejected suggestions.
+- `POST /suggestions/{id}/accept`: Atomically convert a suggestion into an annotation and link it to the seed.
+- `POST /suggestions/{id}/reject`: Reject suggestion and update negative feedback weights.
+- `POST /documents/{id}/suggest-relations`: Trigger background LLM relation discovery between existing annotations.
+- `POST /documents/{id}/chat`: Graph-augmented conversational Q&A with grounded citations (`[s..]`, `[a..]`, `[r..]`).
+- `GET /jobs/{id}`: Poll background task status, progress (0-100%), and results.
+
+---
+
+## Testing
+
+Both suites run locally with isolated test fixtures and zero external service dependencies:
+
+```bash
+# Run all backend tests (80 tests)
+pytest
+
+# Run all frontend tests (54 tests)
+cd frontend && npm test
+```
+
+### Load Testing
+A concurrent load test benchmark script is included in `backend/load_test.py`:
 ```bash
 python backend/load_test.py --url http://127.0.0.1:8000 -n 200 -c 20
 ```
+*Benchmark Performance*: ~300+ req/s throughput with 100% success rate on SQLite WAL mode.
 
-### Benchmark Results (200 requests, Concurrency 20):
-- **Throughput**: ~308.2 req/s
-- **Errors**: 0 (100% success rate)
-- **Latency P50**: 54.77 ms
-- **Latency P95**: 102.46 ms
-- **Latency P99**: 124.94 ms
+---
 
-## API Reference
+## Deployment
 
-### System & Taxonomy
-- `GET /health` - Health status check (`{"status": "ok"}`)
-- `GET /taxonomy` - List available annotation labels and relation types from database
-
-### Documents
-- `POST /documents` - Upload PDF (multipart/form-data). Returns `{document_id, job_id, status, filename}`. Deduplicates instantly via SHA-256 hash.
-- `GET /documents/{id}` - Retrieve document metadata.
-- `GET /documents/{id}/text` - Retrieve clean segmented document text.
-- `GET /documents/{id}/pdf` - Stream raw PDF file for viewer.
-
-### Annotations
-- `GET /documents/{id}/annotations` - List all annotations for document.
-- `POST /documents/{id}/annotations` - Create annotation. Validates `start < end`, exact match with `clean_text[start:end]`, and taxonomy label.
-- `PATCH /annotations/{id}` - Update label, note, position. Requires `version`; returns `409 Conflict` on stale edits.
-- `DELETE /annotations/{id}` - Delete annotation; cascades deletion to all attached relations.
-
-### Relations & Graph
-- `GET /documents/{id}/relations` - List all relations for document.
-- `POST /documents/{id}/relations` - Create relation. Validates taxonomy type and rejects self-links (`422`).
-- `PATCH /relations/{id}` - Update relation. Requires `version`; returns `409 Conflict` on stale edits.
-- `DELETE /relations/{id}` - Delete relation.
-- `GET /documents/{id}/graph` - Combined view of annotations (nodes) and relations (edges).
-
-### Smart Highlights & AI Relations
-- `POST /documents/{id}/suggest-highlights` - Rank sentences via embedding similarity to current annotations minus rejected penalties.
-- `GET /documents/{id}/suggestions` - List pending/accepted/rejected suggestions.
-- `POST /suggestions/{id}/accept` - Accept suggestion (creates annotation, idempotent).
-- `POST /suggestions/{id}/reject` - Reject suggestion (idempotent).
-- `POST /documents/{id}/suggest-relations` - Launch background LLM relation discovery across annotation pairs. Returns `{"job_id": "..."}`. Returns `503` if LLM is unconfigured.
-
-### Graph-Aware Document Chat
-- `POST /documents/{id}/chat` - Query document and relationship mesh with grounded citations.
-  - **Request**: `{"question": "string", "history": [{"role": "user", "content": "..."}]}` (history is trimmed to `CHAT_MAX_HISTORY` turns).
-  - **Response**: `{"answer": "string", "citations": [{"type": "sentence" | "annotation" | "relation", "id": 1, "start": 0, "end": 20}], "used_context": true}`.
-  - **Status codes**: `200` on success (including `used_context: false` on no-context shortcut), `404` for unknown document, `422` for empty question, `503` if LLM service is unconfigured.
-
-### Jobs
-- `GET /jobs/{id}` - Retrieve job execution status (`queued`, `running`, `done`, `failed`), progress (0-100), result, and error.
-
-## Demo Script
-
-A dedicated graph-aware chat demonstration script is included at `scripts/demo_chat.py`. It tests three questions exploring definitions, support chains, and contradiction relations on `sample.pdf`:
-
+### Docker Deployment
+Build and run the production container:
 ```bash
-python scripts/demo_chat.py
+docker build -t documesh .
+docker run -p 8000:8000 -v $(pwd)/data:/app/data -v $(pwd)/uploads:/app/uploads documesh
 ```
 
-## Free Hosting & Deployment
-
-The application is containerized with a multi-stage `Dockerfile` and configured for instant free-tier deployment across multiple platforms.
-
-### Option 1: Hugging Face Spaces (Recommended - 100% Free, 16 GB RAM)
-Hugging Face Spaces provides **2 vCPU, 16 GB RAM** on their free tier with **no credit card required**, which is ideal for PyTorch and sentence-transformer embeddings.
-
-1. Go to [huggingface.co/new-space](https://huggingface.co/new-space).
-2. Set Space Name (e.g. `pdf-knowledge-graph`).
-3. Select **Docker** as the Space SDK (Blank template).
-4. In your terminal, link and push your repository:
+### Hugging Face Spaces (Free Tier)
+DocuMesh is configured to run on a Hugging Face Docker Space (16 GB RAM, 2 vCPU):
+1. Create a new Space at [huggingface.co/new-space](https://huggingface.co/new-space) selecting **Docker** SDK.
+2. Link your repository:
    ```bash
-   git remote add space https://huggingface.co/spaces/<YOUR_HF_USERNAME>/<YOUR_SPACE_NAME>
+   git remote add space https://huggingface.co/spaces/<USERNAME>/<SPACE_NAME>
    git push space main
    ```
-5. Your app will automatically build and become live at `https://<YOUR_HF_USERNAME>-<YOUR_SPACE_NAME>.hf.space`.
+3. Set any necessary environment variables under Space Settings.
 
 ---
 
-### Option 2: Render Free Tier
-1. Push this repository to GitHub.
-2. Go to [render.com](https://render.com) and create a **New Web Service**.
-3. Connect your repository. Render will automatically detect [`render.yaml`](file:///mnt/DE94962594960067/Users/kandp/Documents/Work/Personal_Git_Files/pdf_analyser_annot/render.yaml) and the [`Dockerfile`](file:///mnt/DE94962594960067/Users/kandp/Documents/Work/Personal_Git_Files/pdf_analyser_annot/Dockerfile).
-4. Click **Deploy**. Render will build and deploy the container on their free tier.
-
----
-
-### Option 3: Local / VPS Production Service
-To run the optimized production build (FastAPI serving the unified SPA and API) on any Linux server:
-```bash
-./scripts/start_production.sh
-```
-This builds the frontend bundle into `frontend/dist`, initializes the database seed, and serves the complete application on port `8000` (or `$PORT`).
-
-## Known Limitations
-- Text-only PDFs: scanned image PDFs without embedded text layers require upstream OCR (out of scope).
-- Single-document knowledge graph view (cross-document relations out of scope).
-
+## License & Contributing
+MIT License. Contributions and issue reports are welcome via pull requests and GitHub Issues.

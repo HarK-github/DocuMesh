@@ -126,6 +126,35 @@ def test_annotation_bad_offsets_and_mismatched_quote(test_setup) -> None:
     assert "not in the taxonomy" in res.json()["detail"]
 
 
+def test_annotation_resilient_offset_fallback(test_setup) -> None:
+    """Verify that when start/end offsets are offset or zero, the backend finds the quote in clean_text."""
+    client, doc_id, text = test_setup
+    quote = "Digital computers are universal."
+    # Pass offsets at 0..len(quote) which is wrong (actual quote is at index 55)
+    res = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": 0, "end": len(quote), "quote": quote, "label": "Claim"},
+    )
+    assert res.status_code == 201
+    ann = res.json()
+    assert ann["quote"] == quote
+    assert ann["start"] == text.index(quote)
+    assert ann["end"] == text.index(quote) + len(quote)
+
+
+def test_annotation_whitespace_normalization(test_setup) -> None:
+    """Verify quote matching with newlines/irregular whitespace matches cleanly."""
+    client, doc_id, text = test_setup
+    quote_with_newline = "Digital\ncomputers  are   universal."
+    res = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": 0, "end": len(quote_with_newline), "quote": quote_with_newline, "label": "Claim"},
+    )
+    assert res.status_code == 201
+    ann = res.json()
+    assert ann["quote"] == "Digital computers are universal."
+
+
 def test_annotation_patch_stale_edit_and_delete(test_setup) -> None:
     """Verify annotation update with versioning, 409 conflict on stale version, and delete."""
     client, doc_id, text = test_setup
@@ -219,3 +248,84 @@ def test_relations_crud_and_validation(test_setup) -> None:
     client.delete(f"/annotations/{ann1['id']}")
     remaining_rels = client.get(f"/documents/{doc_id}/relations").json()
     assert len(remaining_rels) == 0
+
+
+def test_graph_transitive_implied_relations(test_setup) -> None:
+    """Verify Phase D: transitive closure generates implied relations for causes/precedes."""
+    client, doc_id, text = test_setup
+
+    q1 = "Can machines think?"
+    q2 = "This should begin with definitions."
+    q3 = "Digital computers are universal."
+
+    a1 = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": text.index(q1), "end": text.index(q1) + len(q1), "quote": q1, "label": "Problem"},
+    ).json()
+    a2 = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": text.index(q2), "end": text.index(q2) + len(q2), "quote": q2, "label": "Method"},
+    ).json()
+    a3 = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": text.index(q3), "end": text.index(q3) + len(q3), "quote": q3, "label": "Solution"},
+    ).json()
+
+    # a1 -> a2 (causes), a2 -> a3 (causes)
+    client.post(
+        f"/documents/{doc_id}/relations",
+        json={"source_id": a1["id"], "target_id": a2["id"], "type": "causes", "status": "confirmed"},
+    )
+    client.post(
+        f"/documents/{doc_id}/relations",
+        json={"source_id": a2["id"], "target_id": a3["id"], "type": "causes", "status": "confirmed"},
+    )
+
+    graph = client.get(f"/documents/{doc_id}/graph").json()
+    implied = [r for r in graph["relations"] if r["status"] == "implied"]
+    assert len(implied) == 1
+    assert implied[0]["source_id"] == a1["id"]
+    assert implied[0]["target_id"] == a3["id"]
+    assert implied[0]["type"] == "causes"
+
+
+def test_get_document_paths(test_setup) -> None:
+    """Verify Phase C: BFS traversal finds multi-hop reasoning paths."""
+    client, doc_id, text = test_setup
+
+    q1 = "Can machines think?"
+    q2 = "This should begin with definitions."
+    q3 = "Digital computers are universal."
+
+    a1 = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": text.index(q1), "end": text.index(q1) + len(q1), "quote": q1, "label": "Problem"},
+    ).json()
+    a2 = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": text.index(q2), "end": text.index(q2) + len(q2), "quote": q2, "label": "Method"},
+    ).json()
+    a3 = client.post(
+        f"/documents/{doc_id}/annotations",
+        json={"start": text.index(q3), "end": text.index(q3) + len(q3), "quote": q3, "label": "Solution"},
+    ).json()
+
+    client.post(
+        f"/documents/{doc_id}/relations",
+        json={"source_id": a1["id"], "target_id": a2["id"], "type": "causes"},
+    )
+    client.post(
+        f"/documents/{doc_id}/relations",
+        json={"source_id": a2["id"], "target_id": a3["id"], "type": "solves"},
+    )
+
+    # Path from a1 to a3
+    res = client.get(f"/documents/{doc_id}/paths?from={a1['id']}&to={a3['id']}")
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["paths"]) == 1
+    p = data["paths"][0]
+    assert p["length"] == 2
+    assert p["nodes"] == [a1["id"], a2["id"], a3["id"]]
+    assert f"[{a1['id']}] --[causes]--> [{a2['id']}] --[solves]--> [{a3['id']}]" in p["trace"]
+

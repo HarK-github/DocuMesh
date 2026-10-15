@@ -16,6 +16,9 @@
     "causes",
     "solves",
     "relates_to",
-    "similar_to"
+    "similar_to",
+    "contrasts_with",
+    "conditional_on",
+    "precedes"
   ]
 }

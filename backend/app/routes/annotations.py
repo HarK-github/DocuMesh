@@ -46,11 +46,45 @@ def create_annotation(
     if payload.end > len(doc.clean_text) or payload.start < 0:
         raise HTTPException(status_code=422, detail="Offsets exceed document clean_text boundaries")
 
+    import re
+
     # 1. Snap start and end to nearest word boundaries
     snapped_start, snapped_end = snap_to_word_boundaries(doc.clean_text, payload.start, payload.end)
     expected_quote = doc.clean_text[snapped_start:snapped_end]
 
-    if payload.quote != expected_quote and payload.quote != doc.clean_text[payload.start:payload.end]:
+    raw_quote = payload.quote.strip() if payload.quote else ""
+
+    def _norm(s: str) -> str:
+        return re.sub(r"\s+", " ", s).strip()
+
+    quote_matches = (
+        payload.quote == expected_quote
+        or payload.quote == doc.clean_text[payload.start:payload.end]
+        or _norm(payload.quote) == _norm(expected_quote)
+        or _norm(payload.quote) == _norm(doc.clean_text[payload.start:payload.end])
+    )
+
+    if not quote_matches and raw_quote:
+        # Fallback: search for quote within doc.clean_text
+        found_idx = doc.clean_text.find(raw_quote)
+        found_len = len(raw_quote)
+        if found_idx == -1:
+            words = [re.escape(w) for w in raw_quote.split() if w]
+            if words:
+                pat = re.compile(r"\s+".join(words), re.IGNORECASE)
+                m = pat.search(doc.clean_text)
+                if m:
+                    found_idx = m.start()
+                    found_len = m.end() - m.start()
+
+        if found_idx != -1:
+            snapped_start, snapped_end = snap_to_word_boundaries(
+                doc.clean_text, found_idx, found_idx + found_len
+            )
+            expected_quote = doc.clean_text[snapped_start:snapped_end]
+            quote_matches = True
+
+    if not quote_matches:
         raise HTTPException(
             status_code=422,
             detail=f"Quote mismatch: expected '{expected_quote}', received '{payload.quote}'",

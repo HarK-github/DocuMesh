@@ -3,11 +3,9 @@ import {
   Upload,
   Sparkles,
   Network,
-  BookOpen,
   CheckCircle2,
   AlertCircle,
   Loader2,
-  PlusCircle,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -30,6 +28,8 @@ import {
   useAcceptSuggestion,
   useRejectSuggestion,
   useAcceptAllSuggestions,
+  useAutoHighlight,
+  useServerConnection,
 } from './hooks/useApi';
 import { useHealth } from './hooks/useHealth';
 import { api } from './api/client';
@@ -43,7 +43,7 @@ import ChatPanel from './components/ChatPanel';
 export default function App() {
   const [selectedDocId, setSelectedDocId] = useState(1);
   const [activeTab, setActiveTab] = useState('both'); // 'viewer' | 'graph' | 'both'
-  const [docViewMode, setDocViewMode] = useState('reader'); // 'reader' | 'pdf'
+  const [docViewMode, setDocViewMode] = useState('pdf'); // 'pdf' | 'reader'
   const [sidebarTab, setSidebarTab] = useState('chat'); // 'inspector' | 'chat'
   const [selectedAnnotationId, setSelectedAnnotationId] = useState(null);
   const [selectedRelationId, setSelectedRelationId] = useState(null);
@@ -52,14 +52,15 @@ export default function App() {
   const [activeJobId, setActiveJobId] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
   const [uploadError, setUploadError] = useState(null);
+  const [autoHighlightMode, setAutoHighlightMode] = useState('llm');
   const queryClient = useQueryClient();
 
-  // Health and taxonomy
-  const { data: healthData, isError: healthError } = useHealth();
+  // Health, taxonomy, and live server connection
+  const { isOnline, isReconnecting, reconnect } = useServerConnection();
+  const { isError: healthError } = useHealth();
   const { data: taxonomy } = useTaxonomy();
 
   // Document queries
-  const { data: docData, isLoading: docLoading } = useDocument(selectedDocId);
   const { data: textData } = useDocumentText(selectedDocId);
   const { data: annotations = [] } = useAnnotations(selectedDocId);
   const { data: relations = [] } = useRelations(selectedDocId);
@@ -80,11 +81,31 @@ export default function App() {
   const acceptSuggestionMutation = useAcceptSuggestion(selectedDocId);
   const rejectSuggestionMutation = useRejectSuggestion(selectedDocId);
   const acceptAllSuggestionsMutation = useAcceptAllSuggestions(selectedDocId);
+  const autoHighlightMutation = useAutoHighlight(selectedDocId);
+
+  const isAutoHighlighting =
+    autoHighlightMutation.isPending ||
+    (jobData?.type === 'auto_highlight' && jobData?.status === 'running');
+
+  const handleAutoHighlight = async (mode = 'llm') => {
+    if (!selectedDocId || isAutoHighlighting) return;
+    try {
+      setJobDescription(`Auto-highlighting full document (${mode.toUpperCase()} mode)...`);
+      const res = await autoHighlightMutation.mutateAsync({ mode });
+      if (res?.id) {
+        setActiveJobId(res.id);
+      }
+    } catch (err) {
+      console.error('Failed to trigger auto-highlight:', err);
+    }
+  };
 
   // Clear completed job after a delay and invalidate queries
   useEffect(() => {
     if (jobData?.status === 'done' || jobData?.status === 'failed') {
       if (jobData?.status === 'done' && selectedDocId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.document(selectedDocId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.documentText(selectedDocId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.relations(selectedDocId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.annotations(selectedDocId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.graph(selectedDocId) });
@@ -202,45 +223,67 @@ export default function App() {
         height: '100vh',
         width: '100vw',
         overflow: 'hidden',
-        background: '#f1f5f9',
-        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        background: '#ffffff',
+        fontFamily: '"Source Serif 4", Georgia, serif',
+        color: '#000000',
       }}
     >
       {/* Top Header */}
       <header
         style={{
-          height: '60px',
+          height: '64px',
           background: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '4px solid #000000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 20px',
+          padding: '0 24px',
           flexShrink: 0,
-          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+          boxShadow: 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Brand identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
             style={{
               width: '32px',
               height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+              borderRadius: 0,
+              background: '#000000',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: '#ffffff',
+              border: '1.5px solid #000000',
             }}
           >
-            <Network size={18} />
+            <Network size={18} strokeWidth={1.5} color="#ffffff" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
+            <h1
+              style={{
+                margin: 0,
+                fontFamily: '"Playfair Display", Georgia, serif',
+                fontSize: '1.35rem',
+                fontWeight: 900,
+                color: '#000000',
+                letterSpacing: '-0.025em',
+                lineHeight: 1.1,
+              }}
+            >
               DocuMesh
             </h1>
-            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
-              Interactive Document &amp; Relationship Mesh
+            <span
+              style={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                color: '#525252',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Editorial Document &amp; Semantic Mesh
             </span>
           </div>
         </div>
@@ -249,62 +292,72 @@ export default function App() {
         <div
           style={{
             display: 'flex',
-            background: '#f1f5f9',
-            padding: '3px',
-            borderRadius: '8px',
-            gap: '2px',
+            background: '#ffffff',
+            border: '1.5px solid #000000',
+            borderRadius: 0,
           }}
         >
           <button
             type="button"
-            onClick={() => setActiveTab('viewer')}
+            onClick={() => setActiveTab('graph')}
             style={{
-              padding: '5px 12px',
-              borderRadius: '6px',
+              padding: '6px 14px',
+              borderRadius: 0,
               border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 500,
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
               cursor: 'pointer',
-              background: activeTab === 'viewer' ? '#ffffff' : 'transparent',
-              color: activeTab === 'viewer' ? '#2563eb' : '#64748b',
-              boxShadow: activeTab === 'viewer' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              background: activeTab === 'graph' ? '#000000' : '#ffffff',
+              color: activeTab === 'graph' ? '#ffffff' : '#000000',
+              transition: 'none',
             }}
           >
-            Document View
+            Graph View
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('both')}
             style={{
-              padding: '5px 12px',
-              borderRadius: '6px',
+              padding: '6px 14px',
+              borderRadius: 0,
               border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 500,
+              borderLeft: '1.5px solid #000000',
+              borderRight: '1.5px solid #000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
               cursor: 'pointer',
-              background: activeTab === 'both' ? '#ffffff' : 'transparent',
-              color: activeTab === 'both' ? '#2563eb' : '#64748b',
-              boxShadow: activeTab === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              background: activeTab === 'both' ? '#000000' : '#ffffff',
+              color: activeTab === 'both' ? '#ffffff' : '#000000',
+              transition: 'none',
             }}
           >
             Split View
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('graph')}
+            onClick={() => setActiveTab('viewer')}
             style={{
-              padding: '5px 12px',
-              borderRadius: '6px',
+              padding: '6px 14px',
+              borderRadius: 0,
               border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 500,
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
               cursor: 'pointer',
-              background: activeTab === 'graph' ? '#ffffff' : 'transparent',
-              color: activeTab === 'graph' ? '#2563eb' : '#64748b',
-              boxShadow: activeTab === 'graph' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              background: activeTab === 'viewer' ? '#000000' : '#ffffff',
+              color: activeTab === 'viewer' ? '#ffffff' : '#000000',
+              transition: 'none',
             }}
           >
-            Graph View
+            Document View
           </button>
         </div>
 
@@ -318,15 +371,19 @@ export default function App() {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: selectedAnnotationId ? '1px solid #93c5fd' : '1px solid #dbeafe',
-              background: selectedAnnotationId ? '#dbeafe' : '#eff6ff',
-              color: '#1d4ed8',
-              fontSize: '0.8rem',
+              padding: '7px 14px',
+              borderRadius: 0,
+              border: '1.5px solid #000000',
+              background: selectedAnnotationId ? '#000000' : '#ffffff',
+              color: selectedAnnotationId ? '#ffffff' : '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
               fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
               cursor: annotations.length < 2 || activeJobId !== null ? 'not-allowed' : 'pointer',
-              opacity: annotations.length < 2 || activeJobId !== null ? 0.6 : 1,
+              opacity: annotations.length < 2 || activeJobId !== null ? 0.4 : 1,
+              transition: 'none',
             }}
             title={
               selectedAnnotationId
@@ -334,7 +391,7 @@ export default function App() {
                 : 'Infer typed relationships between annotations across document using AI'
             }
           >
-            <Sparkles size={14} />
+            <Sparkles size={13} strokeWidth={1.5} color={selectedAnnotationId ? '#ffffff' : '#000000'} />
             <span>{selectedAnnotationId ? 'Discover Relations (Selected)' : 'Discover Relations'}</span>
           </button>
 
@@ -343,17 +400,21 @@ export default function App() {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '6px',
-              background: '#2563eb',
+              padding: '7px 16px',
+              borderRadius: 0,
+              border: '1.5px solid #000000',
+              background: '#000000',
               color: '#ffffff',
-              fontSize: '0.8rem',
-              fontWeight: 500,
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
               cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
+              transition: 'none',
             }}
           >
-            <Upload size={14} />
+            <Upload size={13} strokeWidth={1.5} color="#ffffff" />
             <span>Upload PDF</span>
             <input
               type="file"
@@ -363,72 +424,218 @@ export default function App() {
             />
           </label>
 
+          {/* Auto-Highlight All & Construct Full Graph Button */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'stretch',
+              border: '1.5px solid #000000',
+              background: '#ffffff',
+            }}
+          >
+            <button
+              type="button"
+              disabled={isAutoHighlighting || !selectedDocId}
+              onClick={() => handleAutoHighlight(autoHighlightMode)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: 0,
+                border: 'none',
+                borderRight: '1.5px solid #000000',
+                background: isAutoHighlighting ? '#000000' : '#ffffff',
+                color: isAutoHighlighting ? '#ffffff' : '#000000',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                cursor: isAutoHighlighting ? 'wait' : 'pointer',
+                transition: 'none',
+              }}
+              title="Automatically classify every sentence in top-down order and construct the full relation knowledge graph"
+            >
+              {isAutoHighlighting ? (
+                <Loader2 size={13} className="spin" color="#ffffff" />
+              ) : (
+                <Sparkles size={13} strokeWidth={1.5} color="#000000" />
+              )}
+              <span>{isAutoHighlighting ? 'Processing All...' : 'Auto-Highlight All'}</span>
+            </button>
+            <select
+              value={autoHighlightMode}
+              onChange={(e) => setAutoHighlightMode(e.target.value)}
+              disabled={isAutoHighlighting}
+              style={{
+                padding: '0 8px',
+                border: 'none',
+                borderRadius: 0,
+                background: '#ffffff',
+                color: '#000000',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                cursor: isAutoHighlighting ? 'not-allowed' : 'pointer',
+                outline: 'none',
+              }}
+              title="Choose between LLM semantic classification or Fast embedding prototype mode"
+            >
+              <option value="llm">LLM</option>
+              <option value="embedding">Fast</option>
+            </select>
+          </div>
+
           {/* Backend Status indicator */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '4px 8px',
-              borderRadius: '16px',
-              background: healthError ? '#fee2e2' : '#f0fdf4',
-              color: healthError ? '#b91c1c' : '#15803d',
-              fontSize: '0.75rem',
+              padding: '5px 10px',
+              borderRadius: 0,
+              border: '1px solid #000000',
+              background: '#ffffff',
+              color: '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.68rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
             }}
           >
             <span
               style={{
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                background: healthError ? '#ef4444' : '#22c55e',
+                width: '6px',
+                height: '6px',
+                borderRadius: 0,
+                background: (!isOnline || healthError) ? '#737373' : '#000000',
+                border: '1px solid #000000',
               }}
             />
-            <span>{healthError ? 'API Offline' : 'Connected'}</span>
+            <span>{(!isOnline || healthError) ? (isReconnecting ? 'Reconnecting...' : 'API Offline') : 'Connected'}</span>
           </div>
         </div>
       </header>
+
+      {/* Auto-Reconnection Persistent Banner */}
+      {(!isOnline || healthError) && (
+        <div
+          data-testid="reconnect-banner"
+          style={{
+            background: '#000000',
+            color: '#ffffff',
+            borderBottom: '2px solid #ffffff',
+            padding: '8px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.75rem',
+            letterSpacing: '0.04em',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                background: '#ffffff',
+              }}
+            />
+            <span>SERVER UNREACHABLE — AUTO-RECONNECTING IN BACKGROUND...</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => reconnect()}
+            style={{
+              background: '#ffffff',
+              color: '#000000',
+              border: 'none',
+              borderRadius: 0,
+              padding: '4px 12px',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              cursor: 'pointer',
+            }}
+          >
+            {isReconnecting ? 'RECONNECTING...' : 'RETRY NOW'}
+          </button>
+        </div>
+      )}
+
+      {/* Upload Error Banner */}
+      {uploadError && (
+        <div
+          style={{
+            background: '#000000',
+            color: '#ffffff',
+            borderBottom: '2px solid #000000',
+            padding: '10px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.78rem',
+          }}
+        >
+          <AlertCircle size={16} strokeWidth={1.5} color="#ffffff" />
+          <span>Upload Error: {uploadError}</span>
+        </div>
+      )}
 
       {/* Background Job Progress Notification Banner */}
       {activeJobId && jobData && (
         <div
           style={{
-            background: jobData.status === 'failed' ? '#fef2f2' : '#eff6ff',
-            borderBottom: `1px solid ${jobData.status === 'failed' ? '#fca5a5' : '#bfdbfe'}`,
-            padding: '8px 20px',
+            background: '#000000',
+            color: '#ffffff',
+            borderBottom: '2px solid #000000',
+            padding: '10px 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            fontSize: '0.82rem',
+            fontSize: '0.78rem',
+            fontFamily: '"JetBrains Mono", monospace',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {jobData.status === 'done' ? (
-              <CheckCircle2 size={16} color="#16a34a" />
+              <CheckCircle2 size={16} strokeWidth={1.5} color="#ffffff" />
             ) : jobData.status === 'failed' ? (
-              <AlertCircle size={16} color="#dc2626" />
+              <AlertCircle size={16} strokeWidth={1.5} color="#ffffff" />
             ) : (
-              <Loader2 size={16} color="#2563eb" className="spin" />
+              <Loader2 size={16} color="#ffffff" className="spin" />
             )}
-            <span style={{ fontWeight: 600 }}>
+            <span style={{ fontWeight: 600, letterSpacing: '0.04em' }}>
               {jobData.status === 'done' && jobData.type === 'suggest_relations' && jobData.result?.suggested_count !== undefined
                 ? jobData.result.suggested_count > 0
                   ? `Relation discovery complete: found ${jobData.result.suggested_count} new relation${jobData.result.suggested_count === 1 ? '' : 's'}!`
                   : 'Relation discovery complete: no clear new relations found among analyzed pairs.'
+                : jobData.status === 'done' && jobData.type === 'auto_highlight' && jobData.result
+                ? `Auto-highlight complete: ${jobData.result.annotations_created || 0} highlights & ${jobData.result.relations_created || 0} graph relations constructed!`
                 : `${jobDescription || `Job ${jobData.type}`} (${jobData.status})`}
             </span>
             {jobData.status === 'failed' && (
-              <span style={{ color: '#b91c1c' }}>: {jobData.error}</span>
+              <span style={{ color: '#ffffff' }}>: {jobData.error}</span>
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '120px',
-                height: '6px',
-                borderRadius: '3px',
-                background: '#e2e8f0',
+                width: '140px',
+                height: '8px',
+                borderRadius: 0,
+                border: '1px solid #ffffff',
+                background: '#000000',
                 overflow: 'hidden',
               }}
             >
@@ -436,12 +643,12 @@ export default function App() {
                 style={{
                   height: '100%',
                   width: `${jobData.progress}%`,
-                  background: jobData.status === 'failed' ? '#ef4444' : '#2563eb',
-                  transition: 'width 0.3s ease',
+                  background: '#ffffff',
+                  transition: 'none',
                 }}
               />
             </div>
-            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{jobData.progress}%</span>
+            <span style={{ fontSize: '0.72rem', color: '#ffffff', fontWeight: 600 }}>{jobData.progress}%</span>
           </div>
         </div>
       )}
@@ -452,11 +659,40 @@ export default function App() {
           display: 'flex',
           flex: 1,
           overflow: 'hidden',
-          padding: '12px',
-          gap: '12px',
+          padding: '14px',
+          gap: '14px',
+          background: '#ffffff',
         }}
       >
-        {/* Left Column: Reader / Document View */}
+        {/* Left Column: Knowledge Graph */}
+        {(activeTab === 'graph' || activeTab === 'both') && (
+          <div
+            style={{
+              flex: activeTab === 'both' ? 5 : 1,
+              height: '100%',
+              overflow: 'clip',
+              minWidth: 0,
+              minHeight: 0,
+            }}
+          >
+            <GraphView
+              annotations={graphData?.annotations || annotations}
+              relations={graphData?.relations || relations}
+              taxonomy={taxonomy}
+              selectedAnnotationId={selectedAnnotationId}
+              selectedRelationId={selectedRelationId}
+              onSelectAnnotation={handleSelectAnnotation}
+              onAcceptSuggestion={handleAcceptSuggestion}
+              onRejectSuggestion={handleRejectSuggestion}
+              onCreateRelation={(payload) => createRelationMutation.mutate(payload)}
+              onUpdateRelation={(id, data) => updateRelationMutation.mutate({ id, data })}
+              onSaveNodePosition={(id, data) => updateAnnotationMutation.mutate({ id, data })}
+              onDeleteRelation={(id) => deleteRelationMutation.mutate(id)}
+            />
+          </div>
+        )}
+
+        {/* Center Column: Reader / Document View (PDF default) */}
         {(activeTab === 'viewer' || activeTab === 'both') && (
           <div
             style={{
@@ -465,7 +701,7 @@ export default function App() {
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
-              gap: '6px',
+              gap: '8px',
             }}
           >
             <div
@@ -473,51 +709,57 @@ export default function App() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 4px',
+                padding: '0 2px',
               }}
             >
               <div
                 style={{
                   display: 'inline-flex',
-                  background: '#e2e8f0',
-                  padding: '2px',
-                  borderRadius: '6px',
-                  gap: '2px',
+                  border: '1px solid #000000',
+                  borderRadius: 0,
+                  background: '#ffffff',
                 }}
               >
                 <button
                   type="button"
-                  onClick={() => setDocViewMode('reader')}
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: '4px',
-                    border: 'none',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    background: docViewMode === 'reader' ? '#ffffff' : 'transparent',
-                    color: docViewMode === 'reader' ? '#2563eb' : '#64748b',
-                    boxShadow: docViewMode === 'reader' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                  }}
-                >
-                  Reader View
-                </button>
-                <button
-                  type="button"
                   onClick={() => setDocViewMode('pdf')}
                   style={{
-                    padding: '3px 10px',
-                    borderRadius: '4px',
+                    padding: '4px 12px',
+                    borderRadius: 0,
                     border: 'none',
-                    fontSize: '0.75rem',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.72rem',
                     fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
                     cursor: 'pointer',
-                    background: docViewMode === 'pdf' ? '#ffffff' : 'transparent',
-                    color: docViewMode === 'pdf' ? '#2563eb' : '#64748b',
-                    boxShadow: docViewMode === 'pdf' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                    background: docViewMode === 'pdf' ? '#000000' : '#ffffff',
+                    color: docViewMode === 'pdf' ? '#ffffff' : '#000000',
+                    transition: 'none',
                   }}
                 >
                   PDF View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDocViewMode('reader')}
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: 0,
+                    border: 'none',
+                    borderLeft: '1px solid #000000',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    cursor: 'pointer',
+                    background: docViewMode === 'reader' ? '#000000' : '#ffffff',
+                    color: docViewMode === 'reader' ? '#ffffff' : '#000000',
+                    transition: 'none',
+                  }}
+                >
+                  Reader View
                 </button>
               </div>
             </div>
@@ -572,38 +814,10 @@ export default function App() {
           </div>
         )}
 
-        {/* Center Column: Knowledge Graph */}
-        {(activeTab === 'graph' || activeTab === 'both') && (
-          <div
-            style={{
-              flex: activeTab === 'both' ? 5 : 1,
-              height: '100%',
-              overflow: 'clip',
-              minWidth: 0,
-              minHeight: 0,
-            }}
-          >
-            <GraphView
-              annotations={graphData?.annotations || annotations}
-              relations={graphData?.relations || relations}
-              taxonomy={taxonomy}
-              selectedAnnotationId={selectedAnnotationId}
-              selectedRelationId={selectedRelationId}
-              onSelectAnnotation={handleSelectAnnotation}
-              onAcceptSuggestion={handleAcceptSuggestion}
-              onRejectSuggestion={handleRejectSuggestion}
-              onCreateRelation={(payload) => createRelationMutation.mutate(payload)}
-              onUpdateRelation={(id, data) => updateRelationMutation.mutate({ id, data })}
-              onSaveNodePosition={(id, data) => updateAnnotationMutation.mutate({ id, data })}
-              onDeleteRelation={(id) => deleteRelationMutation.mutate(id)}
-            />
-          </div>
-        )}
-
         {/* Right Sidebar: Inspector (Annotations & Suggestions) or Chat */}
         <div
           style={{
-            width: '360px',
+            width: '380px',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -616,10 +830,9 @@ export default function App() {
           <div
             style={{
               display: 'flex',
-              background: '#e2e8f0',
-              padding: '2px',
-              borderRadius: '8px',
-              gap: '2px',
+              border: '1.5px solid #000000',
+              borderRadius: 0,
+              background: '#ffffff',
             }}
           >
             <button
@@ -627,15 +840,18 @@ export default function App() {
               onClick={() => setSidebarTab('inspector')}
               style={{
                 flex: 1,
-                padding: '5px 8px',
-                borderRadius: '6px',
+                padding: '6px 10px',
+                borderRadius: 0,
                 border: 'none',
-                fontSize: '0.78rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.72rem',
                 fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
                 cursor: 'pointer',
-                background: sidebarTab === 'inspector' ? '#ffffff' : 'transparent',
-                color: sidebarTab === 'inspector' ? '#2563eb' : '#64748b',
-                boxShadow: sidebarTab === 'inspector' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                background: sidebarTab === 'inspector' ? '#000000' : '#ffffff',
+                color: sidebarTab === 'inspector' ? '#ffffff' : '#000000',
+                transition: 'none',
               }}
             >
               Annotations ({annotations.length})
@@ -648,19 +864,23 @@ export default function App() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '5px',
-                padding: '5px 8px',
-                borderRadius: '6px',
+                gap: '6px',
+                padding: '6px 10px',
+                borderRadius: 0,
                 border: 'none',
-                fontSize: '0.78rem',
+                borderLeft: '1.5px solid #000000',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.72rem',
                 fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
                 cursor: 'pointer',
-                background: sidebarTab === 'chat' ? '#ffffff' : 'transparent',
-                color: sidebarTab === 'chat' ? '#2563eb' : '#64748b',
-                boxShadow: sidebarTab === 'chat' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                background: sidebarTab === 'chat' ? '#000000' : '#ffffff',
+                color: sidebarTab === 'chat' ? '#ffffff' : '#000000',
+                transition: 'none',
               }}
             >
-              <Sparkles size={13} color={sidebarTab === 'chat' ? '#2563eb' : '#64748b'} />
+              <Sparkles size={12} strokeWidth={1.5} color={sidebarTab === 'chat' ? '#ffffff' : '#000000'} />
               <span>Document Chat</span>
             </button>
           </div>
@@ -711,7 +931,7 @@ export default function App() {
                   onReject={handleRejectSuggestion}
                   onAcceptAll={handleAcceptAllSuggestions}
                   onRefresh={handleGenerateHighlights}
-                  onSelect={(sug) => {
+                  onSelect={(_sug) => {
                     setScrollToId(null);
                   }}
                 />

@@ -97,7 +97,6 @@ export default function ReaderView({
     setActiveFlashRange(flashRange);
     const timer = setTimeout(() => setActiveFlashRange(null), 1800);
 
-    // Find the first segment element that intersects flashRange
     const segEls = containerRef.current.querySelectorAll('[data-start]');
     for (const el of segEls) {
       const segStart = parseInt(el.getAttribute('data-start'), 10);
@@ -112,34 +111,59 @@ export default function ReaderView({
   }, [flashRange]);
 
   // Handle user mouse-up selection
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) return;
 
     const selectedStr = selection.toString().trim();
-    if (!selectedStr || selectedStr.length < 2) return;
+    if (!selectedStr || selectedStr.length < 1) return;
 
-    const range = selection.getRangeAt(0);
-    // 1. Try DOM data-start based computation
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (!range) return;
+
     let matched = computeSelectionOffsetsFromDom(range, cleanText);
-
-    // 2. Fallback to text offset finder if DOM traversal failed
     if (!matched) {
       matched = findTextOffsets(cleanText, selectedStr);
     }
 
     if (matched) {
-      const rect = range.getBoundingClientRect();
+      let rect = range.getBoundingClientRect();
+      if (!rect || (rect.width === 0 && rect.height === 0)) {
+        const clientRects = range.getClientRects();
+        if (clientRects.length > 0) {
+          rect = clientRects[0];
+        }
+      }
+
       const containerRect = containerRef.current?.getBoundingClientRect() || {
         top: 0,
         left: 0,
+        width: 800,
+        height: 600,
       };
 
+      const scrollTop = containerRef.current ? containerRef.current.scrollTop : 0;
+      const scrollLeft = containerRef.current ? containerRef.current.scrollLeft : 0;
+
+      const activeLabel = selectedLabel || taxonomy?.labels?.[0] || 'Claim';
+      if (!selectedLabel) {
+        setSelectedLabel(activeLabel);
+      }
+
+      const clientX = rect && rect.width > 0 ? rect.left + rect.width / 2 : (e?.clientX || containerRect.left + containerRect.width / 2);
+      const clientY = rect && rect.bottom > 0 ? rect.bottom : (e?.clientY || containerRect.top + 100);
+
       setSelectionRange(matched);
-      setScope(getDefaultSuggestionScope(selectedLabel, annotations));
+      setScope(getDefaultSuggestionScope(activeLabel, annotations));
       setPopoverPos({
-        top: rect.bottom - containerRect.top + 8,
-        left: Math.max(10, rect.left - containerRect.left + rect.width / 2 - 140),
+        top: clientY - containerRect.top + scrollTop + 8,
+        left: Math.max(
+          10,
+          Math.min(
+            clientX - containerRect.left + scrollLeft - 155,
+            (containerRect.width || 800) - 325
+          )
+        ),
       });
     }
   };
@@ -160,13 +184,14 @@ export default function ReaderView({
 
   const handleSaveAnnotation = (e) => {
     if (e) e.preventDefault();
-    if (!selectionRange || !selectedLabel || isMutating) return;
+    const activeLabel = selectedLabel || taxonomy?.labels?.[0] || 'Claim';
+    if (!selectionRange || !activeLabel || isMutating) return;
 
     onCreateAnnotation({
       start: selectionRange.start,
       end: selectionRange.end,
       quote: selectionRange.quote,
-      label: selectedLabel,
+      label: activeLabel,
       note: note.trim() || null,
       x: 200 + Math.random() * 50,
       y: 150 + Math.random() * 50,
@@ -177,13 +202,14 @@ export default function ReaderView({
 
   const handleSaveAndFindMore = (e) => {
     if (e) e.preventDefault();
-    if (!selectionRange || !selectedLabel || isMutating) return;
+    const activeLabel = selectedLabel || taxonomy?.labels?.[0] || 'Claim';
+    if (!selectionRange || !activeLabel || isMutating) return;
 
     onSaveAndFindMore({
       start: selectionRange.start,
       end: selectionRange.end,
       quote: selectionRange.quote,
-      label: selectedLabel,
+      label: activeLabel,
       note: note.trim() || null,
       scope: scope,
       x: 200 + Math.random() * 50,
@@ -214,14 +240,14 @@ export default function ReaderView({
         height: '100%',
         overflowY: 'auto',
         background: '#ffffff',
-        padding: '2rem 2.5rem',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        padding: '2.5rem 3.5rem',
+        borderRadius: 0,
+        border: '1px solid #000000',
+        boxShadow: 'none',
         lineHeight: 1.85,
-        fontSize: '1.02rem',
-        color: '#1e293b',
-        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        fontSize: '1.05rem',
+        color: '#000000',
+        fontFamily: '"Source Serif 4", Georgia, serif',
       }}
     >
       {/* Header bar */}
@@ -229,28 +255,37 @@ export default function ReaderView({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          marginBottom: '1.5rem',
-          borderBottom: '1px solid #f1f5f9',
-          paddingBottom: '0.75rem',
+          gap: '10px',
+          marginBottom: '2rem',
+          borderBottom: '2px solid #000000',
+          paddingBottom: '1rem',
           userSelect: 'none',
         }}
       >
-        <FileText size={18} color="#2563eb" />
+        <FileText size={16} strokeWidth={1.5} color="#000000" />
         <span
           style={{
-            fontSize: '0.85rem',
+            fontFamily: '"Playfair Display", Georgia, serif',
+            fontSize: '1rem',
             fontWeight: 700,
-            color: '#1e293b',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            color: '#000000',
+            letterSpacing: '-0.01em',
           }}
         >
           Reader View
         </span>
-        <span style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '6px' }}>
-          • Inline Highlights
+        <span
+          style={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.72rem',
+            color: '#525252',
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+          }}
+        >
+          • Inline Editorial Annotations
         </span>
+
         {pendingSuggestions.length > 0 ? (
           <button
             type="button"
@@ -261,25 +296,38 @@ export default function ReaderView({
               marginLeft: 'auto',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
-              padding: '3px 8px',
-              borderRadius: '5px',
-              border: 'none',
-              background: '#16a34a',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: 0,
+              border: '1px solid #000000',
+              background: '#000000',
               color: '#ffffff',
-              fontSize: '0.75rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
               fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
               cursor: isMutating ? 'not-allowed' : 'pointer',
               opacity: isMutating ? 0.6 : 1,
+              transition: 'none',
             }}
             title="Accept all visible pending suggestions"
           >
-            <Check size={11} />
+            <Check size={12} strokeWidth={1.5} color="#ffffff" />
             Accept all shown ({pendingSuggestions.length})
           </button>
         ) : (
-          <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: '#94a3b8' }}>
-            Select any text to annotate
+          <span
+            style={{
+              marginLeft: 'auto',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              color: '#525252',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Select text to annotate
           </span>
         )}
       </div>
@@ -287,17 +335,27 @@ export default function ReaderView({
       {/* Document content */}
       <div style={{ userSelect: 'text' }}>
         {paragraphs.length === 0 ? (
-          <p style={{ color: '#94a3b8' }}>No text available to display.</p>
+          <p
+            style={{
+              color: '#525252',
+              fontStyle: 'italic',
+              textAlign: 'center',
+              padding: '3rem 0',
+            }}
+          >
+            No text available to display.
+          </p>
         ) : (
           paragraphs.map((para, pIdx) => (
             <p
               key={`p-${pIdx}`}
-              className="reader-paragraph"
+              className={`reader-paragraph ${pIdx === 0 ? 'reader-first-para' : ''}`}
               style={{
-                marginBottom: '1.25rem',
+                marginBottom: '1.6rem',
                 marginBlockStart: 0,
-                marginBlockEnd: '1.25rem',
+                marginBlockEnd: '1.6rem',
                 textAlign: 'justify',
+                textJustify: 'inter-word',
               }}
             >
               {para.map((seg, sIdx) => {
@@ -322,8 +380,7 @@ export default function ReaderView({
                       data-end={seg.end}
                       className={isFlashing ? 'flash-highlight' : ''}
                       style={{
-                        borderRadius: isFlashing ? '3px' : '0',
-                        transition: 'background-color 0.2s ease',
+                        transition: 'none',
                       }}
                     >
                       {seg.text}
@@ -333,7 +390,6 @@ export default function ReaderView({
 
                 // 2. Annotation highlight
                 if (hasAnns) {
-                  // Select the innermost (smallest) annotation for click handling
                   const sortedAnns = [...seg.annotations].sort(
                     (a, b) => (a.end - a.start) - (b.end - b.start)
                   );
@@ -350,20 +406,27 @@ export default function ReaderView({
                       onClick={() => onSelectAnnotation(primaryAnn?.id)}
                       className={isFlashing ? 'flash-highlight' : ''}
                       style={{
-                        backgroundColor: isMulti ? '#fef3c7' : labelStyle.bg,
-                        color: isMulti ? '#78350f' : labelStyle.text,
+                        backgroundColor: isSelected
+                          ? '#000000'
+                          : isMulti
+                          ? '#f5f5f5'
+                          : (labelStyle.bg || '#FFF9C4'),
+                        color: isSelected ? '#ffffff' : '#000000',
                         borderBottom: isMulti
-                          ? '3px double #d97706'
-                          : `2px solid ${labelStyle.border}`,
-                        padding: '1px 3px',
-                        borderRadius: '4px',
+                          ? '3px double #000000'
+                          : isSelected
+                          ? '2px solid #000000'
+                          : `2px solid ${labelStyle.border || '#000000'}`,
+                        borderLeft: `3px solid ${labelStyle.border || '#000000'}`,
+                        padding: '1px 4px',
+                        borderRadius: 0,
                         margin: '0 1px',
                         cursor: 'pointer',
                         fontWeight: isSelected ? 700 : 500,
-                        outline: isSelected ? '2px solid #2563eb' : 'none',
-                        outlineOffset: '1px',
+                        outline: isSelected ? '2px solid #000000' : 'none',
+                        outlineOffset: '2px',
                         display: 'inline',
-                        transition: 'all 0.15s ease',
+                        transition: 'none',
                       }}
                       title={
                         isMulti
@@ -382,31 +445,36 @@ export default function ReaderView({
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '2px',
+                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.62rem',
                             fontWeight: 700,
                             padding: '1px 4px',
-                            marginLeft: '3px',
-                            borderRadius: '3px',
-                            background: '#fde68a',
-                            color: '#92400e',
+                            marginLeft: '4px',
+                            borderRadius: 0,
+                            border: '1px solid #000000',
+                            background: isSelected ? '#ffffff' : '#000000',
+                            color: isSelected ? '#000000' : '#ffffff',
                             verticalAlign: 'middle',
                             userSelect: 'none',
                           }}
                         >
-                          <Layers size={9} />
+                          <Layers size={9} strokeWidth={1.5} />
                           {seg.annotations.length}
                         </span>
                       ) : (
                         <span
                           style={{
+                            fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.62rem',
                             fontWeight: 700,
                             textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
                             padding: '1px 4px',
-                            marginLeft: '3px',
-                            borderRadius: '3px',
-                            background: labelStyle.badge,
-                            color: labelStyle.text,
+                            marginLeft: '4px',
+                            borderRadius: 0,
+                            border: '1px solid #000000',
+                            background: isSelected ? '#ffffff' : (labelStyle.badge || '#000000'),
+                            color: isSelected ? '#000000' : (labelStyle.badgeText || '#ffffff'),
                             verticalAlign: 'middle',
                             userSelect: 'none',
                           }}
@@ -431,17 +499,17 @@ export default function ReaderView({
                       onClick={() => onSelectAnnotation(sug?.id)}
                       className={isFlashing ? 'flash-highlight' : ''}
                       style={{
-                        backgroundColor: isSugSelected ? '#fef08a' : '#fef9c388',
-                        color: '#713f12',
-                        borderBottom: isSugSelected ? '2px solid #ca8a04' : '2px dashed #ca8a04',
+                        backgroundColor: '#ffffff',
+                        color: '#000000',
+                        borderBottom: isSugSelected ? '2px solid #000000' : '1.5px dashed #000000',
                         padding: '1px 3px',
-                        borderRadius: '4px',
+                        borderRadius: 0,
                         margin: '0 1px',
                         display: 'inline',
                         cursor: 'pointer',
-                        outline: isSugSelected ? '2px solid #ca8a04' : 'none',
-                        outlineOffset: '1px',
-                        transition: 'all 0.15s ease',
+                        outline: isSugSelected ? '2px solid #000000' : 'none',
+                        outlineOffset: '2px',
+                        transition: 'none',
                       }}
                       title={`Suggested highlight (relevance: ${(
                         (sug?.score || 0) * 100
@@ -452,18 +520,19 @@ export default function ReaderView({
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '2px',
+                          gap: '3px',
                           marginLeft: '4px',
                           fontSize: '0.68rem',
-                          background: '#fef9c3',
-                          padding: '1px 5px',
-                          borderRadius: '4px',
-                          border: '1px solid #fde047',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          background: '#ffffff',
+                          padding: '1px 4px',
+                          borderRadius: 0,
+                          border: '1px solid #000000',
                           verticalAlign: 'middle',
                           userSelect: 'none',
                         }}
                       >
-                        <Sparkles size={10} color="#ca8a04" />
+                        <Sparkles size={9} strokeWidth={1.5} color="#000000" />
                         <button
                           type="button"
                           onClick={(e) => {
@@ -474,13 +543,13 @@ export default function ReaderView({
                             border: 'none',
                             background: 'transparent',
                             cursor: 'pointer',
-                            color: '#16a34a',
+                            color: '#000000',
                             padding: '1px',
                             display: 'flex',
                           }}
                           title="Accept suggestion"
                         >
-                          <Check size={11} />
+                          <Check size={11} strokeWidth={1.5} />
                         </button>
                         <button
                           type="button"
@@ -492,13 +561,13 @@ export default function ReaderView({
                             border: 'none',
                             background: 'transparent',
                             cursor: 'pointer',
-                            color: '#dc2626',
+                            color: '#000000',
                             padding: '1px',
                             display: 'flex',
                           }}
                           title="Reject suggestion"
                         >
-                          <X size={11} />
+                          <X size={11} strokeWidth={1.5} />
                         </button>
                       </span>
                     </mark>
@@ -536,4 +605,3 @@ export default function ReaderView({
 }
 
 export { SelectionPopover };
-

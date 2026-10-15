@@ -1,11 +1,12 @@
 """Relation CRUD and Graph view endpoints with taxonomy and cycle validation."""
 
+from collections import deque, defaultdict
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 from backend.app.db import get_db
-from backend.app.models import Document, Annotation, Relation, RelationType, Suggestion
+from backend.app.models import Document, Annotation, Relation, RelationType, Suggestion, RejectedPair
 from backend.app.schemas import (
     RelationCreate,
     RelationUpdate,
@@ -13,6 +14,9 @@ from backend.app.schemas import (
     GraphResponse,
     AnnotationResponse,
     SuggestRelationsRequest,
+    PathsResponse,
+    PathItem,
+    PathEdge,
 )
 from backend.app.services.clean import snap_to_word_boundaries
 
@@ -106,6 +110,7 @@ def create_relation(
         type=payload.type,
         status=payload.status or "confirmed",
         reason=payload.reason,
+        cos_score=payload.cos_score if payload.cos_score is not None else payload.score,
         version=1,
     )
     db.add(relation)
@@ -139,6 +144,21 @@ def update_relation(
 
     if payload.status is not None:
         relation.status = payload.status
+        if payload.status == "rejected":
+            ann_min = min(relation.source_id, relation.target_id)
+            ann_max = max(relation.source_id, relation.target_id)
+            exists = (
+                db.query(RejectedPair)
+                .filter(
+                    RejectedPair.document_id == relation.document_id,
+                    RejectedPair.ann_id_min == ann_min,
+                    RejectedPair.ann_id_max == ann_max,
+                )
+                .first()
+            )
+            if not exists:
+                db.add(RejectedPair(document_id=relation.document_id, ann_id_min=ann_min, ann_id_max=ann_max))
+
     if payload.reason is not None:
         relation.reason = payload.reason
 
@@ -157,10 +177,26 @@ def update_relation(
 
 @router.delete("/relations/{relation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_relation(relation_id: int, db: Session = Depends(get_db)) -> None:
-    """Delete a relation."""
+    """Delete a relation and remember as rejected pair to prevent re-suggesting."""
     relation = db.query(Relation).filter(Relation.id == relation_id).first()
     if not relation:
         raise HTTPException(status_code=404, detail="Relation not found")
+
+    # Record rejected pair so relation suggester won't re-propose it
+    ann_min = min(relation.source_id, relation.target_id)
+    ann_max = max(relation.source_id, relation.target_id)
+    exists = (
+        db.query(RejectedPair)
+        .filter(
+            RejectedPair.document_id == relation.document_id,
+            RejectedPair.ann_id_min == ann_min,
+            RejectedPair.ann_id_max == ann_max,
+        )
+        .first()
+    )
+    if not exists:
+        db.add(RejectedPair(document_id=relation.document_id, ann_id_min=ann_min, ann_id_max=ann_max))
+
     db.delete(relation)
     db.commit()
     return None
@@ -204,6 +240,8 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
             status=r.status or "confirmed",
             reason=r.reason,
             version=r.version,
+            score=r.cos_score,
+            cos_score=r.cos_score,
         )
         for r in relations
     ]
@@ -266,8 +304,99 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
             )
             edges.append(ghost_edge)
 
+    # Phase D: Implied relation inference for transitive types (causes, precedes)
+    # ponytail: 2-hop transitive closure; BFS if multi-hop arbitrary closure needed
+    transitive_types = {"causes", "precedes"}
+    existing_pairs = {(r.source_id, r.target_id) for r in relations}
+    existing_pairs.update({(r.target_id, r.source_id) for r in relations})
+
+    for t in transitive_types:
+        out_edges = defaultdict(list)
+        for r in relations:
+            if r.type == t and (r.status or "confirmed") == "confirmed":
+                out_edges[r.source_id].append(r.target_id)
+
+        for a_id, b_list in out_edges.items():
+            for b_id in b_list:
+                for c_id in out_edges.get(b_id, []):
+                    if a_id != c_id and (a_id, c_id) not in existing_pairs:
+                        existing_pairs.add((a_id, c_id))
+                        edges.append(
+                            RelationResponse(
+                                id=-(500000 + len(edges)),
+                                document_id=document_id,
+                                source_id=a_id,
+                                target_id=c_id,
+                                type=t,
+                                status="implied",
+                                reason=f"Transitive inference: ({a_id}) -> ({b_id}) -> ({c_id})",
+                                version=1,
+                            )
+                        )
+
     return GraphResponse(
         document_id=document_id,
         annotations=nodes,
         relations=edges,
+    )
+
+
+@router.get("/documents/{document_id}/paths", response_model=PathsResponse)
+def get_document_paths(
+    document_id: int,
+    from_id: int = Query(..., alias="from", description="Source annotation ID"),
+    to_id: int = Query(..., alias="to", description="Target annotation ID"),
+    max_depth: int = Query(default=4, ge=1, le=10, description="Maximum path length hops"),
+    db: Session = Depends(get_db),
+) -> PathsResponse:
+    """Find reasoning paths/chains between two annotations via BFS traversal (Phase C)."""
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # ponytail: stdlib collections.deque BFS for shortest and diverse paths
+    relations = (
+        db.query(Relation)
+        .filter(Relation.document_id == document_id, Relation.status.in_(["confirmed", "suggested"]))
+        .all()
+    )
+
+    adj = defaultdict(list)
+    for r in relations:
+        adj[r.source_id].append((r.target_id, r.type))
+
+    paths_found: List[PathItem] = []
+    queue = deque([(from_id, [from_id], [])])
+
+    while queue and len(paths_found) < 10:
+        curr, node_path, edge_path = queue.popleft()
+        if curr == to_id and edge_path:
+            trace_parts = [f"[{node_path[0]}]"]
+            for edge in edge_path:
+                trace_parts.append(f"--[{edge.type}]--> [{edge.target_id}]")
+            trace_str = " ".join(trace_parts)
+
+            paths_found.append(
+                PathItem(
+                    nodes=node_path,
+                    edges=edge_path,
+                    length=len(edge_path),
+                    trace=trace_str,
+                )
+            )
+            continue
+
+        if len(edge_path) >= max_depth:
+            continue
+
+        for next_id, edge_type in adj.get(curr, []):
+            if next_id not in node_path:
+                new_edge = PathEdge(source_id=curr, target_id=next_id, type=edge_type)
+                queue.append((next_id, node_path + [next_id], edge_path + [new_edge]))
+
+    return PathsResponse(
+        document_id=document_id,
+        from_id=from_id,
+        to_id=to_id,
+        paths=paths_found,
     )

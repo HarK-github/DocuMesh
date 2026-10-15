@@ -26,24 +26,34 @@ export default function SuggestionList({
         flexDirection: 'column',
         height: '100%',
         background: '#ffffff',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        borderRadius: 0,
+        border: '1px solid #000000',
+        boxShadow: 'none',
         overflow: 'hidden',
       }}
     >
       <div
         style={{
-          padding: '14px 18px',
-          borderBottom: '1px solid #f1f5f9',
+          padding: '12px 16px',
+          borderBottom: '2px solid #000000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          background: '#ffffff',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={18} color="#eab308" />
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>
+          <Sparkles size={16} strokeWidth={1.5} color="#000000" />
+          <h3
+            style={{
+              margin: 0,
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontSize: '1rem',
+              fontWeight: 700,
+              color: '#000000',
+              letterSpacing: '-0.01em',
+            }}
+          >
             Smart Highlights ({pendingSuggestions.length})
           </h3>
         </div>
@@ -60,18 +70,22 @@ export default function SuggestionList({
                 alignItems: 'center',
                 gap: '4px',
                 padding: '4px 8px',
-                borderRadius: '6px',
-                border: 'none',
-                background: '#16a34a',
+                borderRadius: 0,
+                border: '1px solid #000000',
+                background: '#000000',
                 color: '#ffffff',
-                fontSize: '0.75rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.72rem',
                 fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 opacity: isLoading ? 0.6 : 1,
+                transition: 'none',
               }}
               title="Accept all currently shown suggestions"
             >
-              <Check size={12} />
+              <Check size={12} strokeWidth={1.5} />
               <span>Accept all shown</span>
             </button>
           )}
@@ -85,16 +99,21 @@ export default function SuggestionList({
               alignItems: 'center',
               gap: '4px',
               padding: '4px 8px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
+              borderRadius: 0,
+              border: '1px solid #000000',
               background: '#ffffff',
-              fontSize: '0.75rem',
+              color: '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
               cursor: isLoading ? 'not-allowed' : 'pointer',
-              color: '#475569',
+              transition: 'none',
             }}
             title="Compute and re-rank suggestions based on current annotations"
           >
-            <RefreshCw size={12} className={isLoading ? 'spin' : ''} />
+            <RefreshCw size={12} strokeWidth={1.5} className={isLoading ? 'spin' : ''} />
             <span>{isLoading ? 'Ranking...' : 'Re-rank'}</span>
           </button>
         </div>
@@ -104,36 +123,59 @@ export default function SuggestionList({
         <div
           data-testid="pending-cap-message"
           style={{
-            margin: '8px 14px 0 14px',
+            margin: '8px 12px 0 12px',
             padding: '8px 12px',
-            borderRadius: '6px',
-            background: '#fff7ed',
-            border: '1px solid #fed7aa',
-            color: '#c2410c',
-            fontSize: '0.78rem',
+            borderRadius: 0,
+            background: '#000000',
+            color: '#ffffff',
+            border: '1px solid #000000',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.75rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
           }}
         >
-          <AlertCircle size={14} />
+          <AlertCircle size={14} strokeWidth={1.5} />
           <span>{capMsg}</span>
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '12px 14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+        }}
+      >
         {pendingSuggestions.length === 0 ? (
           <div
             data-testid="empty-suggestions-state"
-            style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}
+            style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#525252' }}
           >
             <p
               data-testid="empty-suggestions-message"
-              style={{ margin: 0, fontSize: '0.9rem', fontWeight: 500, color: '#64748b' }}
+              style={{
+                margin: 0,
+                fontFamily: '"Playfair Display", Georgia, serif',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: '#000000',
+              }}
             >
               No more similar passages found
             </p>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem' }}>
+            <p
+              style={{
+                margin: '6px 0 0 0',
+                fontSize: '0.82rem',
+                fontFamily: '"Source Serif 4", Georgia, serif',
+                color: '#525252',
+              }}
+            >
               Select text to create an annotation, then click "Save + find more like this" to discover similar passages.
             </p>
           </div>
@@ -145,35 +187,46 @@ export default function SuggestionList({
                 key={sug.id}
                 onClick={() => onSelect(sug)}
                 style={{
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #fef08a',
-                  background: '#fefce8',
+                  padding: '12px',
+                  borderRadius: 0,
+                  border: '1px solid #000000',
+                  background: '#ffffff',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '6px',
+                  gap: '8px',
                   cursor: 'pointer',
-                  transition: 'box-shadow 0.15s ease',
+                  transition: 'background-color 100ms linear',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span
                       style={{
+                        fontFamily: '"JetBrains Mono", monospace',
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         padding: '1px 6px',
-                        borderRadius: '4px',
-                        background: '#fef08a',
-                        color: '#854d0e',
+                        borderRadius: 0,
+                        background: '#000000',
+                        color: '#ffffff',
+                        letterSpacing: '0.05em',
                       }}
                     >
                       {scorePct}% match
                     </span>
-                    <span style={{ fontSize: '0.7rem', color: '#a16207' }}>Page {sug.page}</span>
+                    <span
+                      style={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.7rem',
+                        color: '#525252',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      Page {sug.page}
+                    </span>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -182,19 +235,22 @@ export default function SuggestionList({
                       }}
                       style={{
                         padding: '3px 8px',
-                        borderRadius: '4px',
-                        border: 'none',
-                        background: '#16a34a',
+                        borderRadius: 0,
+                        border: '1px solid #000000',
+                        background: '#000000',
                         color: '#ffffff',
-                        fontSize: '0.75rem',
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
                         display: 'flex',
                         alignItems: 'center',
                         gap: '2px',
                         cursor: 'pointer',
+                        transition: 'none',
                       }}
                       title="Accept as annotation"
                     >
-                      <Check size={12} /> Accept
+                      <Check size={12} strokeWidth={1.5} /> Accept
                     </button>
                     <button
                       type="button"
@@ -204,19 +260,22 @@ export default function SuggestionList({
                       }}
                       style={{
                         padding: '3px 8px',
-                        borderRadius: '4px',
-                        border: '1px solid #fca5a5',
+                        borderRadius: 0,
+                        border: '1px solid #000000',
                         background: '#ffffff',
-                        color: '#dc2626',
-                        fontSize: '0.75rem',
+                        color: '#000000',
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
                         display: 'flex',
                         alignItems: 'center',
                         gap: '2px',
                         cursor: 'pointer',
+                        transition: 'none',
                       }}
                       title="Reject suggestion"
                     >
-                      <X size={12} /> Reject
+                      <X size={12} strokeWidth={1.5} /> Reject
                     </button>
                   </div>
                 </div>
@@ -224,9 +283,11 @@ export default function SuggestionList({
                 <p
                   style={{
                     margin: 0,
-                    fontSize: '0.85rem',
-                    color: '#713f12',
+                    fontFamily: '"Source Serif 4", Georgia, serif',
+                    fontSize: '0.88rem',
+                    color: '#000000',
                     fontStyle: 'italic',
+                    lineHeight: 1.4,
                     display: '-webkit-box',
                     WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical',

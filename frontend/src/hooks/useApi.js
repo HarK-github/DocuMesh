@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../api/client';
 
@@ -230,3 +231,83 @@ export function useAcceptAllSuggestions(documentId) {
     },
   });
 }
+
+export function useAutoHighlight(documentId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload = { mode: 'llm' }) =>
+      api.post(`/documents/${documentId}/auto-highlight`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.annotations(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.relations(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(documentId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(documentId) });
+    },
+  });
+}
+
+/**
+ * Hook providing live server reachability status with seamless automatic reconnection.
+ */
+export function useServerConnection() {
+  const queryClient = useQueryClient();
+  const [isOnline, setIsOnline] = useState(true);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+
+  const checkHealth = useCallback(async () => {
+    try {
+      await api.get('/health');
+      setIsOnline((prev) => {
+        if (!prev) {
+          // Invalidate queries to seamlessly refresh app data upon reconnection
+          queryClient.invalidateQueries();
+        }
+        return true;
+      });
+      setIsReconnecting(false);
+      return true;
+    } catch {
+      setIsOnline(false);
+      setIsReconnecting(true);
+      return false;
+    }
+  }, [queryClient]);
+
+  useEffect(() => {
+    const handleOffline = () => {
+      setIsOnline(false);
+      setIsReconnecting(true);
+    };
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      setIsReconnecting(false);
+    };
+
+    window.addEventListener('app:server-offline', handleOffline);
+    window.addEventListener('app:server-online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', checkHealth);
+
+    return () => {
+      window.removeEventListener('app:server-offline', handleOffline);
+      window.removeEventListener('app:server-online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', checkHealth);
+    };
+  }, [checkHealth]);
+
+  // Periodic health check heartbeat while offline to auto-reconnect
+  useEffect(() => {
+    if (isOnline) return;
+
+    const interval = setInterval(() => {
+      checkHealth();
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [isOnline, checkHealth]);
+
+  return { isOnline, isReconnecting, reconnect: checkHealth };
+}
+

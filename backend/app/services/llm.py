@@ -43,12 +43,47 @@ class FakeLLMClient(BaseLLMClient):
         self.malformed = malformed
         self.canned_answer = canned_answer
 
-    def complete_json(self, prompt: str) -> Dict[str, Any]:
+    def complete_json(self, prompt: str) -> Any:
         """Return mock JSON response or raise error."""
         if self.fail:
             raise RuntimeError("Fake LLM upstream service failure")
         if self.malformed:
             raise json.JSONDecodeError("Expecting value", "bad json", 0)
+
+        # Check if prompt is sentence classification format
+        if "classify" in prompt.lower() or "classifications" in prompt.lower():
+            sent_indices = [int(m) for m in re.findall(r"\[(\d+)\]", prompt)]
+            if not sent_indices:
+                sent_indices = [int(m) for m in re.findall(r"Sentence\s*ID\s*(\d+)", prompt, re.IGNORECASE)]
+            if sent_indices:
+                sample_labels = ["Claim", "Evidence", "Definition", "Method", "Result", "Problem", "Solution", None]
+                return {
+                    "classifications": [
+                        {
+                            "idx": idx,
+                            "label": sample_labels[idx % len(sample_labels)],
+                        }
+                        for idx in sent_indices
+                    ]
+                }
+
+        # Check if prompt is batched format with Candidate IDs
+        cand_ids = [int(m) for m in re.findall(r"Candidate ID\s*(\d+)", prompt)]
+        if not cand_ids:
+            cand_ids = [int(m) for m in re.findall(r"candidate_id[\"']?\s*:\s*(\d+)", prompt)]
+
+        if cand_ids:
+            return {
+                "relations": [
+                    {
+                        "candidate_id": cid,
+                        "type": self.default_type,
+                        "direction": "forward",
+                        "reason": "Automated relationship inference by LLM analysis",
+                    }
+                    for cid in cand_ids
+                ]
+            }
 
         # Parse prompt to determine intelligent fake relation
         return {
@@ -80,8 +115,8 @@ class FakeLLMClient(BaseLLMClient):
         return f"According to the document text and annotations, the answer is confirmed by {cited_str}."
 
 
-def _extract_json_object(content: str) -> Dict[str, Any]:
-    """Parse JSON object from text, handling markdown fences, trailing text, and extra braces."""
+def _extract_json_object(content: str) -> Any:
+    """Parse JSON object or array from text, handling markdown fences, trailing text, and extra braces."""
     trimmed = content.strip()
     if trimmed.startswith("```"):
         lines = trimmed.splitlines()
@@ -93,16 +128,26 @@ def _extract_json_object(content: str) -> Dict[str, Any]:
     try:
         return json.loads(trimmed)
     except json.JSONDecodeError:
-        idx = trimmed.find("{")
-        if idx != -1:
-            try:
-                decoder = json.JSONDecoder()
-                obj, _ = decoder.raw_decode(trimmed[idx:])
-                if isinstance(obj, dict):
-                    return obj
-            except Exception:
-                pass
-        match = re.search(r"\{.*\}", trimmed, re.DOTALL)
+        idx_brace = trimmed.find("{")
+        idx_sq = trimmed.find("[")
+        if idx_brace != -1 and (idx_sq == -1 or idx_brace < idx_sq):
+            idx = idx_brace
+            match_pattern = r"\{.*\}"
+        elif idx_sq != -1:
+            idx = idx_sq
+            match_pattern = r"\[.*\]"
+        else:
+            raise
+
+        try:
+            decoder = json.JSONDecoder()
+            obj, _ = decoder.raw_decode(trimmed[idx:])
+            if isinstance(obj, (dict, list)):
+                return obj
+        except Exception:
+            pass
+
+        match = re.search(match_pattern, trimmed, re.DOTALL)
         if match:
             return json.loads(match.group(0))
         raise

@@ -105,6 +105,8 @@ class RelationCreate(BaseModel):
     type: str
     status: Optional[str] = "confirmed"
     reason: Optional[str] = None
+    cos_score: Optional[float] = None
+    score: Optional[float] = None
 
 
 class RelationUpdate(BaseModel):
@@ -126,6 +128,7 @@ class RelationResponse(BaseModel):
     reason: Optional[str] = None
     version: int = 1
     score: Optional[float] = None
+    cos_score: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -143,7 +146,32 @@ class GraphResponse(BaseModel):
     relations: List[RelationResponse]
 
 
+class PathEdge(BaseModel):
+    source_id: int
+    target_id: int
+    type: str
+
+
+class PathItem(BaseModel):
+    nodes: List[int]
+    edges: List[PathEdge]
+    length: int
+    trace: str
+
+
+class PathsResponse(BaseModel):
+    document_id: int
+    from_id: int
+    to_id: int
+    paths: List[PathItem]
+
+
 # Suggestion Schemas
+class AutoHighlightRequest(BaseModel):
+    """Payload to request automated full-document highlight & relationship discovery."""
+    mode: Optional[str] = "llm"  # 'llm' | 'embedding'
+
+
 class SuggestHighlightsRequest(BaseModel):
     """Payload to request scoped highlight suggestions."""
     seed_annotation_id: Optional[int] = None

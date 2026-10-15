@@ -1,16 +1,7 @@
 import React, { useState } from 'react';
 import { Tag, Edit2, Trash2, Check, X, AlertCircle, Bookmark, Layers, Sparkles } from 'lucide-react';
 import { getDefaultSuggestionScope } from '../config';
-
-const LABEL_BADGES = {
-  Claim: { bg: '#eff6ff', text: '#1d4ed8' },
-  Evidence: { bg: '#f0fdf4', text: '#15803d' },
-  Definition: { bg: '#fefce8', text: '#a16207' },
-  Method: { bg: '#faf5ff', text: '#7e22ce' },
-  Result: { bg: '#fff1f2', text: '#be123c' },
-  Problem: { bg: '#fef2f2', text: '#b91c1c' },
-  Solution: { bg: '#f0fdfa', text: '#0f766e' },
-};
+import { getLabelStyle } from '../lib/colors';
 
 export default function AnnotationPanel({
   annotations = [],
@@ -76,24 +67,34 @@ export default function AnnotationPanel({
         flexDirection: 'column',
         height: '100%',
         background: '#ffffff',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        borderRadius: 0,
+        border: '1px solid #000000',
+        boxShadow: 'none',
         overflow: 'hidden',
       }}
     >
       <div
         style={{
-          padding: '14px 18px',
-          borderBottom: '1px solid #f1f5f9',
+          padding: '12px 16px',
+          borderBottom: '2px solid #000000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          background: '#ffffff',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bookmark size={18} color="#2563eb" />
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>
+          <Bookmark size={16} strokeWidth={1.5} color="#000000" />
+          <h3
+            style={{
+              margin: 0,
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontSize: '1rem',
+              fontWeight: 700,
+              color: '#000000',
+              letterSpacing: '-0.01em',
+            }}
+          >
             Annotations ({annotations.length})
           </h3>
         </div>
@@ -102,62 +103,106 @@ export default function AnnotationPanel({
       {staleError && (
         <div
           style={{
-            margin: '8px 14px',
+            margin: '8px 12px',
             padding: '8px 12px',
-            borderRadius: '6px',
-            background: '#fff7ed',
-            border: '1px solid #fed7aa',
-            color: '#c2410c',
-            fontSize: '0.8rem',
+            borderRadius: 0,
+            background: '#000000',
+            color: '#ffffff',
+            border: '1px solid #000000',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.75rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
           }}
         >
-          <AlertCircle size={14} />
+          <AlertCircle size={14} strokeWidth={1.5} />
           <span>{staleError}</span>
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '12px 14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+        }}
+      >
         {annotations.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}>
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>No annotations yet.</p>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem' }}>Highlight any text in the document viewer to create one.</p>
+          <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#525252' }}>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: '"Playfair Display", Georgia, serif',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: '#000000',
+              }}
+            >
+              No annotations yet.
+            </p>
+            <p
+              style={{
+                margin: '6px 0 0 0',
+                fontSize: '0.82rem',
+                fontFamily: '"Source Serif 4", Georgia, serif',
+                color: '#525252',
+              }}
+            >
+              Highlight any text in the document viewer to create one.
+            </p>
           </div>
         ) : (
           annotations.map((ann) => {
             const isSelected = ann.id === selectedId;
             const isEditing = ann.id === editingId;
-            const badge = LABEL_BADGES[ann.label] || { bg: '#f1f5f9', text: '#475569' };
+            const style = getLabelStyle(ann.label);
 
             return (
               <div
                 key={ann.id}
                 onClick={() => onSelect(ann.id)}
                 style={{
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                  background: isSelected ? '#f8fafc' : '#ffffff',
+                  padding: '12px',
+                  borderRadius: 0,
+                  border: isSelected ? '2.5px solid #000000' : '1px solid #000000',
+                  background: '#ffffff',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 2px 4px rgba(37,99,235,0.08)' : 'none',
+                  transition: 'background-color 100ms linear',
+                  boxShadow: 'none',
                 }}
               >
                 {isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.7rem', color: '#64748b', marginBottom: '2px' }}>Label</label>
+                      <label
+                        style={{
+                          display: 'block',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.68rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          color: '#525252',
+                          marginBottom: '2px',
+                        }}
+                      >
+                        Label
+                      </label>
                       <select
                         value={editLabel}
                         onChange={(e) => setEditLabel(e.target.value)}
                         style={{
                           width: '100%',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid #cbd5e1',
+                          padding: '5px 8px',
+                          borderRadius: 0,
+                          border: '1.5px solid #000000',
                           fontSize: '0.8rem',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          background: '#ffffff',
+                          color: '#000000',
                         }}
                       >
                         {taxonomy?.labels?.map((lbl) => (
@@ -169,7 +214,19 @@ export default function AnnotationPanel({
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.7rem', color: '#64748b', marginBottom: '2px' }}>Note</label>
+                      <label
+                        style={{
+                          display: 'block',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.68rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          color: '#525252',
+                          marginBottom: '2px',
+                        }}
+                      >
+                        Note
+                      </label>
                       <input
                         type="text"
                         value={editNote}
@@ -177,11 +234,14 @@ export default function AnnotationPanel({
                         placeholder="Add a note..."
                         style={{
                           width: '100%',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid #cbd5e1',
+                          padding: '5px 8px',
+                          borderRadius: 0,
+                          border: '1.5px solid #000000',
                           fontSize: '0.8rem',
+                          fontFamily: '"Source Serif 4", Georgia, serif',
                           boxSizing: 'border-box',
+                          background: '#ffffff',
+                          color: '#000000',
                         }}
                       />
                     </div>
@@ -192,50 +252,69 @@ export default function AnnotationPanel({
                         onClick={cancelEdit}
                         style={{
                           padding: '4px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid #e2e8f0',
-                          background: '#fff',
+                          borderRadius: 0,
+                          border: '1px solid #000000',
+                          background: '#ffffff',
+                          color: '#000000',
                           cursor: 'pointer',
                           fontSize: '0.75rem',
                         }}
                       >
-                        <X size={12} />
+                        <X size={12} strokeWidth={1.5} />
                       </button>
                       <button
                         type="button"
                         onClick={(e) => saveEdit(ann, e)}
                         style={{
                           padding: '4px 8px',
-                          borderRadius: '4px',
-                          border: 'none',
-                          background: '#2563eb',
-                          color: '#fff',
+                          borderRadius: 0,
+                          border: '1px solid #000000',
+                          background: '#000000',
+                          color: '#ffffff',
                           cursor: 'pointer',
                           fontSize: '0.75rem',
                         }}
                       >
-                        <Check size={12} />
+                        <Check size={12} strokeWidth={1.5} />
                       </button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px',
+                      }}
+                    >
                       <span
                         style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          backgroundColor: badge.bg,
-                          color: badge.text,
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          padding: '2px 6px',
+                          borderRadius: 0,
+                          border: '1px solid #000000',
+                          backgroundColor: style.badge,
+                          color: style.badgeText || '#000000',
                         }}
                       >
                         {ann.label}
                       </span>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }} title="Optimistic version">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span
+                          style={{
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.68rem',
+                            color: '#525252',
+                          }}
+                          title="Optimistic version"
+                        >
                           v{ann.version}
                         </span>
                         <button
@@ -245,12 +324,12 @@ export default function AnnotationPanel({
                             border: 'none',
                             background: 'transparent',
                             cursor: 'pointer',
-                            color: '#64748b',
+                            color: '#000000',
                             padding: '2px',
                           }}
                           title="Edit annotation"
                         >
-                          <Edit2 size={13} />
+                          <Edit2 size={13} strokeWidth={1.5} />
                         </button>
                         <button
                           type="button"
@@ -259,21 +338,23 @@ export default function AnnotationPanel({
                             border: 'none',
                             background: 'transparent',
                             cursor: 'pointer',
-                            color: '#ef4444',
+                            color: '#000000',
                             padding: '2px',
                           }}
                           title="Delete annotation"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={13} strokeWidth={1.5} />
                         </button>
                       </div>
                     </div>
 
                     <p
                       style={{
-                        margin: '0 0 4px 0',
-                        fontSize: '0.85rem',
-                        color: '#1e293b',
+                        margin: '0 0 6px 0',
+                        fontFamily: '"Source Serif 4", Georgia, serif',
+                        fontSize: '0.88rem',
+                        lineHeight: 1.45,
+                        color: '#000000',
                         fontStyle: 'italic',
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
@@ -285,21 +366,47 @@ export default function AnnotationPanel({
                     </p>
 
                     {ann.note && (
-                      <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>
-                        <span style={{ fontWeight: 500 }}>Note:</span> {ann.note}
+                      <p
+                        style={{
+                          margin: '4px 0 0 0',
+                          fontFamily: '"Source Serif 4", Georgia, serif',
+                          fontSize: '0.78rem',
+                          color: '#525252',
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, fontFamily: '"JetBrains Mono", monospace' }}>NOTE:</span>{' '}
+                        {ann.note}
                       </p>
                     )}
 
                     {/* Adjust Boundaries & Overlapping Layers for selected annotation */}
                     {isSelected && (
-                      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
+                      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #000000' }}>
                         {/* Adjust Controls */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
+                          <span
+                            style={{
+                              fontFamily: '"JetBrains Mono", monospace',
+                              fontSize: '0.68rem',
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                              color: '#525252',
+                            }}
+                          >
                             Adjust Boundaries:
                           </span>
                           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#475569' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: '0.72rem',
+                                color: '#000000',
+                              }}
+                            >
                               <span>Start ({ann.start}):</span>
                               <button
                                 type="button"
@@ -308,7 +415,15 @@ export default function AnnotationPanel({
                                   e.stopPropagation();
                                   onUpdate({ id: ann.id, data: { start: Math.max(0, ann.start - 1), version: ann.version } });
                                 }}
-                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                                style={{
+                                  padding: '1px 6px',
+                                  fontSize: '0.75rem',
+                                  borderRadius: 0,
+                                  border: '1px solid #000000',
+                                  background: '#ffffff',
+                                  color: '#000000',
+                                  cursor: 'pointer',
+                                }}
                               >
                                 -
                               </button>
@@ -321,12 +436,29 @@ export default function AnnotationPanel({
                                     onUpdate({ id: ann.id, data: { start: ann.start + 1, version: ann.version } });
                                   }
                                 }}
-                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                                style={{
+                                  padding: '1px 6px',
+                                  fontSize: '0.75rem',
+                                  borderRadius: 0,
+                                  border: '1px solid #000000',
+                                  background: '#ffffff',
+                                  color: '#000000',
+                                  cursor: 'pointer',
+                                }}
                               >
                                 +
                               </button>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#475569' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: '0.72rem',
+                                color: '#000000',
+                              }}
+                            >
                               <span>End ({ann.end}):</span>
                               <button
                                 type="button"
@@ -337,7 +469,15 @@ export default function AnnotationPanel({
                                     onUpdate({ id: ann.id, data: { end: ann.end - 1, version: ann.version } });
                                   }
                                 }}
-                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                                style={{
+                                  padding: '1px 6px',
+                                  fontSize: '0.75rem',
+                                  borderRadius: 0,
+                                  border: '1px solid #000000',
+                                  background: '#ffffff',
+                                  color: '#000000',
+                                  cursor: 'pointer',
+                                }}
                               >
                                 -
                               </button>
@@ -348,7 +488,15 @@ export default function AnnotationPanel({
                                   e.stopPropagation();
                                   onUpdate({ id: ann.id, data: { end: ann.end + 1, version: ann.version } });
                                 }}
-                                style={{ padding: '1px 6px', fontSize: '0.75rem', borderRadius: '3px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                                style={{
+                                  padding: '1px 6px',
+                                  fontSize: '0.75rem',
+                                  borderRadius: 0,
+                                  border: '1px solid #000000',
+                                  background: '#ffffff',
+                                  color: '#000000',
+                                  cursor: 'pointer',
+                                }}
                               >
                                 +
                               </button>
@@ -365,9 +513,29 @@ export default function AnnotationPanel({
                           );
                           if (overlapping.length === 0) return null;
                           return (
-                            <div style={{ marginTop: '6px', padding: '6px 8px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Layers size={10} />
+                            <div
+                              style={{
+                                marginTop: '6px',
+                                padding: '6px 8px',
+                                background: '#f5f5f5',
+                                borderRadius: 0,
+                                border: '1px solid #000000',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: '0.68rem',
+                                  color: '#525252',
+                                  fontWeight: 600,
+                                  textTransform: 'uppercase',
+                                  marginBottom: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                }}
+                              >
+                                <Layers size={10} strokeWidth={1.5} />
                                 <span>Other overlapping layers ({overlapping.length}):</span>
                               </div>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -381,13 +549,14 @@ export default function AnnotationPanel({
                                     }}
                                     style={{
                                       padding: '2px 6px',
-                                      fontSize: '0.7rem',
-                                      borderRadius: '4px',
-                                      border: '1px solid #cbd5e1',
+                                      fontFamily: '"JetBrains Mono", monospace',
+                                      fontSize: '0.68rem',
+                                      borderRadius: 0,
+                                      border: '1px solid #000000',
                                       background: '#ffffff',
                                       cursor: 'pointer',
-                                      color: '#1e293b',
-                                      fontWeight: 500,
+                                      color: '#000000',
+                                      fontWeight: 600,
                                     }}
                                   >
                                     {oa.label} (#{oa.id})
@@ -403,12 +572,28 @@ export default function AnnotationPanel({
                           const defaultScope = getDefaultSuggestionScope(ann.label, annotations);
                           const currentScope = findMoreScopes[ann.id] || defaultScope;
                           return (
-                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #000000' }}>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  marginBottom: '6px',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontFamily: '"JetBrains Mono", monospace',
+                                    fontSize: '0.68rem',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    color: '#525252',
+                                  }}
+                                >
                                   Find Similar Passages:
                                 </span>
-                                <div style={{ display: 'flex', gap: '2px', background: '#f1f5f9', padding: '2px', borderRadius: '4px' }}>
+                                <div style={{ display: 'flex', border: '1px solid #000000' }}>
                                   <button
                                     type="button"
                                     data-testid={`panel-scope-passage-${ann.id}`}
@@ -418,12 +603,13 @@ export default function AnnotationPanel({
                                     }}
                                     style={{
                                       padding: '2px 6px',
+                                      fontFamily: '"JetBrains Mono", monospace',
                                       fontSize: '0.68rem',
-                                      fontWeight: currentScope === 'passage' ? 600 : 400,
-                                      borderRadius: '3px',
+                                      fontWeight: currentScope === 'passage' ? 700 : 400,
+                                      borderRadius: 0,
                                       border: 'none',
-                                      background: currentScope === 'passage' ? '#ffffff' : 'transparent',
-                                      color: currentScope === 'passage' ? '#1e293b' : '#64748b',
+                                      background: currentScope === 'passage' ? '#000000' : '#ffffff',
+                                      color: currentScope === 'passage' ? '#ffffff' : '#000000',
                                       cursor: 'pointer',
                                     }}
                                   >
@@ -438,12 +624,14 @@ export default function AnnotationPanel({
                                     }}
                                     style={{
                                       padding: '2px 6px',
+                                      fontFamily: '"JetBrains Mono", monospace',
                                       fontSize: '0.68rem',
-                                      fontWeight: currentScope === 'category' ? 600 : 400,
-                                      borderRadius: '3px',
+                                      fontWeight: currentScope === 'category' ? 700 : 400,
+                                      borderRadius: 0,
                                       border: 'none',
-                                      background: currentScope === 'category' ? '#ffffff' : 'transparent',
-                                      color: currentScope === 'category' ? '#1e293b' : '#64748b',
+                                      borderLeft: '1px solid #000000',
+                                      background: currentScope === 'category' ? '#000000' : '#ffffff',
+                                      color: currentScope === 'category' ? '#ffffff' : '#000000',
                                       cursor: 'pointer',
                                     }}
                                   >
@@ -464,19 +652,23 @@ export default function AnnotationPanel({
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  gap: '4px',
-                                  padding: '5px 10px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #bfdbfe',
-                                  background: '#eff6ff',
-                                  color: '#1d4ed8',
-                                  fontSize: '0.75rem',
+                                  gap: '6px',
+                                  padding: '6px 12px',
+                                  borderRadius: 0,
+                                  border: '1.5px solid #000000',
+                                  background: '#000000',
+                                  color: '#ffffff',
+                                  fontFamily: '"JetBrains Mono", monospace',
+                                  fontSize: '0.72rem',
                                   fontWeight: 600,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.06em',
                                   cursor: isFindingMore ? 'not-allowed' : 'pointer',
                                   opacity: isFindingMore ? 0.6 : 1,
+                                  transition: 'none',
                                 }}
                               >
-                                <Sparkles size={12} />
+                                <Sparkles size={12} strokeWidth={1.5} color="#ffffff" />
                                 {isFindingMore ? 'Finding similar...' : 'Find more like this'}
                               </button>
                             </div>

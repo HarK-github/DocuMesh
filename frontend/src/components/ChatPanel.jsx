@@ -15,6 +15,7 @@ import { useChat } from '../hooks/useApi';
 
 /**
  * CitationChip component for rendering clickable citation pills.
+ * Maintains exact element hierarchy: [mainButton, optionalSaveButton] inside root span.
  */
 export function CitationChip({
   citation,
@@ -45,33 +46,33 @@ export function CitationChip({
     switch (citation.type) {
       case 'sentence':
         return {
-          bg: '#f1f5f9',
-          border: '#cbd5e1',
-          text: '#334155',
+          bg: '#ffffff',
+          border: '#000000',
+          text: '#000000',
           label: `[s${citation.id}] Sentence`,
           Icon: FileText,
         };
       case 'annotation':
         return {
-          bg: '#eff6ff',
-          border: '#93c5fd',
-          text: '#1d4ed8',
+          bg: '#000000',
+          border: '#000000',
+          text: '#ffffff',
           label: `[a${citation.id}] Annotation`,
           Icon: Bookmark,
         };
       case 'relation':
         return {
-          bg: '#faf5ff',
-          border: '#d8b4fe',
-          text: '#7e22ce',
+          bg: '#f5f5f5',
+          border: '#000000',
+          text: '#000000',
           label: `[r${citation.id}] Relation`,
           Icon: Network,
         };
       default:
         return {
-          bg: '#f8fafc',
-          border: '#e2e8f0',
-          text: '#64748b',
+          bg: '#ffffff',
+          border: '#000000',
+          text: '#000000',
           label: `[#${citation.id}]`,
           Icon: Sparkles,
         };
@@ -98,18 +99,19 @@ export function CitationChip({
           alignItems: 'center',
           gap: '4px',
           padding: '2px 8px',
-          borderRadius: '12px',
+          borderRadius: 0,
           border: `1px solid ${style.border}`,
           background: style.bg,
           color: style.text,
-          fontSize: '0.72rem',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '0.7rem',
           fontWeight: 600,
           cursor: 'pointer',
-          transition: 'all 0.15s ease',
+          transition: 'none',
         }}
         title={`Jump to ${citation.type} #${citation.id}`}
       >
-        <IconComponent size={11} />
+        <IconComponent size={11} strokeWidth={1.5} color={style.text} />
         <span>{style.label}</span>
       </button>
 
@@ -126,16 +128,19 @@ export function CitationChip({
             alignItems: 'center',
             gap: '2px',
             padding: '2px 6px',
-            borderRadius: '10px',
-            border: '1px solid #bbf7d0',
-            background: isSaved ? '#f0fdf4' : '#ffffff',
-            color: isSaved ? '#16a34a' : '#15803d',
+            borderRadius: 0,
+            border: '1px solid #000000',
+            background: isSaved ? '#000000' : '#ffffff',
+            color: isSaved ? '#ffffff' : '#000000',
+            fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.68rem',
+            fontWeight: 600,
             cursor: isSaved ? 'default' : 'pointer',
+            transition: 'none',
           }}
           title={isSaved ? 'Annotated' : 'Save this sentence as an annotation'}
         >
-          {isSaved ? <Check size={10} /> : <PlusCircle size={10} />}
+          {isSaved ? <Check size={10} strokeWidth={1.5} /> : <PlusCircle size={10} strokeWidth={1.5} />}
           <span>{isSaved ? 'Saved' : 'Annotate'}</span>
         </button>
       )}
@@ -156,7 +161,7 @@ export default function ChatPanel({
     {
       role: 'assistant',
       content:
-        'Hello! I can answer questions about this document using its text and relationship graph. Answers include clickable citations that highlight referenced passages.',
+        'Hello. I can assist in examining this text and its relationship graph. Responses include clickable citations corresponding to passages and entities.',
       citations: [],
     },
   ]);
@@ -180,12 +185,10 @@ export default function ChatPanel({
     setErrorMessage(null);
     setInput('');
 
-    // Add user message to state
     const userMessage = { role: 'user', content: query };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
 
-    // Prepare history: dialogue turns excluding system greeting
     const historyTurns = updatedMessages
       .slice(1, -1)
       .map((m) => ({ role: m.role, content: m.content }));
@@ -242,10 +245,10 @@ export default function ChatPanel({
         flexDirection: 'column',
         height: '100%',
         background: '#ffffff',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
+        borderRadius: 0,
+        border: '1px solid #000000',
         overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: 'none',
       }}
     >
       {/* Header */}
@@ -253,39 +256,48 @@ export default function ChatPanel({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '10px',
           padding: '12px 16px',
-          borderBottom: '1px solid #e2e8f0',
-          background: '#f8fafc',
+          borderBottom: '2px solid #000000',
+          background: '#ffffff',
         }}
       >
         <div
           style={{
-            width: '26px',
-            height: '26px',
-            borderRadius: '6px',
-            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+            width: '28px',
+            height: '28px',
+            borderRadius: 0,
+            background: '#000000',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: '#ffffff',
           }}
         >
-          <MessageSquare size={14} />
+          <MessageSquare size={14} strokeWidth={1.5} color="#ffffff" />
         </div>
         <div>
           <h2
             style={{
               margin: 0,
-              fontSize: '0.85rem',
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontSize: '0.95rem',
               fontWeight: 700,
-              color: '#0f172a',
+              color: '#000000',
+              letterSpacing: '-0.01em',
             }}
           >
             Document Chat
           </h2>
-          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
-            Graph-aware Q&amp;A with citations
+          <span
+            style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.68rem',
+              color: '#525252',
+              letterSpacing: '0.04em',
+            }}
+          >
+            GRAPH-AWARE Q&amp;A
           </span>
         </div>
       </div>
@@ -295,10 +307,10 @@ export default function ChatPanel({
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '14px',
+          padding: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '14px',
         }}
       >
         {messages.map((msg, idx) => (
@@ -312,17 +324,15 @@ export default function ChatPanel({
           >
             <div
               style={{
-                maxWidth: '90%',
-                padding: '10px 14px',
-                borderRadius: '10px',
-                fontSize: '0.85rem',
-                lineHeight: 1.5,
-                background: msg.role === 'user' ? '#2563eb' : '#f1f5f9',
-                color: msg.role === 'user' ? '#ffffff' : '#1e293b',
-                border:
-                  msg.role === 'user'
-                    ? '1px solid #1d4ed8'
-                    : '1px solid #e2e8f0',
+                maxWidth: '92%',
+                padding: '12px 16px',
+                borderRadius: 0,
+                fontSize: '0.88rem',
+                lineHeight: 1.55,
+                fontFamily: '"Source Serif 4", Georgia, serif',
+                background: msg.role === 'user' ? '#000000' : '#ffffff',
+                color: msg.role === 'user' ? '#ffffff' : '#000000',
+                border: msg.role === 'user' ? '1.5px solid #000000' : '1.5px solid #000000',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
               }}
@@ -334,7 +344,7 @@ export default function ChatPanel({
             {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
               <div
                 style={{
-                  marginTop: '6px',
+                  marginTop: '8px',
                   display: 'flex',
                   flexWrap: 'wrap',
                   gap: '4px',
@@ -343,10 +353,13 @@ export default function ChatPanel({
               >
                 <span
                   style={{
+                    fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.68rem',
-                    fontWeight: 600,
-                    color: '#64748b',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: '#525252',
                     marginRight: '2px',
+                    letterSpacing: '0.05em',
                   }}
                 >
                   Citations:
@@ -368,8 +381,17 @@ export default function ChatPanel({
         ))}
 
         {chatMutation.isPending && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.8rem' }}>
-            <Loader2 size={15} className="spin" color="#2563eb" />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.78rem',
+            }}
+          >
+            <Loader2 size={14} className="spin" color="#000000" />
             <span>Analyzing document and annotation graph...</span>
           </div>
         )}
@@ -381,19 +403,20 @@ export default function ChatPanel({
       {errorMessage && (
         <div
           style={{
-            margin: '0 12px 8px 12px',
-            padding: '8px 12px',
-            background: '#fee2e2',
-            border: '1px solid #fca5a5',
-            borderRadius: '8px',
-            color: '#991b1b',
-            fontSize: '0.78rem',
+            margin: '0 12px 10px 12px',
+            padding: '10px 12px',
+            background: '#000000',
+            border: '1px solid #000000',
+            borderRadius: 0,
+            color: '#ffffff',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.75rem',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
           }}
         >
-          <AlertCircle size={15} color="#dc2626" style={{ flexShrink: 0 }} />
+          <AlertCircle size={15} color="#ffffff" style={{ flexShrink: 0 }} />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -404,7 +427,7 @@ export default function ChatPanel({
         style={{
           display: 'flex',
           padding: '10px 12px',
-          borderTop: '1px solid #e2e8f0',
+          borderTop: '2px solid #000000',
           background: '#ffffff',
           gap: '8px',
         }}
@@ -417,11 +440,14 @@ export default function ChatPanel({
           disabled={chatMutation.isPending}
           style={{
             flex: 1,
-            padding: '8px 12px',
-            borderRadius: '8px',
-            border: '1px solid #cbd5e1',
+            padding: '8px 10px',
+            borderRadius: 0,
+            border: '1.5px solid #000000',
+            fontFamily: '"Source Serif 4", Georgia, serif',
             fontSize: '0.84rem',
             outline: 'none',
+            background: '#ffffff',
+            color: '#000000',
           }}
         />
         <button
@@ -429,22 +455,23 @@ export default function ChatPanel({
           disabled={!input.trim() || chatMutation.isPending}
           style={{
             padding: '8px 14px',
-            borderRadius: '8px',
-            border: 'none',
-            background: '#2563eb',
+            borderRadius: 0,
+            border: '1.5px solid #000000',
+            background: '#000000',
             color: '#ffffff',
             cursor: !input.trim() || chatMutation.isPending ? 'not-allowed' : 'pointer',
             opacity: !input.trim() || chatMutation.isPending ? 0.6 : 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            transition: 'none',
           }}
           title="Send question"
         >
           {chatMutation.isPending ? (
-            <Loader2 size={15} className="spin" />
+            <Loader2 size={15} className="spin" color="#ffffff" />
           ) : (
-            <Send size={15} />
+            <Send size={15} strokeWidth={1.5} color="#ffffff" />
           )}
         </button>
       </form>

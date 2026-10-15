@@ -147,17 +147,18 @@ def get_document_pdf(
     try:
         pdf_doc = pymupdf.open(str(pdf_path))
         color_map = {
-            "Problem": (0.95, 0.4, 0.4),      # light red
-            "Solution": (0.3, 0.8, 0.4),     # light green
-            "Claim": (0.95, 0.7, 0.2),       # warm amber
-            "Evidence": (0.3, 0.6, 0.95),    # soft blue
-            "Method": (0.7, 0.4, 0.9),       # soft purple
-            "Assumption": (0.6, 0.6, 0.7),   # slate gray
+            "Claim": (1.0, 0.95, 0.60),       # pale yellow
+            "Evidence": (0.75, 0.90, 1.0),     # pale sky blue
+            "Definition": (0.90, 0.80, 1.0),   # pale lavender
+            "Method": (0.75, 0.96, 0.80),      # pale emerald green
+            "Result": (1.0, 0.85, 0.70),       # pale orange
+            "Problem": (1.0, 0.75, 0.75),      # pale rose
+            "Solution": (0.70, 0.96, 0.92),    # pale teal
         }
         for a in anns:
             if not a.quote or not a.quote.strip():
                 continue
-            stroke_col = color_map.get(a.label, (0.95, 0.85, 0.3))
+            stroke_col = color_map.get(a.label, (1.0, 0.95, 0.60))
             for page in pdf_doc:
                 rects = page.search_for(a.quote)
                 if rects:

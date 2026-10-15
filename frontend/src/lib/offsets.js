@@ -70,6 +70,19 @@ export function findTextOffsets(cleanText, selectionText, hintOffset = 0) {
     };
   }
 
+  // 3. Case-insensitive match fallback
+  const patternI = new RegExp(words.join('\\s+'), 'gi');
+  let matchI = patternI.exec(cleanText);
+  if (matchI) {
+    const start = matchI.index;
+    const end = start + matchI[0].length;
+    return {
+      start,
+      end,
+      quote: cleanText.slice(start, end),
+    };
+  }
+
   return null;
 }
 

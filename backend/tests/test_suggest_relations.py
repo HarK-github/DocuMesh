@@ -188,3 +188,183 @@ def test_suggest_relations_scoped_seed(relation_test_setup) -> None:
     assert job_data["status"] == "done"
     assert job_data["result"]["suggested_count"] > 0
 
+
+def test_suggest_relations_persists_cos_score(relation_test_setup) -> None:
+    """Verify cos_score is persisted on suggested Relation and exposed via API."""
+    client, doc_id, _, _, SessionFactory = relation_test_setup
+
+    fake_client = FakeLLMClient(default_type="supports")
+    set_shared_llm_client(fake_client)
+
+    res = client.post(f"/documents/{doc_id}/suggest-relations")
+    job_id = res.json()["job_id"]
+
+    for _ in range(20):
+        time.sleep(0.1)
+        job_res = client.get(f"/jobs/{job_id}").json()
+        if job_res["status"] in ("done", "failed"):
+            break
+
+    with SessionFactory() as session:
+        rel = session.query(Relation).filter(Relation.document_id == doc_id).first()
+        assert rel is not None
+        assert rel.cos_score is not None
+        assert rel.score == rel.cos_score
+
+    # Check /graph endpoint exposes score and cos_score
+    graph_res = client.get(f"/documents/{doc_id}/graph").json()
+    assert len(graph_res["relations"]) > 0
+    assert graph_res["relations"][0]["cos_score"] is not None
+
+
+def test_suggest_relations_prunes_skip_label_pairs(relation_test_setup) -> None:
+    """Verify Definition <-> Result pairs are pruned by label-pair filter."""
+    client, doc_id, _, _, SessionFactory = relation_test_setup
+
+    with SessionFactory() as session:
+        # Clear existing annotations and add Definition <-> Result
+        session.query(Relation).filter(Relation.document_id == doc_id).delete()
+        session.query(Annotation).filter(Annotation.document_id == doc_id).delete()
+        d_ann = Annotation(
+            document_id=doc_id,
+            start=0,
+            end=10,
+            quote="Definition of term",
+            label="Definition",
+            version=1,
+        )
+        r_ann = Annotation(
+            document_id=doc_id,
+            start=11,
+            end=25,
+            quote="Result achieved here",
+            label="Result",
+            version=1,
+        )
+        session.add_all([d_ann, r_ann])
+        session.commit()
+
+    fake_client = FakeLLMClient(default_type="supports")
+    set_shared_llm_client(fake_client)
+
+    res = client.post(f"/documents/{doc_id}/suggest-relations")
+    job_id = res.json()["job_id"]
+
+    for _ in range(20):
+        time.sleep(0.1)
+        job_res = client.get(f"/jobs/{job_id}").json()
+        if job_res["status"] in ("done", "failed"):
+            break
+
+    job_data = client.get(f"/jobs/{job_id}").json()
+    assert job_data["status"] == "done"
+    # Filter pruned the pair so 0 candidates were sent to LLM
+    assert job_data["result"]["suggested_count"] == 0
+
+
+def test_suggest_relations_caching_avoids_llm(relation_test_setup) -> None:
+    """Verify that cached relation inferences are retrieved from DB without calling LLM."""
+    client, doc_id, _, _, SessionFactory = relation_test_setup
+
+    fake_client = FakeLLMClient(default_type="supports")
+    set_shared_llm_client(fake_client)
+
+    # First run: populates cache
+    res = client.post(f"/documents/{doc_id}/suggest-relations")
+    job_id = res.json()["job_id"]
+    for _ in range(20):
+        time.sleep(0.1)
+        if client.get(f"/jobs/{job_id}").json()["status"] in ("done", "failed"):
+            break
+
+    # Verify cache has entries
+    with SessionFactory() as session:
+        from backend.app.models import RelationCache
+        caches = session.query(RelationCache).all()
+        assert len(caches) > 0
+        # Delete relation row from DB to simulate fresh discovery
+        session.query(Relation).filter(Relation.document_id == doc_id).delete()
+        session.commit()
+
+    # Second run: configure LLM to fail if invoked
+    failing_llm = FakeLLMClient(fail=True)
+    set_shared_llm_client(failing_llm)
+
+    res2 = client.post(f"/documents/{doc_id}/suggest-relations")
+    job_id2 = res2.json()["job_id"]
+    for _ in range(20):
+        time.sleep(0.1)
+        if client.get(f"/jobs/{job_id2}").json()["status"] in ("done", "failed"):
+            break
+
+    job_data2 = client.get(f"/jobs/{job_id2}").json()
+    assert job_data2["status"] == "done"
+    # Successfully retrieved from cache!
+    assert job_data2["result"]["suggested_count"] > 0
+
+
+def test_suggest_relations_rejected_pair_not_resuggested(relation_test_setup) -> None:
+    """Verify deleted/rejected relations are saved in RejectedPair and skipped in future runs."""
+    client, doc_id, _, _, SessionFactory = relation_test_setup
+
+    fake_client = FakeLLMClient(default_type="supports")
+    set_shared_llm_client(fake_client)
+
+    res = client.post(f"/documents/{doc_id}/suggest-relations")
+    job_id = res.json()["job_id"]
+    for _ in range(20):
+        time.sleep(0.1)
+        if client.get(f"/jobs/{job_id}").json()["status"] in ("done", "failed"):
+            break
+
+    # Get suggested relation ID and delete it
+    with SessionFactory() as session:
+        rel = session.query(Relation).filter(Relation.document_id == doc_id).first()
+        rel_id = rel.id
+
+    del_res = client.delete(f"/relations/{rel_id}")
+    assert del_res.status_code == 204
+
+    # Verify RejectedPair entry exists
+    with SessionFactory() as session:
+        from backend.app.models import RejectedPair
+        rejected = session.query(RejectedPair).filter(RejectedPair.document_id == doc_id).all()
+        assert len(rejected) > 0
+
+    # Re-run suggestion job: pair should be skipped
+    res2 = client.post(f"/documents/{doc_id}/suggest-relations")
+    job_id2 = res2.json()["job_id"]
+    for _ in range(20):
+        time.sleep(0.1)
+        if client.get(f"/jobs/{job_id2}").json()["status"] in ("done", "failed"):
+            break
+
+    job_data2 = client.get(f"/jobs/{job_id2}").json()
+    assert job_data2["status"] == "done"
+    assert job_data2["result"]["suggested_count"] == 0
+
+
+def test_suggest_relations_new_taxonomy_types(relation_test_setup) -> None:
+    """Verify contrasts_with, conditional_on, and precedes can be suggested."""
+    client, doc_id, _, _, SessionFactory = relation_test_setup
+
+    # Test contrasts_with
+    fake_client = FakeLLMClient(default_type="contrasts_with")
+    set_shared_llm_client(fake_client)
+
+    res = client.post(f"/documents/{doc_id}/suggest-relations")
+    job_id = res.json()["job_id"]
+    for _ in range(20):
+        time.sleep(0.1)
+        if client.get(f"/jobs/{job_id}").json()["status"] in ("done", "failed"):
+            break
+
+    job_data = client.get(f"/jobs/{job_id}").json()
+    assert job_data["status"] == "done"
+    assert job_data["result"]["suggested_count"] > 0
+
+    with SessionFactory() as session:
+        rel = session.query(Relation).filter(Relation.document_id == doc_id).first()
+        assert rel.type == "contrasts_with"
+
+

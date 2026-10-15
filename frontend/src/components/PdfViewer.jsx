@@ -21,6 +21,7 @@ function PdfPage({ pdfDoc, pageNumber, scale }) {
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const renderTaskRef = useRef(null);
+  const [pageSize, setPageSize] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,6 +33,11 @@ function PdfPage({ pdfDoc, pageNumber, scale }) {
         if (cancelled) return;
 
         const viewport = page.getViewport({ scale });
+        setPageSize({
+          width: Math.floor(viewport.width),
+          height: Math.floor(viewport.height),
+        });
+
         const canvas = canvasRef.current;
         if (!canvas || !canvas.getContext) return;
 
@@ -63,6 +69,8 @@ function PdfPage({ pdfDoc, pageNumber, scale }) {
           textLayerDiv.innerHTML = '';
           textLayerDiv.style.width = `${Math.floor(viewport.width)}px`;
           textLayerDiv.style.height = `${Math.floor(viewport.height)}px`;
+          textLayerDiv.style.setProperty('--scale-factor', `${scale}`);
+          textLayerDiv.style.setProperty('--total-scale-factor', `${scale}`);
 
           const textContent = await page.getTextContent();
           if (cancelled) return;
@@ -95,14 +103,19 @@ function PdfPage({ pdfDoc, pageNumber, scale }) {
     <div
       id={`pdf-page-${pageNumber}`}
       data-page-number={pageNumber}
+      className="page"
       style={{
         position: 'relative',
-        margin: '0 auto 20px auto',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
+        margin: '0 auto 24px auto',
+        boxShadow: 'none',
         background: '#ffffff',
-        borderRadius: '4px',
+        borderRadius: 0,
+        border: '1px solid #000000',
         overflow: 'hidden',
-        width: 'fit-content',
+        width: pageSize ? `${pageSize.width}px` : 'fit-content',
+        height: pageSize ? `${pageSize.height}px` : 'auto',
+        '--scale-factor': `${scale}`,
+        '--total-scale-factor': `${scale}`,
       }}
     >
       <canvas ref={canvasRef} style={{ display: 'block' }} />
@@ -117,6 +130,9 @@ function PdfPage({ pdfDoc, pageNumber, scale }) {
           bottom: 0,
           pointerEvents: 'auto',
           userSelect: 'text',
+          WebkitUserSelect: 'text',
+          '--scale-factor': `${scale}`,
+          '--total-scale-factor': `${scale}`,
         }}
       />
     </div>
@@ -263,38 +279,56 @@ export default function PdfViewer({
   }, [scrollToAnnotationId, annotations, pdfDoc]);
 
   // Handle user mouse-up selection on the PDF text layer
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) return;
 
     const rawStr = selection.toString().trim();
-    if (!rawStr || rawStr.length < 2) return;
+    if (!rawStr || rawStr.length < 1) return;
 
     let matched = cleanText ? findTextOffsets(cleanText, rawStr) : null;
     if (!matched) {
       matched = { start: 0, end: rawStr.length, quote: rawStr };
     }
 
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (!range) return;
+
+    let rect = range.getBoundingClientRect();
+    if (!rect || (rect.width === 0 && rect.height === 0)) {
+      const clientRects = range.getClientRects();
+      if (clientRects.length > 0) {
+        rect = clientRects[0];
+      }
+    }
+
     const containerRect = containerRef.current?.getBoundingClientRect() || {
       top: 0,
       left: 0,
       width: 800,
+      height: 600,
     };
 
     const scrollTop = containerRef.current ? containerRef.current.scrollTop : 0;
     const scrollLeft = containerRef.current ? containerRef.current.scrollLeft : 0;
 
+    const activeLabel = selectedLabel || taxonomy?.labels?.[0] || 'Claim';
+    if (!selectedLabel) {
+      setSelectedLabel(activeLabel);
+    }
+
+    const clientX = rect && rect.width > 0 ? rect.left + rect.width / 2 : (e?.clientX || containerRect.left + containerRect.width / 2);
+    const clientY = rect && rect.bottom > 0 ? rect.bottom : (e?.clientY || containerRect.top + 100);
+
     setSelectionRange(matched);
-    setScope(getDefaultSuggestionScope(selectedLabel, annotations));
+    setScope(getDefaultSuggestionScope(activeLabel, annotations));
     setPopoverPos({
-      top: rect.bottom - containerRect.top + scrollTop + 8,
+      top: clientY - containerRect.top + scrollTop + 8,
       left: Math.max(
         10,
         Math.min(
-          rect.left - containerRect.left + scrollLeft + rect.width / 2 - 145,
-          (containerRect.width || 800) - 310
+          clientX - containerRect.left + scrollLeft - 155,
+          (containerRect.width || 800) - 325
         )
       ),
     });
@@ -316,13 +350,20 @@ export default function PdfViewer({
 
   const handleSave = (e) => {
     if (e) e.preventDefault();
-    if (!selectionRange || !selectedLabel || isMutating) return;
+    const activeLabel = selectedLabel || taxonomy?.labels?.[0] || 'Claim';
+    if (!selectionRange || !activeLabel || isMutating) return;
+
+    let range = selectionRange;
+    if (cleanText) {
+      const rematch = findTextOffsets(cleanText, selectionRange.quote);
+      if (rematch) range = rematch;
+    }
 
     onCreateAnnotation({
-      start: selectionRange.start,
-      end: selectionRange.end,
-      quote: selectionRange.quote,
-      label: selectedLabel,
+      start: range.start,
+      end: range.end,
+      quote: range.quote,
+      label: activeLabel,
       note: note.trim() || null,
       x: 200 + Math.random() * 50,
       y: 150 + Math.random() * 50,
@@ -332,13 +373,20 @@ export default function PdfViewer({
 
   const handleSaveAndFindMore = (e) => {
     if (e) e.preventDefault();
-    if (!selectionRange || !selectedLabel || isMutating) return;
+    const activeLabel = selectedLabel || taxonomy?.labels?.[0] || 'Claim';
+    if (!selectionRange || !activeLabel || isMutating) return;
+
+    let range = selectionRange;
+    if (cleanText) {
+      const rematch = findTextOffsets(cleanText, selectionRange.quote);
+      if (rematch) range = rematch;
+    }
 
     onSaveAndFindMore({
-      start: selectionRange.start,
-      end: selectionRange.end,
-      quote: selectionRange.quote,
-      label: selectedLabel,
+      start: range.start,
+      end: range.end,
+      quote: range.quote,
+      label: activeLabel,
       note: note.trim() || null,
       scope: scope,
       x: 200 + Math.random() * 50,
@@ -360,9 +408,11 @@ export default function PdfViewer({
           alignItems: 'center',
           justifyContent: 'center',
           background: '#ffffff',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-          color: '#94a3b8',
+          borderRadius: 0,
+          border: '1px solid #000000',
+          color: '#525252',
+          fontFamily: '"Source Serif 4", Georgia, serif',
+          fontStyle: 'italic',
         }}
       >
         No document selected.
@@ -380,10 +430,11 @@ export default function PdfViewer({
         display: 'flex',
         flexDirection: 'column',
         background: '#ffffff',
-        borderRadius: '12px',
-        border: '1px solid #e2e8f0',
+        borderRadius: 0,
+        border: '1px solid #000000',
         overflow: 'hidden',
         position: 'relative',
+        boxShadow: 'none',
       }}
     >
       {/* Header Toolbar */}
@@ -392,19 +443,28 @@ export default function PdfViewer({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '8px 16px',
-          borderBottom: '1px solid #e2e8f0',
-          background: '#f8fafc',
+          padding: '10px 16px',
+          borderBottom: '2px solid #000000',
+          background: '#ffffff',
           fontSize: '0.8rem',
-          color: '#475569',
+          color: '#000000',
           flexShrink: 0,
-          gap: '8px',
+          gap: '10px',
           flexWrap: 'wrap',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-            <FileText size={15} color="#2563eb" /> PDF Document
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+            }}
+          >
+            <FileText size={15} strokeWidth={1.5} color="#000000" /> PDF Document
           </span>
           <button
             type="button"
@@ -413,15 +473,18 @@ export default function PdfViewer({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              padding: '2px 8px',
-              borderRadius: '9999px',
-              fontSize: '0.72rem',
+              padding: '3px 8px',
+              borderRadius: 0,
+              fontSize: '0.7rem',
               fontWeight: 600,
+              fontFamily: '"JetBrains Mono", monospace',
               cursor: 'pointer',
-              border: showHighlights ? '1px solid #bfdbfe' : '1px solid #cbd5e1',
-              background: showHighlights ? '#eff6ff' : '#f1f5f9',
-              color: showHighlights ? '#2563eb' : '#64748b',
-              transition: 'all 0.15s ease',
+              border: '1px solid #000000',
+              background: showHighlights ? '#000000' : '#ffffff',
+              color: showHighlights ? '#ffffff' : '#000000',
+              transition: 'none',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
             }}
             title={
               showHighlights
@@ -429,7 +492,7 @@ export default function PdfViewer({
                 : 'Click to show highlighted annotations on PDF'
             }
           >
-            <Highlighter size={12} />
+            <Highlighter size={12} strokeWidth={1.5} color={showHighlights ? '#ffffff' : '#000000'} />
             {showHighlights
               ? `Highlights: ON (${annotationsCount})`
               : 'Highlights: OFF'}
@@ -437,12 +500,14 @@ export default function PdfViewer({
           {numPages > 0 && (
             <span
               style={{
-                fontSize: '0.72rem',
-                color: '#64748b',
-                background: '#f1f5f9',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.7rem',
+                color: '#000000',
+                background: '#ffffff',
                 padding: '2px 6px',
-                borderRadius: '4px',
-                border: '1px solid #e2e8f0',
+                borderRadius: 0,
+                border: '1px solid #000000',
+                textTransform: 'uppercase',
               }}
             >
               {numPages} {numPages === 1 ? 'page' : 'pages'}
@@ -456,11 +521,9 @@ export default function PdfViewer({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '2px',
               background: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
-              padding: '2px',
+              border: '1px solid #000000',
+              borderRadius: 0,
             }}
           >
             <button
@@ -470,22 +533,26 @@ export default function PdfViewer({
                 border: 'none',
                 background: 'transparent',
                 cursor: 'pointer',
-                color: '#475569',
-                padding: '2px 4px',
+                color: '#000000',
+                padding: '3px 6px',
                 display: 'flex',
                 alignItems: 'center',
               }}
               title="Zoom Out"
             >
-              <ZoomOut size={13} />
+              <ZoomOut size={13} strokeWidth={1.5} />
             </button>
             <span
               style={{
+                fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.72rem',
-                minWidth: '34px',
+                minWidth: '38px',
                 textAlign: 'center',
                 fontWeight: 600,
-                color: '#334155',
+                color: '#000000',
+                borderLeft: '1px solid #000000',
+                borderRight: '1px solid #000000',
+                padding: '2px 4px',
               }}
             >
               {Math.round(scale * 100)}%
@@ -497,30 +564,31 @@ export default function PdfViewer({
                 border: 'none',
                 background: 'transparent',
                 cursor: 'pointer',
-                color: '#475569',
-                padding: '2px 4px',
+                color: '#000000',
+                padding: '3px 6px',
                 display: 'flex',
                 alignItems: 'center',
               }}
               title="Zoom In"
             >
-              <ZoomIn size={13} />
+              <ZoomIn size={13} strokeWidth={1.5} />
             </button>
             <button
               type="button"
               onClick={zoomReset}
               style={{
                 border: 'none',
+                borderLeft: '1px solid #000000',
                 background: 'transparent',
                 cursor: 'pointer',
-                color: '#64748b',
-                padding: '2px 4px',
+                color: '#000000',
+                padding: '3px 6px',
                 display: 'flex',
                 alignItems: 'center',
               }}
               title="Reset Zoom (Fit)"
             >
-              <RotateCcw size={12} />
+              <RotateCcw size={12} strokeWidth={1.5} />
             </button>
           </div>
 
@@ -531,14 +599,19 @@ export default function PdfViewer({
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              color: '#64748b',
+              color: '#000000',
               textDecoration: 'none',
-              fontWeight: 500,
-              fontSize: '0.75rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontWeight: 600,
+              fontSize: '0.72rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              padding: '4px 8px',
+              border: '1px solid #000000',
             }}
             title="Download PDF file"
           >
-            <Download size={13} />
+            <Download size={12} strokeWidth={1.5} />
             <span>Download</span>
           </a>
           <a
@@ -549,15 +622,21 @@ export default function PdfViewer({
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              color: '#2563eb',
+              color: '#ffffff',
+              background: '#000000',
               textDecoration: 'none',
-              fontWeight: 500,
-              fontSize: '0.75rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontWeight: 600,
+              fontSize: '0.72rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              padding: '4px 8px',
+              border: '1px solid #000000',
             }}
             title="Open in new browser tab"
           >
             <span>Open in Tab</span>
-            <ExternalLink size={12} />
+            <ExternalLink size={12} strokeWidth={1.5} color="#ffffff" />
           </a>
         </div>
       </div>
@@ -570,7 +649,7 @@ export default function PdfViewer({
           flex: 1,
           overflowY: 'auto',
           overflowX: 'auto',
-          background: '#f1f5f9',
+          background: '#f5f5f5',
           padding: '24px 16px',
           position: 'relative',
         }}
@@ -583,12 +662,13 @@ export default function PdfViewer({
               alignItems: 'center',
               justifyContent: 'center',
               padding: '60px 0',
-              color: '#64748b',
-              gap: '8px',
+              color: '#000000',
+              gap: '10px',
+              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
-            <Loader2 size={24} className="spin" color="#2563eb" />
-            <span style={{ fontSize: '0.85rem' }}>Loading interactive PDF pages...</span>
+            <Loader2 size={24} className="spin" color="#000000" />
+            <span style={{ fontSize: '0.8rem', letterSpacing: '0.04em' }}>LOADING INTERACTIVE PDF PAGES...</span>
           </div>
         )}
 
@@ -600,12 +680,13 @@ export default function PdfViewer({
               alignItems: 'center',
               justifyContent: 'center',
               padding: '40px 20px',
-              color: '#ef4444',
+              color: '#000000',
               gap: '8px',
+              fontFamily: '"JetBrains Mono", monospace',
             }}
           >
-            <AlertCircle size={24} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{loadError}</span>
+            <AlertCircle size={24} color="#000000" />
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{loadError}</span>
           </div>
         )}
 
