@@ -136,9 +136,16 @@ def rank_sentences(
     if not positive_embeddings:
         return []
 
-    # Stack embeddings
+    # Stack and normalize embeddings
     pos_matrix = np.vstack(positive_embeddings)
-    neg_matrix = np.vstack(negative_embeddings) if negative_embeddings else None
+    pos_norms = np.linalg.norm(pos_matrix, axis=1, keepdims=True)
+    pos_matrix = pos_matrix / np.where(pos_norms == 0, 1.0, pos_norms)
+
+    neg_matrix = None
+    if negative_embeddings:
+        neg_matrix = np.vstack(negative_embeddings)
+        neg_norms = np.linalg.norm(neg_matrix, axis=1, keepdims=True)
+        neg_matrix = neg_matrix / np.where(neg_norms == 0, 1.0, neg_norms)
 
     scored_candidates = []
 
@@ -157,15 +164,16 @@ def rank_sentences(
         if sent_emb is None:
             continue
 
+        sent_norm = np.linalg.norm(sent_emb)
+        sent_vec = sent_emb / sent_norm if sent_norm > 0 else sent_emb
+
         # 2. Compute mean similarity to positive examples
-        pos_sims = [cosine_similarity(sent_emb, p) for p in pos_matrix]
-        mean_pos = float(np.mean(pos_sims)) if pos_sims else 0.0
+        mean_pos = float((pos_matrix @ sent_vec).mean())
 
         # 3. Compute weighted penalty for negative examples
         neg_penalty = 0.0
         if neg_matrix is not None and len(neg_matrix) > 0:
-            neg_sims = [cosine_similarity(sent_emb, n) for n in neg_matrix]
-            neg_penalty = negative_weight * float(np.mean(neg_sims))
+            neg_penalty = negative_weight * float((neg_matrix @ sent_vec).mean())
 
         final_score = mean_pos - neg_penalty
 

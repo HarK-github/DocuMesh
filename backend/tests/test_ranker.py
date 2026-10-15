@@ -97,3 +97,29 @@ def test_ranker_with_fake_embedder() -> None:
         threshold=-1.0,
     )
     assert len(ranked) == 2
+
+
+def test_rank_sentences_vectorized_sample_equivalence() -> None:
+    """Verify rank_sentences produces expected ranking and scores on sample embeddings."""
+    rng = np.random.RandomState(42)
+    pos = [rng.randn(32).astype(np.float32) for _ in range(3)]
+    neg = [rng.randn(32).astype(np.float32) for _ in range(2)]
+    cand_embs = [rng.randn(32).astype(np.float32) for _ in range(5)]
+
+    sentences = [
+        {"id": i, "start": i * 10, "end": (i + 1) * 10, "embedding": cand_embs[i]}
+        for i in range(5)
+    ]
+
+    ranked = rank_sentences(
+        sentences=sentences,
+        positive_embeddings=pos,
+        negative_embeddings=neg,
+        existing_annotations=[],
+        negative_weight=0.5,
+        threshold=-1.0,
+    )
+    assert len(ranked) == 5
+    scores = [score for _, score in ranked]
+    assert all(scores[i] >= scores[i + 1] for i in range(len(scores) - 1))
+
