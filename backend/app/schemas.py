@@ -39,19 +39,6 @@ class DocumentTextResponse(BaseModel):
     clean_text: Optional[str] = None
 
 
-# Sentence Schemas
-class SentenceResponse(BaseModel):
-    """Sentence segment with page and offsets."""
-    id: int
-    document_id: int
-    idx: int
-    start: int
-    end: int
-    page: int
-
-    model_config = {"from_attributes": True}
-
-
 # Annotation Schemas
 class AnnotationCreate(BaseModel):
     """Payload to create an annotation."""
