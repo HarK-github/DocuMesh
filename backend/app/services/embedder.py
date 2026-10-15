@@ -1,10 +1,14 @@
 """Embedding service interface with SentenceTransformer and Fake implementations."""
 
+import os
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 import hashlib
 import numpy as np
 from backend.app.settings import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class BaseEmbedder(ABC):
@@ -64,7 +68,7 @@ _shared_embedder: Optional[BaseEmbedder] = None
 
 
 def get_embedder(force_fake: bool = False) -> BaseEmbedder:
-    """Return shared embedder instance, using FakeEmbedder if specified or in tests."""
+    """Return shared embedder instance, using FakeEmbedder if specified, in tests, or on memory-constrained hosts."""
     global _shared_embedder
     settings = get_settings()
 
@@ -72,6 +76,28 @@ def get_embedder(force_fake: bool = False) -> BaseEmbedder:
         return FakeEmbedder()
 
     if _shared_embedder is None:
+        # Check if running in a memory-constrained container (e.g. Render free tier with 512MB RAM)
+        if os.environ.get("RENDER") and not os.environ.get("FORCE_REAL_EMBEDDER"):
+            limit = 0
+            for p in ("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"):
+                if os.path.exists(p):
+                    try:
+                        with open(p, "r") as f:
+                            val = f.read().strip()
+                            if val.isdigit():
+                                limit = int(val)
+                                break
+                    except Exception:
+                        pass
+            if 0 < limit <= 768 * 1024 * 1024:
+                logger.warning(
+                    f"Detected container memory limit of {limit // (1024 * 1024)}MB. "
+                    "PyTorch SentenceTransformers requires >800MB RSS and will cause OOM SIGKILL. "
+                    "Safely using FakeEmbedder."
+                )
+                _shared_embedder = FakeEmbedder()
+                return _shared_embedder
+
         try:
             _shared_embedder = SentenceTransformerEmbedder()
         except Exception:

@@ -12,3 +12,5 @@ services:
         value: 10000
       - key: LLM_PROVIDER
         value: fake
+      - key: EMBEDDING_MODEL_NAME
+        value: fake
