@@ -308,14 +308,12 @@ def generate_highlight_suggestions(
         limit=batch_limit,
     )
 
-    if not diverse_batch:
-    top_candidates = scored_candidates[:batch_limit]
-    if not top_candidates:
+    batch_to_create = diverse_batch if diverse_batch else scored_candidates[:batch_limit]
+    if not batch_to_create:
         return []
 
     new_suggestions = []
-    for cand in diverse_batch:
-    for cand in top_candidates:
+    for cand in batch_to_create:
         sug = Suggestion(
             document_id=document_id,
             sentence_id=cand["sentence_id"],
