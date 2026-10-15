@@ -3,37 +3,60 @@
 from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 from backend.app.settings import get_settings
-from backend.app.services.vector_store import get_vector_store, BaseVectorStore
-
-
 def retrieve_candidates(
     query_vector: np.ndarray,
     document_id: int,
-    store: Optional[BaseVectorStore] = None,
+    db: Optional[Any] = None,
     pool_size: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieve top CANDIDATE_POOL_SIZE candidates from vector store filtered by document_id."""
+    """Retrieve top candidates for a document using SQLite embeddings and NumPy dot product."""
     settings = get_settings()
     k = pool_size if pool_size is not None else settings.candidate_pool_size
-    vstore = store if store is not None else get_vector_store()
 
-    results = vstore.query(vector=query_vector, k=k, filters={"document_id": document_id})
-    candidates = []
-    for item in results:
-        meta = item.get("metadata", {})
-        cand = {
-            "id": meta.get("sentence_id", item.get("id")),
-            "sentence_id": meta.get("sentence_id"),
-            "document_id": meta.get("document_id", document_id),
-            "start": meta.get("start"),
-            "end": meta.get("end"),
-            "page": meta.get("page"),
-            "embedding": item.get("vector"),
-            "vector": item.get("vector"),
-            "store_score": item.get("score"),
-        }
-        candidates.append(cand)
-    return candidates
+    def _query(session: Any) -> List[Dict[str, Any]]:
+        from backend.app.models import Sentence
+
+        sents = (
+            session.query(Sentence)
+            .filter(Sentence.document_id == document_id, Sentence.embedding.isnot(None))
+            .all()
+        )
+        if not sents:
+            return []
+
+        q_norm = np.linalg.norm(query_vector)
+        q_vec = query_vector / q_norm if q_norm > 0 else query_vector
+
+        vectors = np.stack([np.frombuffer(s.embedding, dtype=np.float32) for s in sents])
+        v_norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+        vectors = vectors / np.where(v_norms == 0, 1.0, v_norms)
+
+        sims = vectors @ q_vec
+
+        candidates = []
+        for s, vec, score in zip(sents, vectors, sims):
+            candidates.append({
+                "id": s.id,
+                "sentence_id": s.id,
+                "document_id": document_id,
+                "start": s.start,
+                "end": s.end,
+                "page": s.page,
+                "embedding": vec,
+                "vector": vec,
+                "score": float(score),
+            })
+        candidates.sort(key=lambda x: x["score"], reverse=True)
+        return candidates[:k]
+
+    if db is not None:
+        return _query(db)
+
+    from backend.app.db import get_session_factory
+
+    SessionLocal = get_session_factory()
+    with SessionLocal() as session:
+        return _query(session)
 
 
 

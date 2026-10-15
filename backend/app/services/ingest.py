@@ -72,36 +72,6 @@ def process_document(job_id: Optional[str], document_id: int, pdf_path: str) -> 
 
             session.commit()
 
-            # Index sentence vectors into vector store
-            try:
-                from backend.app.services.vector_store import get_vector_store
-                import numpy as np
-
-                store = get_vector_store()
-                store.delete(filters={"document_id": document_id})
-                store_items = []
-                saved_sentences = (
-                    session.query(Sentence)
-                    .filter(Sentence.document_id == document_id, Sentence.embedding.isnot(None))
-                    .all()
-                )
-                for s in saved_sentences:
-                    store_items.append({
-                        "id": f"doc_{document_id}_sent_{s.id}",
-                        "vector": np.frombuffer(s.embedding, dtype=np.float32),
-                        "metadata": {
-                            "document_id": document_id,
-                            "sentence_id": s.id,
-                            "start": s.start,
-                            "end": s.end,
-                            "page": s.page,
-                        },
-                    })
-                if store_items:
-                    store.add(store_items)
-            except Exception:
-                pass
-
         if job_id:
             update_job_status(job_id, status="done", progress=100)
 

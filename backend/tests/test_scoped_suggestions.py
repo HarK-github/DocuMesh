@@ -11,7 +11,6 @@ from backend.app.main import create_app
 from backend.app.db import get_db, init_db, reset_engine
 from backend.app.models import Document, Sentence, Annotation, Suggestion, Relation
 from backend.app.services.embedder import FakeEmbedder, set_shared_embedder
-from backend.app.services.vector_store import FakeVectorStore, set_shared_vector_store
 from backend.app.services.ranker import (
     compute_candidate_score,
     select_diverse_candidates_mmr,
@@ -104,8 +103,6 @@ def scoped_setup(tmp_path, monkeypatch):
 
     fake_emb = FakeEmbedder(dim=8)
     set_shared_embedder(fake_emb)
-    fake_store = FakeVectorStore()
-    set_shared_vector_store(fake_store)
 
     text = (
         "Artificial intelligence revolutionizes computers. "    # s0 (0, 51) - Ann 1 (Claim)
@@ -157,22 +154,6 @@ def scoped_setup(tmp_path, monkeypatch):
             s_objs.append(s)
             session.add(s)
         session.commit()
-
-        # Seed in vector store
-        store_items = []
-        for s in s_objs:
-            store_items.append({
-                "id": f"doc_{doc_id}_sent_{s.id}",
-                "vector": np.frombuffer(s.embedding, dtype=np.float32),
-                "metadata": {
-                    "document_id": doc_id,
-                    "sentence_id": s.id,
-                    "start": s.start,
-                    "end": s.end,
-                    "page": s.page,
-                },
-            })
-        fake_store.add(store_items)
 
         # Create annotations:
         ann1 = Annotation(

@@ -13,7 +13,6 @@ from backend.app.services.ranker import (
     select_diverse_candidates_mmr,
     intervals_overlap,
 )
-from backend.app.services.vector_store import rebuild_vector_store_if_needed
 from backend.app.settings import get_settings
 
 router = APIRouter(tags=["Suggestions"])
@@ -180,9 +179,6 @@ def generate_highlight_suggestions(
             sentences[i].embedding = _serialize_embedding(emb)
         db.commit()
 
-    # Sync sentences into vector store if empty
-    rebuild_vector_store_if_needed(db)
-
     # 1. Positives
     if scope == "category":
         cat_anns = (
@@ -219,11 +215,12 @@ def generate_highlight_suggestions(
         if s.sentence and s.sentence.embedding is not None
     ]
 
-    # 3. Retrieve candidates from vector store
+    # 3. Retrieve candidates using SQLite embeddings
     q_vec = np.mean(positive_embs, axis=0)
     raw_candidates = retrieve_candidates(
         query_vector=q_vec,
         document_id=document_id,
+        db=db,
         pool_size=settings.candidate_pool_size,
     )
 

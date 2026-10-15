@@ -64,17 +64,6 @@ class Settings(BaseSettings):
         alias="SIMILARITY_THRESHOLD",
         description="Cosine similarity threshold for suggestions",
     )
-    # Vector store configuration
-    vector_store: str = Field(
-        default="chroma",
-        alias="VECTOR_STORE",
-        description="Vector store backend: chroma, fake",
-    )
-    vector_store_path: str = Field(
-        default="./data/chroma",
-        alias="VECTOR_STORE_PATH",
-        description="Persistent directory for Chroma vector store",
-    )
     candidate_pool_size: int = Field(
         default=30,
         alias="CANDIDATE_POOL_SIZE",

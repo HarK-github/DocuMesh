@@ -19,7 +19,6 @@ def suggestions_setup(tmp_path, monkeypatch):
     monkeypatch.setenv("DB_PATH", str(db_file))
     monkeypatch.setenv("SIMILARITY_THRESHOLD", "-1.0")  # Accept all for test predictability
     monkeypatch.setenv("SUGGESTION_COUNT", "5")
-    monkeypatch.setenv("VECTOR_STORE", "fake")
 
     get_settings.cache_clear()
     reset_engine()
@@ -28,12 +27,9 @@ def suggestions_setup(tmp_path, monkeypatch):
     init_db(engine_override=engine)
     TestingSession = sessionmaker(bind=engine)
 
-    # Use FakeEmbedder and FakeVectorStore for fast isolated testing
-    from backend.app.services.vector_store import FakeVectorStore, set_shared_vector_store
+    # Use FakeEmbedder for fast isolated testing
     fake_emb = FakeEmbedder(dim=8)
     set_shared_embedder(fake_emb)
-    fake_store = FakeVectorStore()
-    set_shared_vector_store(fake_store)
 
     text = "Can machines think? Digital computers are universal. The imitation game is played with three people."
     # sentences:
