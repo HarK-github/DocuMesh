@@ -7,7 +7,7 @@ const API_BASE =
     ? import.meta.env.VITE_API_URL
     : typeof window === 'undefined' || window.location.port === '5173'
     ? 'http://localhost:8000'
-    : '';
+    : 'https://pdf-knowledge-graph.onrender.com';
 
 class ApiError extends Error {
   constructor(message, status, data) {
@@ -53,6 +53,9 @@ async function request(endpoint, options = {}) {
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     return response.json();
+  }
+  if (contentType && contentType.includes('text/html')) {
+    throw new ApiError('Expected JSON from backend, but received HTML.', response.status, null);
   }
   return response.text();
 }

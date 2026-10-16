@@ -337,8 +337,8 @@ export default function GraphView({
 
   // Compute filtered nodes and edges
   const { filteredAnnotations, filteredRelations } = useMemo(() => {
-    let anns = annotations;
-    let rels = relations;
+    let anns = Array.isArray(annotations) ? annotations : [];
+    let rels = Array.isArray(relations) ? relations : [];
 
     // Filter by label
     if (filterLabel !== 'ALL') {
@@ -358,7 +358,7 @@ export default function GraphView({
     // Filter neighbors of selected node
     if (showNeighborsOnly && selectedAnnotationId) {
       const neighborIds = new Set([selectedAnnotationId]);
-      relations.forEach((r) => {
+      rels.forEach((r) => {
         if (r.source_id === selectedAnnotationId) neighborIds.add(r.target_id);
         if (r.target_id === selectedAnnotationId) neighborIds.add(r.source_id);
       });
@@ -371,7 +371,8 @@ export default function GraphView({
 
   // Transform annotations to React Flow nodes
   const initialNodes = useMemo(() => {
-    return filteredAnnotations.map((ann, idx) => {
+    const list = Array.isArray(filteredAnnotations) ? filteredAnnotations : [];
+    return list.map((ann, idx) => {
       const isSuggested = ann.status === 'suggested';
       const nodeId = isSuggested ? `sug-${ann.id}` : String(ann.id);
       const posX = ann.x && ann.x !== 0 ? ann.x : 60 + (idx % 3) * 290;
@@ -394,12 +395,14 @@ export default function GraphView({
   // Transform relations to React Flow edges
   const initialEdges = useMemo(() => {
     const annKeyMap = new Map();
-    filteredAnnotations.forEach((a) => {
+    const annList = Array.isArray(filteredAnnotations) ? filteredAnnotations : [];
+    annList.forEach((a) => {
       const k = a.status === 'suggested' ? `sug-${a.id}` : String(a.id);
       annKeyMap.set(k, a);
     });
 
-    return filteredRelations
+    const relList = Array.isArray(filteredRelations) ? filteredRelations : [];
+    return relList
       .map((rel) => {
         const isGhost = rel.id < 0 && annKeyMap.has(`sug-${rel.source_id}`);
         const sourceKey = isGhost ? `sug-${rel.source_id}` : String(rel.source_id);

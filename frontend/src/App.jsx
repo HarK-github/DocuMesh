@@ -674,8 +674,8 @@ export default function App() {
             }}
           >
             <GraphView
-              annotations={graphData?.annotations || annotations}
-              relations={graphData?.relations || relations}
+              annotations={Array.isArray(graphData?.annotations) ? graphData.annotations : (Array.isArray(annotations) ? annotations : [])}
+              relations={Array.isArray(graphData?.relations) ? graphData.relations : (Array.isArray(relations) ? relations : [])}
               taxonomy={taxonomy}
               selectedAnnotationId={selectedAnnotationId}
               selectedRelationId={selectedRelationId}
