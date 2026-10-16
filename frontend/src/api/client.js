@@ -7,7 +7,7 @@ const API_BASE =
     ? import.meta.env.VITE_API_URL
     : typeof window === 'undefined' || window.location.port === '5173'
     ? 'http://localhost:8000'
-    : 'https://pdf-knowledge-graph.onrender.com';
+    : '/api';
 
 class ApiError extends Error {
   constructor(message, status, data) {

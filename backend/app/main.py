@@ -66,6 +66,8 @@ def create_app() -> FastAPI:
     app.include_router(auto_highlight_router)
 
     @app.get("/health", tags=["System"])
+    @app.get("/status", tags=["System"])
+    @app.get("/api/status", tags=["System"])
     def health_check() -> dict:
         """Health check endpoint confirming API operational status."""
         return {"status": "ok"}
