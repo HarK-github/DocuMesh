@@ -1,0 +1,1103 @@
+{
+  "document_id": 20,
+  "tag": "phase6_doc20",
+  "timestamp": "2026-11-13T08:37:45.730840+00:00",
+  "summary": {
+    "overall": {
+      "count": 13,
+      "gold_span_recall": 1.0,
+      "mrr": 0.4,
+      "dangling_id_rate": 0.0,
+      "similar_to_share": 0.0,
+      "correctness": 4.54,
+      "faithfulness": 4.54,
+      "citation_support": 5.0,
+      "completeness": 4.54,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 0
+    },
+    "dev": {
+      "count": 8,
+      "gold_span_recall": 1.0,
+      "mrr": 0.4286,
+      "dangling_id_rate": 0.0,
+      "similar_to_share": 0.0,
+      "correctness": 4.38,
+      "faithfulness": 4.38,
+      "citation_support": 5.0,
+      "completeness": 4.38,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 0
+    },
+    "held_out": {
+      "count": 5,
+      "gold_span_recall": 1.0,
+      "mrr": 0.3333,
+      "dangling_id_rate": 0.0,
+      "similar_to_share": 0.0,
+      "correctness": 4.8,
+      "faithfulness": 4.8,
+      "citation_support": 5.0,
+      "completeness": 4.8,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 0
+    }
+  },
+  "graph_quality": {
+    "node_count": 19,
+    "node_label_accuracy": 0.9091,
+    "per_class_accuracy": {
+      "Solution": {
+        "correct": 3,
+        "total": 4
+      },
+      "Definition": {
+        "correct": 1,
+        "total": 1
+      },
+      "Problem": {
+        "correct": 3,
+        "total": 3
+      },
+      "Method": {
+        "correct": 2,
+        "total": 2
+      },
+      "Result": {
+        "correct": 1,
+        "total": 1
+      }
+    },
+    "total_edges": 3,
+    "valid_edges": 3,
+    "invalid_edges_count": 0,
+    "invalid_edges": [],
+    "edge_precision": 1.0,
+    "edges_below_floor_confirmed": 0,
+    "duplicate_rate": 0.0
+  },
+  "highlight_quality": {
+    "annotations_count": 19,
+    "key_ideas_total": 7,
+    "key_ideas_covered": 7,
+    "key_idea_recall": 1.0,
+    "forbidden_highlights_count": 0,
+    "forbidden_samples": [],
+    "density_per_100_words": 1.76,
+    "percent_sentences_highlighted": 13.48,
+    "boundary_quality": 0.9474
+  },
+  "qa_details": [
+    {
+      "id": "q1",
+      "question": "What is the outer-join trap described in the lab?",
+      "type": "definitional",
+      "split": "dev",
+      "answer": "The outer-join trap is described as: \"in Q17, if you filter on a teaches column in the WHERE clause, you silently turn the LEFT JOIN back into an inner join.\" [a114]",
+      "latency_seconds": 5.07,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2888,
+        "context_approx_tokens": 475,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but it lacks the nuance of the gold answer regarding the silent conversion of LEFT JOIN to inner join.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it lacks the nuance of the gold answer regarding the silent conversion of LEFT JOIN to inner join.",
+              "failed_claims": [
+                {
+                  "claim": "The outer-join trap is described as: \"in Q17, if you filter on a teaches column in the WHERE clause, you silently turn the LEFT JOIN back into an inner join.\"",
+                  "reason": "The generated answer is partially accurate, but it does not fully capture the subtlety of the outer-join trap."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it lacks a minor detail regarding the subtlety of the outer-join trap.",
+              "failed_claims": [
+                {
+                  "claim": "The outer-join trap is described as: \"in Q17, if you filter on a teaches column in the WHERE clause, you silently turn the LEFT JOIN back into an inner join.\"",
+                  "reason": "The generated answer is partially accurate, but it does not fully capture the subtlety of the outer-join trap."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer is fully supported by the provided context, and the citation [a114] directly supports the specific claim.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly complete, but it lacks a minor detail regarding the subtlety of the outer-join trap.",
+              "failed_claims": [
+                {
+                  "claim": "The outer-join trap is described as: \"in Q17, if you filter on a teaches column in the WHERE clause, you silently turn the LEFT JOIN back into an inner join.\"",
+                  "reason": "The generated answer is partially accurate, but it does not fully capture the subtlety of the outer-join trap."
+                }
+              ]
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer provides a specific solution."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q2",
+      "question": "What is the anti-join pattern according to the document?",
+      "type": "definitional",
+      "split": "dev",
+      "answer": "The anti-join pattern is described as \"the \u201cfind the unmatched rows\u201d (anti-join) pattern\" [a68, a114].",
+      "latency_seconds": 2.72,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2986,
+        "context_approx_tokens": 480,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer mostly correctly describes the anti-join pattern, but omits the specific syntax for the pattern (e.g., LEFT JOIN ... WHERE ... IS NULL or NOT EXISTS).",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly describes the anti-join pattern, but omits the specific syntax for the pattern (e.g., LEFT JOIN ... WHERE ... IS NULL or NOT EXISTS).",
+              "failed_claims": [
+                {
+                  "claim": "The generated answer omits the specific syntax for the anti-join pattern.",
+                  "reason": "The gold answer explicitly mentions the syntax for the anti-join pattern, which is not present in the generated answer."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but contains a minor extrapolation (the phrase \"find the unmatched rows\" is not present in the context).",
+              "failed_claims": [
+                {
+                  "claim": "The generated answer contains a minor extrapolation.",
+                  "reason": "The gold answer does not contain the phrase \"find the unmatched rows\", which is present in the generated answer."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer contains two citations ([a68] and [a114]) that directly support the specific claims or sentences they are attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but omits some minor details (e.g., the specific syntax for the anti-join pattern)."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the document does not contain the answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q3",
+      "question": "What dataset and deliverable SQL file are used in Lab 2?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to [c128], the dataset used in Lab 2 is \"data/university.sql\" and the deliverable is \"lab02_solution.sql\".",
+      "latency_seconds": 2.7,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2533,
+        "context_approx_tokens": 387,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer matches the gold answer in terms of dataset and deliverable SQL file.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer matches the gold answer in terms of dataset and deliverable SQL file.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The generated answer is not an abstention, but a direct answer to the question."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q4",
+      "question": "How do you enable foreign keys in SQLite for each session?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "To enable foreign keys in every session, you can use the following SQL command: `PRAGMA foreign_keys = ON;` [a115]",
+      "latency_seconds": 1.83,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2897,
+        "context_approx_tokens": 453,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited ID [a115] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the question is unanswerable."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q5",
+      "question": "What is the checkpoint result for the top student in Q4?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "The top student in Q4 is Tanaka (120). [c131]",
+      "latency_seconds": 1.54,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2958,
+        "context_approx_tokens": 475,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but minor non-critical detail omitted. The correct answer is Q4's top student is Tanaka with 120 total credits (tot_cred).",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail omitted. The correct answer is Q4's top student is Tanaka with 120 total credits (tot_cred).",
+              "failed_claims": [
+                "The generated answer omits the total credits (tot_cred) detail."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The core response is fully supported, but at most one minor extrapolated word/phrasing that does not alter meaning. The correct answer is supported by the provided context.",
+              "failed_claims": [
+                "The generated answer contains a minor extrapolated word/phrasing that does not alter meaning."
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears. The correct answer is supported by the provided context.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but answers the main question directly. The correct answer is mostly complete, but minor non-critical detail omitted."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q6",
+      "question": "What is the result of the row-explosion demonstration in Q24?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to the document, the result of the row-explosion demonstration in Q24 is 105, which equals the number of students (15) times the number of departments (7) [c134].",
+      "latency_seconds": 2.52,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2958,
+        "context_approx_tokens": 468,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but it omits the detail that the result of 15 students times 7 departments is a Cartesian product.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it omits the detail that the result of 15 students times 7 departments is a Cartesian product.",
+              "failed_claims": [
+                "The generated answer does not mention the Cartesian product."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it contains a minor extrapolation by mentioning the number of students and departments without explicitly stating it's a Cartesian product.",
+              "failed_claims": [
+                "The generated answer does not explicitly state the Cartesian product."
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer correctly cites [c134] to support the claim, and the citation directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but it does not address all aspects of the user's question, specifically the detail about the Cartesian product.",
+              "failed_claims": [
+                "The generated answer does not address the Cartesian product."
+              ]
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q7",
+      "question": "How do you avoid self-pairs and mirror duplicates when finding pairs of instructors in the same department?",
+      "type": "multi_hop",
+      "split": "dev",
+      "answer": "To avoid self-pairs and mirror duplicates when finding pairs of instructors in the same department, you should use the condition `a.id < b.id` as mentioned in [a116]. This ensures that each pair is unique and that self-pairs and mirror duplicates are excluded.",
+      "latency_seconds": 2.65,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2915,
+        "context_approx_tokens": 473,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but it omits the detail about mirror duplicates.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it omits the detail about mirror duplicates.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it uses the condition a.id < b.id as mentioned in [a116] without explicitly stating the reason for this condition.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer correctly cites [a116] to support the claim about avoiding self-pairs and mirror duplicates.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer addresses all aspects of the user's question, but it could be more thorough in explaining the condition a.id < b.id."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a valid response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q8",
+      "question": "What is the instructor's personal phone number or email address?",
+      "type": "unanswerable",
+      "split": "dev",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 1.61,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2940,
+        "context_approx_tokens": 470,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer is a direct statement.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q9",
+      "question": "Which instructors are listed when running python3 explore.py Physics?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 1.09,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2951,
+        "context_approx_tokens": 449,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that it couldn't find the information in the document.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it couldn't find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that it couldn't find the information.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer is a statement of inability to find the information.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete, as it correctly states that it couldn't find the information."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that it couldn't find the information in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q10",
+      "question": "Which sections have no assigned instructor in Q18?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "According to [c133], Q18 returns sections with no assigned instructor, which are (CS-319, 2) and (MATH-101, 1).",
+      "latency_seconds": 2.53,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2864,
+        "context_approx_tokens": 483,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer matches the gold answer exactly, including all essential facts and nuances.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer matches the gold answer exactly, including all essential facts and nuances.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context, with no hallucination.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID (e.g., [c133]) directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document, including the sections with no assigned instructor."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information, and the generated answer is accurate."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q11",
+      "question": "Why should parameterized queries with question marks be used in explore.py instead of f-strings?",
+      "type": "multi_hop",
+      "split": "held_out",
+      "answer": "According to [a117], a parameterized query \u2014 the ? is filled safely by the driver, which means that using parameterized queries with question marks is a safer way to fill parameters, as opposed to using f-strings.",
+      "latency_seconds": 2.0,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2835,
+        "context_approx_tokens": 429,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly states the benefits of using parameterized queries with question marks in explore.py. However, it does not fully address the specific issue of SQL injection vulnerabilities.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly states the benefits of using parameterized queries with question marks in explore.py. However, it does not fully address the specific issue of SQL injection vulnerabilities.",
+              "failed_claims": [
+                {
+                  "claim": "f-strings do not protect against SQL injection vulnerabilities",
+                  "reason": "This claim is partially correct, as f-strings can be used to construct malicious SQL queries, but it is not the primary reason for using parameterized queries."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but it does not fully address the nuances of SQL injection vulnerabilities.",
+              "failed_claims": [
+                {
+                  "claim": "parameterized queries with question marks are safer",
+                  "reason": "This claim is mostly correct, but it does not fully explain why parameterized queries are safer."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer correctly cites [a117] to support the claim about parameterized queries.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the task, but it does not fully address the specific issue of SQL injection vulnerabilities.",
+              "failed_clauses": []
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The generated answer does not explicitly state that the document or context does not contain the answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q12",
+      "question": "What is the exact calendar due date and submission timestamp for Lab 2?",
+      "type": "unanswerable",
+      "split": "held_out",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 2.55,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2678,
+        "context_approx_tokens": 406,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q13",
+      "question": "What version of PostgreSQL is required to run the university schema?",
+      "type": "unanswerable",
+      "split": "held_out",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 1.62,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2969,
+        "context_approx_tokens": 464,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that it couldn't find the required PostgreSQL version in the document.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it couldn't find the required PostgreSQL version in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context, with no hallucination.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the answer is a direct statement from the context.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses the user's question, providing a clear and concise response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer, stating that it couldn't find the required information in the document."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
