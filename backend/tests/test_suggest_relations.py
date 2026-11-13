@@ -3,30 +3,34 @@
 import time
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db, reset_engine
+from backend.app.db import get_db
 from backend.app.models import Document, Annotation, Relation
 from backend.app.services.llm import FakeLLMClient, set_shared_llm_client
 from backend.app.settings import get_settings
 
 
 @pytest.fixture
-def relation_test_setup(tmp_path, monkeypatch):
+def relation_test_setup(engine, monkeypatch):
     """Set up TestClient with annotations ready for relationship inference."""
-    db_file = tmp_path / "test_rel_sug.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+    import backend.app.db as app_db
+    app_db.reset_engine()
+    TestingSession = sessionmaker(bind=engine)
+
+    monkeypatch.setattr(app_db, "get_session_factory", lambda eng=None: TestingSession)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
     monkeypatch.setenv("LLM_PROVIDER", "fake")
+    monkeypatch.setenv("EMBEDDING_MODEL_NAME", "fake")
+    monkeypatch.setenv("MIN_RELATION_COS_SIM", "-1.0")
     monkeypatch.setenv("MAX_RELATION_PAIRS", "5")
 
     get_settings.cache_clear()
-    reset_engine()
 
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
+    with engine.connect() as conn:
+        conn.execute(app_db.text("TRUNCATE TABLE documents, sentences, annotations, relations, suggestions, jobs, relation_cache, rejected_pairs CASCADE;"))
+        conn.commit()
 
     with TestingSession() as session:
         doc = Document(
@@ -71,6 +75,11 @@ def relation_test_setup(tmp_path, monkeypatch):
 
     with TestClient(app) as client:
         yield client, doc_id, ann1_id, ann2_id, TestingSession
+
+    with engine.connect() as conn:
+        conn.execute(app_db.text("TRUNCATE TABLE documents, sentences, annotations, relations, suggestions, jobs, relation_cache, rejected_pairs CASCADE;"))
+        conn.commit()
+    app_db.reset_engine()
 
 
 def test_suggest_relations_valid_response(relation_test_setup) -> None:

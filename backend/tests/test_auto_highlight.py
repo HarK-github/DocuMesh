@@ -2,32 +2,32 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db, reset_engine
+from backend.app.db import get_db
 from backend.app.settings import get_settings
 from backend.app.models import Document, Sentence, Annotation, Relation, Job
 from backend.app.services.auto_highlighter import process_auto_highlight_job
 
 
 @pytest.fixture
-def auto_highlight_setup(tmp_path, monkeypatch):
-    """Provide TestClient with temporary DB, seeded taxonomy, and sample document with sentences."""
-    db_file = tmp_path / "test_auto_highlight.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+def auto_highlight_setup(engine, monkeypatch):
+    """Provide TestClient with seeded taxonomy, and sample document with sentences."""
+    connection = engine.connect()
+    transaction = connection.begin()
+    TestingSession = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
+
+    import backend.app.db as app_db
+    monkeypatch.setattr(app_db, "get_session_factory", lambda engine=None: TestingSession)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
     monkeypatch.setenv("LLM_PROVIDER", "fake")
     monkeypatch.setenv("EMBEDDING_MODEL_NAME", "fake")
     monkeypatch.setenv("SIMILARITY_THRESHOLD", "0.0")
+    monkeypatch.setenv("AUTO_HIGHLIGHT_PROTO_THRESHOLD", "-1.0")
 
     get_settings.cache_clear()
-    reset_engine()
-
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
 
     sample_text = (
         "Can machines think? "
@@ -88,6 +88,10 @@ def auto_highlight_setup(tmp_path, monkeypatch):
 
     with TestClient(app) as client:
         yield client, doc_id, sample_text, TestingSession
+
+    transaction.rollback()
+    connection.close()
+    app_db.reset_engine()
 
 
 def test_auto_highlight_endpoint_validation(auto_highlight_setup) -> None:
@@ -175,7 +179,7 @@ def test_auto_highlight_skips_covered_ranges(auto_highlight_setup) -> None:
         session.add(job)
         session.commit()
 
-    result = process_auto_highlight_job(
+    _ = process_auto_highlight_job(
         job_id="job_auto_test_2",
         document_id=doc_id,
         mode="llm",

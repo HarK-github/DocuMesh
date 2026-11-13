@@ -8,33 +8,67 @@ def retrieve_candidates(
     document_id: int,
     db: Optional[Any] = None,
     pool_size: Optional[int] = None,
+    page: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieve top candidates for a document using SQLite embeddings and NumPy dot product."""
+    """Retrieve top candidates for a document using pgvector cosine distance."""
     settings = get_settings()
     k = pool_size if pool_size is not None else settings.candidate_pool_size
 
     def _query(session: Any) -> List[Dict[str, Any]]:
         from backend.app.models import Sentence
 
-        sents = (
-            session.query(Sentence)
+        is_sqlite = False
+        try:
+            bind = session.get_bind()
+            if bind and bind.dialect.name == "sqlite":
+                is_sqlite = True
+        except Exception:
+            pass
+
+        if is_sqlite:
+            query = session.query(Sentence).filter(
+                Sentence.document_id == document_id, Sentence.embedding.isnot(None)
+            )
+            if page is not None:
+                query = query.filter(Sentence.page == page)
+            sents = query.all()
+            if not sents:
+                return []
+            q_norm = np.linalg.norm(query_vector)
+            q_vec = query_vector / q_norm if q_norm > 0 else query_vector
+            candidates = []
+            for s in sents:
+                vec = np.asarray(s.embedding, dtype=np.float32)
+                v_norm = np.linalg.norm(vec)
+                v_unit = vec / v_norm if v_norm > 0 else vec
+                score = float(np.dot(q_vec, v_unit))
+                candidates.append({
+                    "id": s.id,
+                    "sentence_id": s.id,
+                    "document_id": document_id,
+                    "start": s.start,
+                    "end": s.end,
+                    "page": s.page,
+                    "embedding": vec,
+                    "vector": vec,
+                    "score": score,
+                })
+            candidates.sort(key=lambda x: x["score"], reverse=True)
+            return candidates[:k]
+
+        sim_expr = (1.0 - Sentence.embedding.cosine_distance(query_vector)).label("score")
+        query = (
+            session.query(Sentence, sim_expr)
             .filter(Sentence.document_id == document_id, Sentence.embedding.isnot(None))
-            .all()
         )
-        if not sents:
-            return []
+        if page is not None:
+            query = query.filter(Sentence.page == page)
 
-        q_norm = np.linalg.norm(query_vector)
-        q_vec = query_vector / q_norm if q_norm > 0 else query_vector
-
-        vectors = np.stack([np.frombuffer(s.embedding, dtype=np.float32) for s in sents])
-        v_norms = np.linalg.norm(vectors, axis=1, keepdims=True)
-        vectors = vectors / np.where(v_norms == 0, 1.0, v_norms)
-
-        sims = vectors @ q_vec
+        rows = query.order_by(Sentence.embedding.cosine_distance(query_vector)).limit(k).all()
 
         candidates = []
-        for s, vec, score in zip(sents, vectors, sims):
+        for s, score in rows:
+            vec = np.asarray(s.embedding, dtype=np.float32) if s.embedding is not None else None
             candidates.append({
                 "id": s.id,
                 "sentence_id": s.id,
@@ -46,8 +80,7 @@ def retrieve_candidates(
                 "vector": vec,
                 "score": float(score),
             })
-        candidates.sort(key=lambda x: x["score"], reverse=True)
-        return candidates[:k]
+        return candidates
 
     if db is not None:
         return _query(db)

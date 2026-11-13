@@ -4,22 +4,19 @@ import time
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db
+from backend.app.db import get_db
 from backend.app.settings import get_settings
 
 
 @pytest.fixture
-def client_and_db(tmp_path, monkeypatch):
-    """Provide a TestClient connected to a temporary SQLite database and upload folder."""
-    db_file = tmp_path / "test_docs.db"
+def client_and_db(tmp_path, monkeypatch, engine):
+    """Provide a TestClient connected to PostgreSQL test database and upload folder."""
     upload_dir = tmp_path / "uploads"
     upload_dir.mkdir()
 
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
     monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
     monkeypatch.setenv("MAX_UPLOAD_MB", "2")
     monkeypatch.setenv("MAX_PDF_PAGES", "10")
@@ -27,12 +24,16 @@ def client_and_db(tmp_path, monkeypatch):
 
     # Clear cached settings and database engine
     get_settings.cache_clear()
-    from backend.app.db import reset_engine
-    reset_engine()
+    import backend.app.db as app_db
+    app_db.reset_engine()
 
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
     TestingSessionLocal = sessionmaker(bind=engine)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSessionLocal)
+
+    # Clean existing documents
+    with engine.connect() as conn:
+        conn.execute(app_db.text("TRUNCATE TABLE documents, sentences, annotations, relations, suggestions, jobs CASCADE;"))
+        conn.commit()
 
     def override_get_db():
         db = TestingSessionLocal()
@@ -46,6 +47,11 @@ def client_and_db(tmp_path, monkeypatch):
 
     with TestClient(app) as test_client:
         yield test_client, TestingSessionLocal
+
+    with engine.connect() as conn:
+        conn.execute(app_db.text("TRUNCATE TABLE documents, sentences, annotations, relations, suggestions, jobs CASCADE;"))
+        conn.commit()
+    app_db.reset_engine()
 
 
 def test_upload_and_get_document(client_and_db) -> None:

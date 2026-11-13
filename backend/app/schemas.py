@@ -126,11 +126,122 @@ class SuggestRelationsRequest(BaseModel):
 
 
 # Graph Schema
+class EdgeEvidenceResponse(BaseModel):
+    id: int
+    edge_id: int
+    highlight_id: int
+    evidence_quote: str
+
+    model_config = {"from_attributes": True}
+
+
+class GraphEdgeResponse(BaseModel):
+    id: int
+    run_id: int
+    source_kind: str
+    source_id: int
+    target_kind: str
+    target_id: int
+    relation_type: str
+    direction: str = "forward"
+    confidence: float
+    rationale: str
+    review_status: str = "auto_candidate"
+    extraction_method: str = "llm"
+    evidence: List[EdgeEvidenceResponse] = []
+
+    model_config = {"from_attributes": True}
+
+
+class PropositionResponse(BaseModel):
+    id: int
+    document_id: int
+    run_id: int
+    canonical_statement: str
+    statement_type: str
+    summary: Optional[str] = None
+    confidence: float
+    review_status: str
+    provenance_highlight_ids: List[int] = []
+
+    model_config = {"from_attributes": True}
+
+
+class ConceptResponse(BaseModel):
+    id: int
+    document_id: int
+    run_id: int
+    name: str
+    canonical_name: str
+    category: str
+    description: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class ExtractionRunResponse(BaseModel):
+    id: int
+    document_id: int
+    graph_version: int
+    model_name: str
+    prompt_version: str
+    status: str
+    is_active: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class GraphValidationResponse(BaseModel):
+    is_valid: bool
+    issues: List[str]
+    metrics: Dict[str, Any]
+
+
+class LegacyEdgeReviewRequest(BaseModel):
+    run_id: int
+    legacy_relation_id: int
+    classification: str
+    reviewer_reason: Optional[str] = None
+    mapped_edge_id: Optional[int] = None
+    reviewed_by: Optional[str] = "reviewer"
+
+
+class LegacyEdgeReviewResponse(BaseModel):
+    id: int
+    run_id: int
+    legacy_relation_id: int
+    classification: str
+    reviewer_reason: Optional[str] = None
+    mapped_edge_id: Optional[int] = None
+    reviewed_by: str
+    reviewed_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class EdgeMappingReportResponse(BaseModel):
+    document_id: int
+    run_id: int
+    total_legacy_edges: int
+    reviewed_edges_count: int
+    unreviewed_edges_count: int
+    review_coverage_pct: float
+    classification_breakdown: Dict[str, int]
+    items: List[Dict[str, Any]]
+
+
 class GraphResponse(BaseModel):
-    """Combined graph view of annotations (nodes) and relations (edges)."""
+    """Combined graph view of annotations (nodes) and relations (edges), supporting V1 and V2."""
     document_id: int
     annotations: List[AnnotationResponse]
     relations: List[RelationResponse]
+    graph_version: int = 1
+    run_id: Optional[int] = None
+    is_active: bool = False
+    propositions: Optional[List[PropositionResponse]] = None
+    concepts: Optional[List[ConceptResponse]] = None
+    edges: Optional[List[GraphEdgeResponse]] = None
 
 
 class PathEdge(BaseModel):
@@ -210,6 +321,7 @@ class ChatRequest(BaseModel):
     """Payload for document chat query."""
     question: str = Field(..., min_length=1)
     history: List[ChatMessage] = Field(default_factory=list)
+    mode: Optional[str] = Field(default="hybrid", description="Retrieval mode: 'vector' | 'graph' | 'hybrid'")
 
     @field_validator("question")
     @classmethod
@@ -225,6 +337,7 @@ class CitationItem(BaseModel):
     id: int
     start: Optional[int] = None
     end: Optional[int] = None
+    page: Optional[int] = None
 
 
 class ChatResponse(BaseModel):

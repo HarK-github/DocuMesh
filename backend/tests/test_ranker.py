@@ -65,7 +65,7 @@ def test_rank_sentences_with_known_vectors() -> None:
     ranked_excl = rank_sentences(
         sentences=[c1, c2, c3],
         positive_embeddings=[p_vec],
-        negative_embeddings=[],
+        negative_embeddings=[n_vec],
         existing_annotations=[{"start": 2, "end": 8}],  # overlaps c1 only
         threshold=-1.0,
     )
@@ -124,49 +124,53 @@ def test_rank_sentences_vectorized_sample_equivalence() -> None:
     assert all(scores[i] >= scores[i + 1] for i in range(len(scores) - 1))
 
 
-def test_retrieve_candidates_and_rank() -> None:
-    """Verify retrieve_candidates fetches SQLite embeddings and ranks them."""
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-    from backend.app.models import Base, Document, Sentence
+def test_retrieve_candidates_and_rank(db_session) -> None:
+    """Verify retrieve_candidates fetches pgvector embeddings and ranks them."""
+    from backend.app.models import Document, Sentence, EMBEDDING_DIM
     from backend.app.services.ranker import retrieve_candidates
 
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
+    v_pos = np.zeros(EMBEDDING_DIM, dtype=np.float32)
+    v_pos[0] = 1.0
 
-    v_pos = np.array([1.0, 0.0, 0.0], dtype=np.float32)
-    v_neg = np.array([0.0, 1.0, 0.0], dtype=np.float32)
-    v_cand1 = np.array([0.9, 0.1, 0.0], dtype=np.float32)
-    v_cand2 = np.array([0.1, 0.9, 0.0], dtype=np.float32)
-    v_cand_other = np.array([1.0, 0.0, 0.0], dtype=np.float32)
+    v_neg = np.zeros(EMBEDDING_DIM, dtype=np.float32)
+    v_neg[1] = 1.0
 
-    with Session() as session:
-        doc1 = Document(filename="doc1.pdf", file_hash="h1", status="ready")
-        doc2 = Document(filename="doc2.pdf", file_hash="h2", status="ready")
-        session.add_all([doc1, doc2])
-        session.commit()
+    v_cand1 = np.zeros(EMBEDDING_DIM, dtype=np.float32)
+    v_cand1[0] = 0.9
+    v_cand1[1] = 0.1
 
-        s1 = Sentence(document_id=doc1.id, idx=0, start=0, end=20, page=1, embedding=v_cand1.tobytes())
-        s2 = Sentence(document_id=doc1.id, idx=1, start=21, end=40, page=1, embedding=v_cand2.tobytes())
-        s3 = Sentence(document_id=doc2.id, idx=0, start=0, end=20, page=1, embedding=v_cand_other.tobytes())
-        session.add_all([s1, s2, s3])
-        session.commit()
+    v_cand2 = np.zeros(EMBEDDING_DIM, dtype=np.float32)
+    v_cand2[0] = 0.1
+    v_cand2[1] = 0.9
 
-        candidates = retrieve_candidates(query_vector=v_pos, document_id=doc1.id, db=session, pool_size=10)
-        assert len(candidates) == 2
-        assert all(c["document_id"] == doc1.id for c in candidates)
+    v_cand_other = np.zeros(EMBEDDING_DIM, dtype=np.float32)
+    v_cand_other[0] = 1.0
 
-        ranked = rank_sentences(
-            sentences=candidates,
-            positive_embeddings=[v_pos],
-            negative_embeddings=[v_neg],
-            existing_annotations=[],
-            negative_weight=0.5,
-            threshold=-1.0,
-        )
-        assert len(ranked) == 2
-        assert ranked[0][0]["id"] == s1.id
-        assert ranked[1][0]["id"] == s2.id
+    doc1 = Document(filename="doc1.pdf", file_hash="h1", status="ready")
+    doc2 = Document(filename="doc2.pdf", file_hash="h2", status="ready")
+    db_session.add_all([doc1, doc2])
+    db_session.commit()
+
+    s1 = Sentence(document_id=doc1.id, idx=0, start=0, end=20, page=1, embedding=v_cand1)
+    s2 = Sentence(document_id=doc1.id, idx=1, start=21, end=40, page=1, embedding=v_cand2)
+    s3 = Sentence(document_id=doc2.id, idx=0, start=0, end=20, page=1, embedding=v_cand_other)
+    db_session.add_all([s1, s2, s3])
+    db_session.commit()
+
+    candidates = retrieve_candidates(query_vector=v_pos, document_id=doc1.id, db=db_session, pool_size=10)
+    assert len(candidates) == 2
+    assert all(c["document_id"] == doc1.id for c in candidates)
+
+    ranked = rank_sentences(
+        sentences=candidates,
+        positive_embeddings=[v_pos],
+        negative_embeddings=[v_neg],
+        existing_annotations=[],
+        negative_weight=0.5,
+        threshold=-1.0,
+    )
+    assert len(ranked) == 2
+    assert ranked[0][0]["id"] == s1.id
+    assert ranked[1][0]["id"] == s2.id
 
 

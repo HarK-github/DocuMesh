@@ -21,6 +21,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     build-essential \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install CPU-only PyTorch to minimize container size and RAM footprint
@@ -35,12 +36,14 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY backend/ ./backend/
 COPY config/ ./config/
 COPY sample/ ./sample/
+COPY alembic.ini ./alembic.ini
+COPY alembic/ ./alembic/
 
 # Copy compiled frontend assets from Stage 1
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Create storage directories with write permissions
-RUN mkdir -p uploads data && chmod -R 777 uploads data
+# Create uploads directory with write permissions
+RUN mkdir -p uploads && chmod -R 777 uploads
 
 # Copy entrypoint script
 COPY scripts/entrypoint.sh ./scripts/entrypoint.sh

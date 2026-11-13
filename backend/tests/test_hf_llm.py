@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 from backend.app.settings import get_settings
 from backend.app.services.llm import (
     HuggingFaceLLMClient,
+    OpenRouterLLMClient,
     LLMNotConfiguredError,
     get_llm_client,
     set_shared_llm_client,
@@ -163,3 +164,67 @@ def test_get_llm_client_hf_provider(monkeypatch):
     assert isinstance(client_short, HuggingFaceLLMClient)
 
     set_shared_llm_client(None)
+
+
+def test_openrouter_client_requires_key(monkeypatch):
+    """Verify OpenRouterLLMClient raises LLMNotConfiguredError when key is missing."""
+    monkeypatch.setenv("OPENROUTER_KEY", "")
+    monkeypatch.setenv("LLM_API_KEY", "")
+    get_settings.cache_clear()
+
+    with pytest.raises(LLMNotConfiguredError):
+        OpenRouterLLMClient()
+
+
+def test_get_llm_client_openrouter_provider(monkeypatch):
+    """Verify get_llm_client returns OpenRouterLLMClient when configured."""
+    set_shared_llm_client(None)
+    monkeypatch.setenv("LLM_PROVIDER", "openrouter")
+    monkeypatch.setenv("OPENROUTER_KEY", "sk-or-test-key")
+    get_settings.cache_clear()
+
+    client = get_llm_client()
+    assert isinstance(client, OpenRouterLLMClient)
+    assert client.api_key == "sk-or-test-key"
+    set_shared_llm_client(None)
+
+
+def test_openrouter_client_complete_mock(monkeypatch):
+    """Verify OpenRouterLLMClient completes chat using mocked response."""
+    monkeypatch.setenv("OPENROUTER_KEY", "sk-or-test-key")
+    monkeypatch.setenv("LLM_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+    get_settings.cache_clear()
+
+    client = OpenRouterLLMClient()
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "choices": [{"message": {"content": "DocuMesh knowledge graph is live [s1]."}}]
+    }
+
+    monkeypatch.setattr(client, "_post_with_retry", lambda payload, headers: mock_resp)
+
+    messages = [{"role": "user", "content": "Hello"}]
+    answer = client.complete(messages)
+    assert answer == "DocuMesh knowledge graph is live [s1]."
+
+
+def test_openrouter_client_complete_json_mock(monkeypatch):
+    """Verify OpenRouterLLMClient complete_json parses structured payload."""
+    monkeypatch.setenv("OPENROUTER_KEY", "sk-or-test-key")
+    get_settings.cache_clear()
+
+    client = OpenRouterLLMClient()
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "choices": [{"message": {"content": '{"type": "supports", "reason": "strong evidence"}'}}]
+    }
+
+    monkeypatch.setattr(client, "_post_with_retry", lambda payload, headers: mock_resp)
+
+    data = client.complete_json("Analyze link")
+    assert data["type"] == "supports"
+    assert data["reason"] == "strong evidence"

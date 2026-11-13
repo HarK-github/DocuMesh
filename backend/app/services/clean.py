@@ -1,8 +1,32 @@
 """Text cleaning and normalization pipeline for extracted PDF text."""
 
+import math
 from collections import Counter
 import re
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union, Tuple, Optional, Set
+
+_DICTIONARY_WORDS: Optional[Set[str]] = None
+
+
+def _get_english_dictionary() -> Set[str]:
+    """Lazy-load local system dictionary or fallback set for hyphen resolution."""
+    global _DICTIONARY_WORDS
+    if _DICTIONARY_WORDS is None:
+        words = set()
+        dict_path = "/usr/share/dict/words"
+        try:
+            with open(dict_path, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    w = line.strip().lower()
+                    if w:
+                        words.add(w)
+        except Exception:
+            words = {
+                "computational", "universal", "system", "machine", "algorithm",
+                "parameter", "representation", "optimization", "information",
+            }
+        _DICTIONARY_WORDS = words
+    return _DICTIONARY_WORDS
 
 
 def remove_page_numbers(text: str) -> str:
@@ -11,10 +35,30 @@ def remove_page_numbers(text: str) -> str:
     return pattern.sub('', text)
 
 
-def fix_hyphenated_breaks(text: str) -> str:
-    """Rejoin words split by hyphens across line breaks."""
+def fix_hyphenated_breaks(text: str, doc_lexicon: Optional[Set[str]] = None) -> str:
+    """Rejoin words split by hyphens across line breaks using context and dictionary."""
+    if doc_lexicon is None:
+        doc_lexicon = set(re.findall(r'\b[a-zA-Z]+(?:-[a-zA-Z]+)?\b', text.lower()))
+
+    dict_words = _get_english_dictionary()
+
+    def replace_hyphen(match: re.Match) -> str:
+        w1, w2 = match.group(1), match.group(2)
+        compound = f"{w1.lower()}-{w2.lower()}"
+        merged = f"{w1.lower()}{w2.lower()}"
+
+        if compound in doc_lexicon:
+            return f"{w1}-{w2}"
+        if merged in doc_lexicon:
+            return f"{w1}{w2}"
+        if merged in dict_words and compound not in dict_words:
+            return f"{w1}{w2}"
+        if compound in dict_words:
+            return f"{w1}-{w2}"
+        return f"{w1}-{w2}"
+
     pattern = re.compile(r'(\b[a-zA-Z]+)-\s*\n\s*([a-zA-Z]+\b)')
-    return pattern.sub(r'\1\2', text)
+    return pattern.sub(replace_hyphen, text)
 
 
 def rejoin_paragraphs(text: str) -> str:
@@ -33,29 +77,48 @@ def rejoin_paragraphs(text: str) -> str:
 
 
 def remove_repeated_headers_footers(page_texts: List[str]) -> List[str]:
-    """Detect and remove identical header/footer lines across pages."""
+    """Detect and remove normalized repeated header/footer lines across pages."""
     if len(page_texts) < 2:
         return page_texts
 
-    # Gather first and last non-empty lines from each page
-    top_lines = []
-    bot_lines = []
+    def normalize_line(line: str) -> str:
+        return re.sub(r'\b\d+\b', '<NUM>', line.strip())
+
+    top_patterns = []
+    bot_patterns = []
     for pt in page_texts:
         non_empty = [l.strip() for l in pt.splitlines() if l.strip()]
         if non_empty:
-            top_lines.append(non_empty[0])
-            bot_lines.append(non_empty[-1])
+            top_patterns.append(normalize_line(non_empty[0]))
+            bot_patterns.append(normalize_line(non_empty[-1]))
 
-    repeated_headers = {line for line, count in Counter(top_lines).items() if count >= 2}
-    repeated_footers = {line for line, count in Counter(bot_lines).items() if count >= 2}
+    # Dynamic threshold: at least 20% of pages, minimum 2
+    threshold = max(2, math.ceil(0.20 * len(page_texts)))
+
+    repeated_top = {pat for pat, count in Counter(top_patterns).items() if count >= threshold}
+    repeated_bot = {pat for pat, count in Counter(bot_patterns).items() if count >= threshold}
 
     cleaned_pages = []
     for pt in page_texts:
         lines = pt.splitlines()
+        non_empty_indices = [idx for idx, l in enumerate(lines) if l.strip()]
+        if not non_empty_indices:
+            cleaned_pages.append(pt)
+            continue
+
+        first_idx = non_empty_indices[0]
+        last_idx = non_empty_indices[-1]
+
         filtered = []
-        for l in lines:
+        for idx, l in enumerate(lines):
             stripped = l.strip()
-            if stripped in repeated_headers or stripped in repeated_footers:
+            if not stripped:
+                filtered.append(l)
+                continue
+            norm = normalize_line(stripped)
+            if idx == first_idx and norm in repeated_top:
+                continue
+            if idx == last_idx and norm in repeated_bot:
                 continue
             filtered.append(l)
         cleaned_pages.append('\n'.join(filtered))
@@ -63,10 +126,10 @@ def remove_repeated_headers_footers(page_texts: List[str]) -> List[str]:
     return cleaned_pages
 
 
-def clean_page_text(text: str) -> str:
+def clean_page_text(text: str, doc_lexicon: Optional[Set[str]] = None) -> str:
     """Clean a single page text string."""
     t = remove_page_numbers(text)
-    t = fix_hyphenated_breaks(t)
+    t = fix_hyphenated_breaks(t, doc_lexicon=doc_lexicon)
     return rejoin_paragraphs(t)
 
 
@@ -75,11 +138,14 @@ def clean_extracted_pages(pages: List[Dict[str, Union[int, str]]]) -> List[Dict[
     raw_texts = [str(p["text"]) for p in pages]
     no_headers = remove_repeated_headers_footers(raw_texts)
 
+    doc_text = " ".join(raw_texts)
+    doc_lexicon = set(re.findall(r'\b[a-zA-Z]+(?:-[a-zA-Z]+)?\b', doc_text.lower()))
+
     results = []
     for p, cleaned in zip(pages, no_headers):
         results.append({
             "page": p["page"],
-            "text": clean_page_text(cleaned),
+            "text": clean_page_text(cleaned, doc_lexicon=doc_lexicon),
         })
     return results
 

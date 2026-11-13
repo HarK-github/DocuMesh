@@ -2,13 +2,13 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db
-from backend.app.models import Document, Sentence, Suggestion, Annotation
+from backend.app.db import get_db
+from backend.app.models import Document, Sentence, Suggestion
 from backend.app.services.clean import snap_to_word_boundaries
+from backend.app.settings import get_settings
 
 
 def test_snap_to_word_boundaries_cases() -> None:
@@ -42,15 +42,18 @@ def test_snap_to_word_boundaries_cases() -> None:
 
 
 @pytest.fixture
-def setup_db(tmp_path, monkeypatch):
-    """Provide TestClient with temporary DB, seeded taxonomy, and a sample document with clean_text."""
-    db_file = tmp_path / "test_highlight.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+def setup_db(engine, monkeypatch):
+    """Provide TestClient with seeded taxonomy and sample document."""
+    connection = engine.connect()
+    transaction = connection.begin()
+    TestingSession = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
 
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
+    import backend.app.db as app_db
+    monkeypatch.setattr(app_db, "get_session_factory", lambda eng=None: TestingSession)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
+
+    get_settings.cache_clear()
 
     sample_text = "The quick brown fox jumps over the lazy dog."
     with TestingSession() as session:
@@ -97,6 +100,10 @@ def setup_db(tmp_path, monkeypatch):
 
     with TestClient(app) as client:
         yield client, doc_id, sug_id, TestingSession
+
+    transaction.rollback()
+    connection.close()
+    app_db.reset_engine()
 
 
 def test_duplicate_returns_existing_annotation(setup_db) -> None:

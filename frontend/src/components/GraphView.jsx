@@ -19,6 +19,7 @@ import {
   Check,
   Sparkles,
   X,
+  Compass,
 } from 'lucide-react';
 import { getLabelStyle } from '../lib/colors';
 
@@ -274,6 +275,125 @@ const nodeTypes = {
   annotation: AnnotationNode,
 };
 
+export function getRadialLayoutedElements(nodes, edges, focusNodeId = null) {
+  if (!nodes || nodes.length === 0) return { nodes: [], edges: [] };
+
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const adj = new Map();
+  nodes.forEach((n) => adj.set(n.id, new Set()));
+
+  edges.forEach((e) => {
+    if (adj.has(e.source) && adj.has(e.target)) {
+      adj.get(e.source).add(e.target);
+      adj.get(e.target).add(e.source);
+    }
+  });
+
+  // 1. Identify Central Anchor Node (either user-selected or highest-scoring epistemic node)
+  let centerId = focusNodeId && nodeMap.has(focusNodeId) ? focusNodeId : null;
+
+  if (!centerId) {
+    let bestScore = -1;
+    nodes.forEach((n) => {
+      const ann = n.data?.annotation;
+      const deg = adj.get(n.id)?.size || 0;
+      let score = deg * 3;
+      if (ann?.label === 'Problem') score += 25;
+      else if (ann?.label === 'Solution') score += 20;
+      else if (ann?.label === 'Claim') score += 15;
+      else if (ann?.label === 'Definition') score += 8;
+
+      if (score > bestScore) {
+        bestScore = score;
+        centerId = n.id;
+      }
+    });
+  }
+
+  if (!centerId && nodes.length > 0) {
+    centerId = nodes[0].id;
+  }
+
+  const layoutedNodes = [];
+  const placed = new Set();
+
+  // Place Central Anchor Node at (0, 0)
+  const centerNode = nodeMap.get(centerId);
+  if (centerNode) {
+    layoutedNodes.push({
+      ...centerNode,
+      position: { x: 0, y: 0 },
+    });
+    placed.add(centerId);
+  }
+
+  // Ring 1: Direct Neighbors (Inner Semantic Orbit)
+  const directNeighbors = Array.from(adj.get(centerId) || []).filter((id) => !placed.has(id));
+  const r1 = Math.max(420, directNeighbors.length * 65);
+
+  directNeighbors.forEach((nid, i) => {
+    const angle = (2 * Math.PI * i) / Math.max(1, directNeighbors.length) - Math.PI / 2;
+    const node = nodeMap.get(nid);
+    if (node) {
+      layoutedNodes.push({
+        ...node,
+        position: {
+          x: Math.round(r1 * Math.cos(angle) - NODE_WIDTH / 2),
+          y: Math.round(r1 * Math.sin(angle) - NODE_HEIGHT / 2),
+        },
+      });
+      placed.add(nid);
+    }
+  });
+
+  // Ring 2: Second-degree Neighbors (Intermediate Semantic Orbit)
+  const secondNeighbors = [];
+  directNeighbors.forEach((dnId) => {
+    (adj.get(dnId) || []).forEach((n2) => {
+      if (!placed.has(n2)) {
+        placed.add(n2);
+        secondNeighbors.push(n2);
+      }
+    });
+  });
+
+  const r2 = Math.max(r1 + 380, secondNeighbors.length * 60);
+  secondNeighbors.forEach((nid, i) => {
+    // Interleave angles so they don't visually clash with Ring 1 nodes
+    const angle = (2 * Math.PI * i) / Math.max(1, secondNeighbors.length) - Math.PI / 2 + Math.PI / Math.max(1, secondNeighbors.length * 2);
+    const node = nodeMap.get(nid);
+    if (node) {
+      layoutedNodes.push({
+        ...node,
+        position: {
+          x: Math.round(r2 * Math.cos(angle) - NODE_WIDTH / 2),
+          y: Math.round(r2 * Math.sin(angle) - NODE_HEIGHT / 2),
+        },
+      });
+      placed.add(nid);
+    }
+  });
+
+  // Ring 3: All remaining nodes (Outer Orbit - Never grid-wise!)
+  const remaining = nodes.filter((n) => !placed.has(n.id));
+  if (remaining.length > 0) {
+    const r3 = Math.max(r2 + 400, remaining.length * 55);
+    remaining.forEach((n, i) => {
+      const angle = (2 * Math.PI * i) / Math.max(1, remaining.length) - Math.PI / 2;
+      layoutedNodes.push({
+        ...n,
+        position: {
+          x: Math.round(r3 * Math.cos(angle) - NODE_WIDTH / 2),
+          y: Math.round(r3 * Math.sin(angle) - NODE_HEIGHT / 2),
+        },
+      });
+      placed.add(n.id);
+    });
+  }
+
+  return { nodes: layoutedNodes, edges };
+}
+
 function getLayoutedElements(nodes, edges, direction = 'LR') {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -320,7 +440,9 @@ export default function GraphView({
   const [filterLabel, setFilterLabel] = useState('ALL');
   const [filterRelType, setFilterRelType] = useState('ALL');
   const [showNeighborsOnly, setShowNeighborsOnly] = useState(false);
-  const [showSimilarTo, setShowSimilarTo] = useState(true);
+  const [showSimilarTo, setShowSimilarTo] = useState(false);
+  const [hideUnconnected, setHideUnconnected] = useState(false);
+  const [layoutMode, setLayoutMode] = useState('radial');
 
   // Connection dialog state (drag from handle to handle)
   const [pendingConnection, setPendingConnection] = useState(null);
@@ -334,6 +456,17 @@ export default function GraphView({
       setSelectedRelType(taxonomy.relation_types[0]);
     }
   }, [taxonomy, selectedRelType]);
+
+  // Compute set of connected node IDs (nodes with at least 1 relationship)
+  const connectedNodeIds = useMemo(() => {
+    const ids = new Set();
+    const relList = Array.isArray(relations) ? relations : [];
+    relList.forEach((r) => {
+      ids.add(r.source_id);
+      ids.add(r.target_id);
+    });
+    return ids;
+  }, [relations]);
 
   // Compute filtered nodes and edges
   const { filteredAnnotations, filteredRelations } = useMemo(() => {
@@ -350,9 +483,47 @@ export default function GraphView({
       rels = rels.filter((r) => r.type === filterRelType);
     }
 
-    // Hide confirmed similar_to edges by default unless toggled on, but keep suggested ghost edges visible
+    // Hide similar_to edges by default unless explicitly toggled on
     if (!showSimilarTo) {
-      rels = rels.filter((r) => r.type !== 'similar_to' || r.status === 'suggested');
+      rels = rels.filter((r) => r.type !== 'similar_to');
+    }
+
+    // Deduplicate pair connections: Between any pair {u, v}, keep only ONE primary, highest-priority semantic relation
+    const RELATION_PRIORITY = {
+      solves: 100,
+      supports: 90,
+      contradicts: 85,
+      enables: 80,
+      causes: 75,
+      defines: 60,
+      elaborates: 50,
+      part_of: 45,
+      example_of: 30,
+      similar_to: 10,
+    };
+
+    const bestEdgeByPair = new Map();
+    rels.forEach((r) => {
+      const u = Number(r.source_id);
+      const v = Number(r.target_id);
+      if (u === v) return; // Prune self-loops
+
+      const pairKey = u < v ? `${u}-${v}` : `${v}-${u}`;
+      const basePri = RELATION_PRIORITY[r.type] || 20;
+      const statusBonus = r.status === 'confirmed' ? 200 : (r.status === 'auto_candidate' ? 100 : 0);
+      const score = basePri + statusBonus + (r.score ? r.score * 10 : 0);
+
+      const existing = bestEdgeByPair.get(pairKey);
+      if (!existing || score > existing.score) {
+        bestEdgeByPair.set(pairKey, { rel: r, score });
+      }
+    });
+
+    rels = Array.from(bestEdgeByPair.values()).map((item) => item.rel);
+
+    // Filter out unconnected / isolated nodes if toggled on
+    if (hideUnconnected) {
+      anns = anns.filter((a) => connectedNodeIds.has(a.id));
     }
 
     // Filter neighbors of selected node
@@ -367,12 +538,24 @@ export default function GraphView({
     }
 
     return { filteredAnnotations: anns, filteredRelations: rels };
-  }, [annotations, relations, filterLabel, filterRelType, showSimilarTo, showNeighborsOnly, selectedAnnotationId]);
+  }, [
+    annotations,
+    relations,
+    filterLabel,
+    filterRelType,
+    showSimilarTo,
+    hideUnconnected,
+    connectedNodeIds,
+    showNeighborsOnly,
+    selectedAnnotationId,
+  ]);
 
   // Transform annotations to React Flow nodes
   const initialNodes = useMemo(() => {
     const list = Array.isArray(filteredAnnotations) ? filteredAnnotations : [];
-    return list.map((ann, idx) => {
+    const hasCustomCoords = list.some((a) => (a.x && a.x !== 0) || (a.y && a.y !== 0));
+
+    const rawNodes = list.map((ann, idx) => {
       const isSuggested = ann.status === 'suggested';
       const nodeId = isSuggested ? `sug-${ann.id}` : String(ann.id);
       const posX = ann.x && ann.x !== 0 ? ann.x : 60 + (idx % 3) * 290;
@@ -390,15 +573,43 @@ export default function GraphView({
         },
       };
     });
-  }, [filteredAnnotations, selectedAnnotationId, onAcceptSuggestion, onRejectSuggestion]);
+
+    // Clean, organic concentric radial layout
+    if (rawNodes.length > 0 && (layoutMode === 'radial' || !hasCustomCoords)) {
+      const edgesForLayout = (Array.isArray(filteredRelations) ? filteredRelations : []).map((r) => ({
+        source: String(r.source_id),
+        target: String(r.target_id),
+      }));
+      const layouted = getRadialLayoutedElements(
+        rawNodes,
+        edgesForLayout,
+        selectedAnnotationId ? String(selectedAnnotationId) : null
+      );
+      return layouted.nodes;
+    }
+
+    return rawNodes;
+  }, [
+    filteredAnnotations,
+    filteredRelations,
+    selectedAnnotationId,
+    layoutMode,
+    onAcceptSuggestion,
+    onRejectSuggestion,
+  ]);
 
   // Transform relations to React Flow edges
   const initialEdges = useMemo(() => {
     const annKeyMap = new Map();
+    const nodePosMap = new Map();
     const annList = Array.isArray(filteredAnnotations) ? filteredAnnotations : [];
     annList.forEach((a) => {
       const k = a.status === 'suggested' ? `sug-${a.id}` : String(a.id);
       annKeyMap.set(k, a);
+    });
+
+    (initialNodes || []).forEach((n) => {
+      nodePosMap.set(n.id, n.position);
     });
 
     const relList = Array.isArray(filteredRelations) ? filteredRelations : [];
@@ -412,15 +623,15 @@ export default function GraphView({
           return null;
         }
 
-        const srcAnn = annKeyMap.get(sourceKey);
-        const tgtAnn = annKeyMap.get(targetKey);
-
         let sourceHandle = 'bottom';
         let targetHandle = 'top';
 
-        if (srcAnn && tgtAnn) {
-          const dx = (tgtAnn.x || 0) - (srcAnn.x || 0);
-          const dy = (tgtAnn.y || 0) - (srcAnn.y || 0);
+        const srcPos = nodePosMap.get(sourceKey);
+        const tgtPos = nodePosMap.get(targetKey);
+
+        if (srcPos && tgtPos) {
+          const dx = tgtPos.x - srcPos.x;
+          const dy = tgtPos.y - srcPos.y;
 
           if (Math.abs(dx) > Math.abs(dy)) {
             if (dx > 0) {
@@ -444,7 +655,23 @@ export default function GraphView({
         const isSuggested = rel.status === 'suggested';
         const isImplied = rel.status === 'implied';
         const isFocused = rel.id === selectedRelationId;
-        const strokeColor = isImplied ? '#737373' : '#000000';
+
+        // Color code relations by semantic taxonomy
+        const REL_COLOR_MAP = {
+          solves: '#0284c7', // Sky Blue
+          supports: '#059669', // Emerald
+          defines: '#7c3aed', // Purple/Violet
+          causes: '#ea580c', // Orange
+          enables: '#0d9488', // Teal
+          contradicts: '#e11d48', // Crimson Rose
+          part_of: '#6366f1', // Indigo
+          elaborates: '#d97706', // Amber
+          example_of: '#4b5563', // Slate Gray
+          similar_to: '#a3a3a3', // Light Gray
+        };
+
+        const relColor = REL_COLOR_MAP[rel.type] || '#262626';
+        const strokeColor = isImplied ? '#737373' : (isFocused ? '#000000' : relColor);
 
         let edgeLabel = rel.type;
         if (isImplied) {
@@ -466,42 +693,41 @@ export default function GraphView({
           target: targetKey,
           sourceHandle,
           targetHandle,
-          type: 'smoothstep',
-          pathOptions: { borderRadius: 0 },
+          type: 'default', // Smooth curved Bezier!
           label: edgeLabel,
           animated: (isSuggested || isFocused) && !isImplied,
           style: {
             stroke: strokeColor,
-            strokeWidth: isFocused ? 3.5 : (isImplied ? 1.2 : 1.5),
+            strokeWidth: isFocused ? 3.5 : (isImplied ? 1.4 : 2.0),
             strokeDasharray: dashArray,
+            opacity: isFocused ? 1 : 0.88,
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            width: 16,
-            height: 16,
+            width: 14,
+            height: 14,
             color: strokeColor,
           },
           labelStyle: {
-            fill: '#000000',
+            fill: strokeColor,
             fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 700,
             fontSize: 10,
           },
           labelBgStyle: {
             fill: '#ffffff',
-            fillOpacity: 1,
-            stroke: '#000000',
-            strokeWidth: 1,
-            rx: 0,
-            ry: 0,
+            fillOpacity: 0.95,
+            stroke: strokeColor,
+            strokeWidth: 1.2,
+            rx: 6,
+            ry: 6,
           },
-          labelBgPadding: [6, 3],
-          labelBgBorderRadius: 0,
+          labelBgPadding: [6, 4],
           data: { relation: rel },
         };
       })
       .filter(Boolean);
-  }, [filteredAnnotations, filteredRelations, selectedRelationId]);
+  }, [filteredAnnotations, filteredRelations, initialNodes, selectedRelationId]);
 
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
@@ -548,7 +774,29 @@ export default function GraphView({
     setPendingConnection(null);
   };
 
-  const handleAutoLayout = () => {
+  const handleRadialLayout = () => {
+    setLayoutMode('radial');
+    const layouted = getRadialLayoutedElements(
+      nodes,
+      edges,
+      selectedAnnotationId ? String(selectedAnnotationId) : null
+    );
+    setNodes(layouted.nodes);
+    setEdges(layouted.edges);
+    layouted.nodes.forEach((n) => {
+      const ann = n.data?.annotation;
+      if (ann) {
+        onSaveNodePosition(ann.id, {
+          x: n.position.x,
+          y: n.position.y,
+          version: ann.version,
+        });
+      }
+    });
+  };
+
+  const handleDagreLayout = () => {
+    setLayoutMode('tree');
     const layouted = getLayoutedElements(nodes, edges, 'LR');
     setNodes(layouted.nodes);
     setEdges(layouted.edges);
@@ -619,6 +867,7 @@ export default function GraphView({
           gap: '12px',
           fontSize: '0.78rem',
           boxShadow: 'none',
+          flexWrap: 'wrap',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#000000' }}>
@@ -687,9 +936,11 @@ export default function GraphView({
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.72rem',
           }}
+          title="Show only direct neighbors of the selected node"
         >
           <input
             type="checkbox"
+            data-testid="toggle-neighbors-only"
             checked={showNeighborsOnly}
             onChange={(e) => setShowNeighborsOnly(e.target.checked)}
             style={{ accentColor: '#000000' }}
@@ -707,6 +958,29 @@ export default function GraphView({
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.72rem',
           }}
+          title="Remove unlinked/isolated highlights from the stage"
+        >
+          <input
+            type="checkbox"
+            data-testid="toggle-hide-unconnected"
+            checked={hideUnconnected}
+            onChange={(e) => setHideUnconnected(e.target.checked)}
+            style={{ accentColor: '#000000' }}
+          />
+          <span>Connected only ({connectedNodeIds.size})</span>
+        </label>
+
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            color: '#000000',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.72rem',
+          }}
+          title="Toggle visibility of similar_to edges"
         >
           <input
             type="checkbox"
@@ -715,35 +989,64 @@ export default function GraphView({
             onChange={(e) => setShowSimilarTo(e.target.checked)}
             style={{ accentColor: '#000000' }}
           />
-          <span>Show accepted similar_to</span>
+          <span>Show similar_to</span>
         </label>
 
-        <button
-          type="button"
-          onClick={handleAutoLayout}
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '5px 12px',
-            borderRadius: 0,
-            border: '1.5px solid #000000',
-            background: '#000000',
-            color: '#ffffff',
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.72rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            cursor: 'pointer',
-            transition: 'none',
-          }}
-          title="Auto arrange nodes with Dagre layout"
-        >
-          <Layers size={13} strokeWidth={1.5} color="#ffffff" />
-          <span>Auto Layout</span>
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            data-testid="btn-radial-layout"
+            onClick={handleRadialLayout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '5px 12px',
+              borderRadius: 0,
+              border: '1.5px solid #000000',
+              background: layoutMode === 'radial' ? '#000000' : '#ffffff',
+              color: layoutMode === 'radial' ? '#ffffff' : '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              cursor: 'pointer',
+              transition: 'none',
+            }}
+            title={selectedAnnotationId ? "Radially expand around selected node" : "Concentric radial orbit layout"}
+          >
+            <Compass size={13} strokeWidth={1.5} color={layoutMode === 'radial' ? '#ffffff' : '#000000'} />
+            <span>Radial Layout</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="btn-dagre-layout"
+            onClick={handleDagreLayout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '5px 12px',
+              borderRadius: 0,
+              border: '1.5px solid #000000',
+              background: layoutMode === 'tree' ? '#000000' : '#ffffff',
+              color: layoutMode === 'tree' ? '#ffffff' : '#000000',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              cursor: 'pointer',
+              transition: 'none',
+            }}
+            title="Auto arrange nodes with Dagre Left-to-Right hierarchy"
+          >
+            <Layers size={13} strokeWidth={1.5} color={layoutMode === 'tree' ? '#ffffff' : '#000000'} />
+            <span>Tree Layout</span>
+          </button>
+        </div>
       </div>
 
       {/* React Flow Canvas */}

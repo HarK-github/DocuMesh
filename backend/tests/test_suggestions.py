@@ -2,33 +2,33 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db, reset_engine
+from backend.app.db import get_db
 from backend.app.models import Document, Sentence
 from backend.app.services.embedder import FakeEmbedder, set_shared_embedder
 from backend.app.settings import get_settings
 
 
 @pytest.fixture
-def suggestions_setup(tmp_path, monkeypatch):
+def suggestions_setup(engine, monkeypatch):
     """Set up TestClient with FakeEmbedder and a sample segmented document."""
-    db_file = tmp_path / "test_sug.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+    connection = engine.connect()
+    transaction = connection.begin()
+    TestingSession = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
+
+    import backend.app.db as app_db
+    monkeypatch.setattr(app_db, "get_session_factory", lambda engine=None: TestingSession)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
     monkeypatch.setenv("SIMILARITY_THRESHOLD", "-1.0")  # Accept all for test predictability
     monkeypatch.setenv("SUGGESTION_COUNT", "5")
+    monkeypatch.setenv("EMBEDDING_MODEL_NAME", "fake")
 
     get_settings.cache_clear()
-    reset_engine()
-
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
 
     # Use FakeEmbedder for fast isolated testing
-    fake_emb = FakeEmbedder(dim=8)
+    fake_emb = FakeEmbedder()
     set_shared_embedder(fake_emb)
 
     text = "Can machines think? Digital computers are universal. The imitation game is played with three people."
@@ -66,6 +66,10 @@ def suggestions_setup(tmp_path, monkeypatch):
 
     with TestClient(app) as client:
         yield client, doc_id, text
+
+    transaction.rollback()
+    connection.close()
+    app_db.reset_engine()
 
 
 def test_suggest_highlights_flow(suggestions_setup) -> None:

@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ReactFlowProvider } from 'reactflow';
-import { AnnotationNode } from './GraphView';
+import { AnnotationNode, getRadialLayoutedElements } from './GraphView';
 
 describe('GraphView AnnotationNode styling and ghost nodes', () => {
   it('renders confirmed annotation node with solid border and no ghost actions', () => {
@@ -89,5 +89,48 @@ describe('GraphView AnnotationNode styling and ghost nodes', () => {
 
     rejectBtn.props.onClick({ stopPropagation });
     expect(onReject).toHaveBeenCalledWith(12);
+  });
+
+  it('calculates radial layout coordinates fanning out around hub nodes', () => {
+    const testNodes = [
+      { id: '1', data: { annotation: { id: 1, label: 'Problem', quote: 'Challenge' } }, position: { x: 0, y: 0 } },
+      { id: '2', data: { annotation: { id: 2, label: 'Solution', quote: 'Answer' } }, position: { x: 0, y: 0 } },
+      { id: '3', data: { annotation: { id: 3, label: 'Method', quote: 'Algorithm' } }, position: { x: 0, y: 0 } },
+      { id: '4', data: { annotation: { id: 4, label: 'Result', quote: 'Outcome' } }, position: { x: 0, y: 0 } },
+    ];
+    const testEdges = [
+      { source: '1', target: '2' },
+      { source: '1', target: '3' },
+      { source: '2', target: '4' },
+    ];
+
+    const result = getRadialLayoutedElements(testNodes, testEdges);
+    expect(result.nodes).toHaveLength(4);
+    // Ensure nodes receive non-overlapping radial positions
+    const posKeys = new Set(result.nodes.map((n) => `${n.position.x},${n.position.y}`));
+    expect(posKeys.size).toBe(4);
+  });
+
+  it('calculates focused radial layout with focus node at origin (0, 0)', () => {
+    const testNodes = [
+      { id: '10', data: { annotation: { id: 10, label: 'Problem', quote: 'Root Problem' } }, position: { x: 0, y: 0 } },
+      { id: '11', data: { annotation: { id: 11, label: 'Solution', quote: 'Direct Sol' } }, position: { x: 0, y: 0 } },
+      { id: '12', data: { annotation: { id: 12, label: 'Method', quote: 'Direct Method' } }, position: { x: 0, y: 0 } },
+    ];
+    const testEdges = [
+      { source: '10', target: '11' },
+      { source: '10', target: '12' },
+    ];
+
+    const result = getRadialLayoutedElements(testNodes, testEdges, '10');
+    expect(result.nodes).toHaveLength(3);
+    const centerNode = result.nodes.find((n) => n.id === '10');
+    expect(centerNode.position.x).toBe(0);
+    expect(centerNode.position.y).toBe(0);
+
+    const neighbor11 = result.nodes.find((n) => n.id === '11');
+    const neighbor12 = result.nodes.find((n) => n.id === '12');
+    expect(neighbor11.position.x !== 0 || neighbor11.position.y !== 0).toBe(true);
+    expect(neighbor12.position.x !== 0 || neighbor12.position.y !== 0).toBe(true);
   });
 });

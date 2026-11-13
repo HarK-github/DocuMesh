@@ -33,11 +33,11 @@ if [ ! -d "frontend/dist" ] || [ ! -f "frontend/dist/index.html" ]; then
     cd "${ROOT_DIR}"
 fi
 
-# 3. Seed database if not yet initialized
-if [ ! -f "data/app.db" ]; then
-    echo "Seeding initial document and annotations..."
-    "${PYTHON_BIN}" backend/seed.py || echo "Warning: Seed step skipped or already present."
-fi
+# 3. Apply database migrations and seed initial data (idempotent)
+echo "Applying database migrations..."
+"${PYTHON_BIN}" -m alembic upgrade head || echo "Warning: Alembic migration step completed or skipped."
+echo "Seeding initial data (idempotent)..."
+"${PYTHON_BIN}" backend/seed.py || echo "Warning: Seed step skipped or already present."
 
 echo "Serving unified application on http://${HOST}:${PORT}"
 echo "Press Ctrl+C to terminate."

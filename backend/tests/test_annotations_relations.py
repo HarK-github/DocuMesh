@@ -2,23 +2,22 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db
+from backend.app.db import get_db
 from backend.app.models import Document
 
 
 @pytest.fixture
-def test_setup(tmp_path, monkeypatch):
-    """Provide TestClient with temporary DB, seeded taxonomy, and a sample document."""
-    db_file = tmp_path / "test_crud.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+def test_setup(engine, monkeypatch):
+    """Provide TestClient with seeded taxonomy and a sample document."""
+    connection = engine.connect()
+    transaction = connection.begin()
+    TestingSession = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
 
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
+    import backend.app.db as app_db
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
 
     # Insert a document with known clean_text
     sample_text = "Can machines think? This should begin with definitions. Digital computers are universal."
@@ -45,6 +44,10 @@ def test_setup(tmp_path, monkeypatch):
 
     with TestClient(app) as client:
         yield client, doc_id, sample_text
+
+    transaction.rollback()
+    connection.close()
+    app_db.reset_engine()
 
 
 def test_get_taxonomy(test_setup) -> None:

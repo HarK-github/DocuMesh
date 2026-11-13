@@ -1,0 +1,17 @@
+{
+  "status": "GO",
+  "grounding_rate": 1.0,
+  "grounding_rate_threshold": 0.8,
+  "grounding_passed": true,
+  "edge_precision": 1.0,
+  "edge_precision_threshold": 0.75,
+  "edge_precision_passed": true,
+  "total_chunks": 58,
+  "total_mentions": 116,
+  "grounded_mentions": 116,
+  "total_relations": 58,
+  "grounded_relations": 58,
+  "proximity_passed_relations": 58,
+  "audited_valid_edges": 58,
+  "verdict_reason": "All grounding rate and edge precision criteria satisfied."
+}

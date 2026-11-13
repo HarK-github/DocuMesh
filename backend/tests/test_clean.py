@@ -78,3 +78,32 @@ def test_clean_extracted_pages() -> None:
     assert len(cleaned) == 2
     assert cleaned[0]["page"] == 1
     assert "First line. Second line." in cleaned[0]["text"]
+
+
+def test_fix_hyphenated_breaks_compounds() -> None:
+    """Verify Bug A fix: domain compounds preserve hyphen while broken words merge."""
+    sample = (
+        "We evaluate multi-\n  hop reasoning across state-\n of-the-art models "
+        "using a compu-\n tational method."
+    )
+    cleaned = fix_hyphenated_breaks(sample)
+    assert "multi-hop" in cleaned
+    assert "state-of-the-art" in cleaned
+    assert "computational" in cleaned
+
+
+def test_remove_repeated_headers_footers_varying_digits() -> None:
+    """Verify Bug B fix: footers with changing page numbers are detected and removed."""
+    p1 = "Page 1 | ICML 2026\nIntroduction to methods.\n- 1 -"
+    p2 = "Page 2 | ICML 2026\nDetails of the architecture.\n- 2 -"
+    p3 = "Page 3 | ICML 2026\nExperimental results.\n- 3 -"
+    cleaned = remove_repeated_headers_footers([p1, p2, p3])
+    for page in cleaned:
+        assert "Page" not in page
+        assert "ICML 2026" not in page
+        assert "- 1 -" not in page
+        assert "- 2 -" not in page
+        assert "- 3 -" not in page
+    assert "Introduction to methods." in cleaned[0]
+    assert "Details of the architecture." in cleaned[1]
+    assert "Experimental results." in cleaned[2]

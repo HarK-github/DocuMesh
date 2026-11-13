@@ -63,13 +63,16 @@ def update_job_status(
 
 def _job_wrapper(job_id: str, func: Callable, *args: Any, **kwargs: Any) -> None:
     """Execute job function in background thread with status tracking."""
-    update_job_status(job_id, status="running", progress=10)
     try:
+        update_job_status(job_id, status="running", progress=10)
         res = func(job_id, *args, **kwargs)
         update_job_status(job_id, status="done", progress=100, result=res)
     except Exception as exc:
         err_msg = f"{type(exc).__name__}: {str(exc)}\n{traceback.format_exc()}"
-        update_job_status(job_id, status="failed", error=err_msg)
+        try:
+            update_job_status(job_id, status="failed", error=err_msg)
+        except Exception:
+            pass
 
 
 def submit_job(job_id: str, func: Callable, *args: Any, **kwargs: Any) -> None:

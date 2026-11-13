@@ -12,10 +12,10 @@ fi
 
 echo "Starting PDF Annotation & Knowledge Graph application on port ${PORT}..."
 
-# Initialize and seed database if data/app.db does not exist
-if [ ! -f "data/app.db" ]; then
-    echo "Initializing database and seeding sample document..."
-    python3 backend/seed.py || echo "Warning: Seed script completed or skipped."
-fi
+echo "Applying database migrations..."
+python3 -m alembic upgrade head || echo "Warning: Alembic migration step completed or skipped."
+
+echo "Seeding initial data (idempotent)..."
+python3 backend/seed.py || echo "Warning: Seed script completed or skipped."
 
 exec uvicorn backend.app.main:app --host 0.0.0.0 --port "${PORT}"

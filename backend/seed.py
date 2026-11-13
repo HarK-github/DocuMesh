@@ -55,7 +55,8 @@ def seed_database() -> int:
         doc = session.query(Document).filter(Document.id == doc_id).first()
         clean_text = doc.clean_text or ""
 
-        # Remove previous seed annotations if re-running
+        # Remove previous seed annotations and relations if re-running
+        session.query(Relation).filter(Relation.document_id == doc_id).delete()
         session.query(Annotation).filter(Annotation.document_id == doc_id).delete()
         session.commit()
 

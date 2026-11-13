@@ -3,17 +3,15 @@
 import pytest
 import numpy as np
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db, reset_engine
+from backend.app.db import get_db
 from backend.app.models import Document, Sentence, Annotation, Suggestion, Relation
 from backend.app.services.embedder import FakeEmbedder, set_shared_embedder
 from backend.app.services.ranker import (
     compute_candidate_score,
     select_diverse_candidates_mmr,
-    cosine_similarity,
 )
 from backend.app.settings import get_settings
 
@@ -82,24 +80,24 @@ def test_select_diverse_candidates_mmr_avoids_near_duplicates() -> None:
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def scoped_setup(tmp_path, monkeypatch):
-    """Set up TestClient with FakeEmbedder, FakeVectorStore, and documents."""
-    db_file = tmp_path / "test_scoped.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
-    monkeypatch.setenv("VECTOR_STORE", "fake")
-    monkeypatch.setenv("SIMILARITY_THRESHOLD", "0.2")
+def scoped_setup(engine, monkeypatch):
+    """Set up TestClient with FakeEmbedder and documents."""
+    connection = engine.connect()
+    transaction = connection.begin()
+    TestingSession = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
+
+    import backend.app.db as app_db
+    monkeypatch.setattr(app_db, "get_session_factory", lambda eng=None: TestingSession)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
+    monkeypatch.setenv("SIMILARITY_THRESHOLD", "-1.0")
     monkeypatch.setenv("MAX_PENDING_PER_SEED", "2")
     monkeypatch.setenv("SUGGESTION_COUNT", "3")
+    monkeypatch.setenv("EMBEDDING_MODEL_NAME", "fake")
 
     get_settings.cache_clear()
-    reset_engine()
 
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
-
-    fake_emb = FakeEmbedder(dim=8)
+    fake_emb = FakeEmbedder()
     set_shared_embedder(fake_emb)
 
     text = (
@@ -147,7 +145,7 @@ def scoped_setup(tmp_path, monkeypatch):
                 start=st,
                 end=en,
                 page=1,
-                embedding=emb.tobytes(),
+                embedding=emb,
             )
             s_objs.append(s)
             session.add(s)
@@ -196,6 +194,10 @@ def scoped_setup(tmp_path, monkeypatch):
 
     with TestClient(app) as client:
         yield client, doc_id, ann1_id, ann2_id, ann3_id, TestingSession
+
+    transaction.rollback()
+    connection.close()
+    app_db.reset_engine()
 
 
 def test_never_seed_from_unconfirmed_suggestions(scoped_setup) -> None:

@@ -2,13 +2,14 @@
 
 import hashlib
 from pathlib import Path
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import pymupdf
 from backend.app.settings import get_settings
 from backend.app.db import get_db
-from backend.app.models import Document, Annotation
+from backend.app.models import Document, Annotation, Sentence
 from backend.app.schemas import (
     DocumentResponse,
     DocumentUploadResponse,
@@ -90,6 +91,12 @@ async def upload_document(
     )
 
 
+@router.get("", response_model=List[DocumentResponse])
+def list_documents(db: Session = Depends(get_db)) -> List[DocumentResponse]:
+    """Retrieve all ingested documents ordered by newest first."""
+    return db.query(Document).order_by(Document.id.desc()).all()
+
+
 @router.get("/{document_id}", response_model=DocumentResponse)
 def get_document(document_id: int, db: Session = Depends(get_db)) -> DocumentResponse:
     """Retrieve document metadata by ID."""
@@ -159,14 +166,57 @@ def get_document_pdf(
             if not a.quote or not a.quote.strip():
                 continue
             stroke_col = color_map.get(a.label, (1.0, 0.95, 0.60))
-            for page in pdf_doc:
+
+            # Page-targeted search to prevent early-break highlight mismatches
+            target_page_num = getattr(a, "page", None)
+            if target_page_num is None:
+                sent_page = (
+                    db.query(Sentence.page)
+                    .filter(
+                        Sentence.document_id == doc.id,
+                        Sentence.start <= a.start,
+                        Sentence.end >= a.start,
+                    )
+                    .first()
+                )
+                target_page_num = sent_page[0] if sent_page else 1
+
+            page_idx = max(0, min(len(pdf_doc) - 1, target_page_num - 1))
+            search_pages = [page_idx]
+            # Include neighboring pages if annotation might cross physical boundary
+            if page_idx - 1 >= 0:
+                search_pages.append(page_idx - 1)
+            if page_idx + 1 < len(pdf_doc):
+                search_pages.append(page_idx + 1)
+
+            highlighted = False
+            for p_idx in search_pages:
+                page = pdf_doc[p_idx]
                 rects = page.search_for(a.quote)
+                if not rects:
+                    try:
+                        flags = pymupdf.TEXT_DEHYPHENATE | pymupdf.TEXT_PRESERVE_WHITESPACE
+                        rects = page.search_for(a.quote, flags=flags)
+                    except Exception:
+                        pass
                 if rects:
                     h_annot = page.add_highlight_annot(rects)
                     h_annot.set_colors(stroke=stroke_col)
                     h_annot.set_info(title=a.label, content=a.note or a.label)
                     h_annot.update()
+                    highlighted = True
                     break
+
+            if not highlighted:
+                # Fallback to searching all pages
+                for page in pdf_doc:
+                    rects = page.search_for(a.quote)
+                    if rects:
+                        h_annot = page.add_highlight_annot(rects)
+                        h_annot.set_colors(stroke=stroke_col)
+                        h_annot.set_info(title=a.label, content=a.note or a.label)
+                        h_annot.update()
+                        break
 
         out_bytes = pdf_doc.tobytes()
         pdf_doc.close()
@@ -178,6 +228,8 @@ def get_document_pdf(
             },
         )
     except Exception:
+        import traceback
+        traceback.print_exc()
         return FileResponse(
             str(pdf_path),
             media_type="application/pdf",

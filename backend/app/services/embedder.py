@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 import hashlib
 import numpy as np
+from backend.app.models import EMBEDDING_DIM
 from backend.app.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ class BaseEmbedder(ABC):
 class FakeEmbedder(BaseEmbedder):
     """Deterministic fake embedder for testing without model overhead."""
 
-    def __init__(self, dim: int = 16) -> None:
+    def __init__(self, dim: int = EMBEDDING_DIM) -> None:
         self.dim = dim
 
     def embed(self, texts: List[str]) -> np.ndarray:

@@ -4,34 +4,35 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db, reset_engine
+from backend.app.db import get_db
 from backend.app.models import Document, Annotation, Job
 from backend.app.services.jobs import cleanup_stale_jobs, create_job, update_job_status
 from backend.app.settings import get_settings
 
 
 @pytest.fixture
-def concurrency_env(tmp_path, monkeypatch):
-    """Set up temporary database for concurrency tests."""
-    db_file = tmp_path / "test_concurrency.db"
+def concurrency_env(tmp_path, monkeypatch, engine):
+    """Set up PostgreSQL test environment for concurrency tests."""
     upload_dir = tmp_path / "uploads"
     upload_dir.mkdir()
 
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+    import backend.app.db as app_db
+    app_db.reset_engine()
+    TestingSession = sessionmaker(bind=engine)
+
+    monkeypatch.setattr(app_db, "get_session_factory", lambda eng=None: TestingSession)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
     monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
     monkeypatch.setenv("EMBEDDING_MODEL_NAME", "fake")
-    monkeypatch.setenv("SQLITE_BUSY_TIMEOUT_MS", "10000")
 
     get_settings.cache_clear()
-    reset_engine()
 
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
+    with engine.connect() as conn:
+        conn.execute(app_db.text("TRUNCATE TABLE documents, sentences, annotations, relations, suggestions, jobs CASCADE;"))
+        conn.commit()
 
     # Insert document with 20 distinct sentences
     sentences = [f"Sentence number {i} is here." for i in range(25)]
@@ -56,9 +57,14 @@ def concurrency_env(tmp_path, monkeypatch):
     with TestClient(app) as client:
         yield client, doc_id, text, sentences, TestingSession
 
+    with engine.connect() as conn:
+        conn.execute(app_db.text("TRUNCATE TABLE documents, sentences, annotations, relations, suggestions, jobs CASCADE;"))
+        conn.commit()
+    app_db.reset_engine()
+
 
 def test_twenty_parallel_annotation_creates(concurrency_env) -> None:
-    """Verify 20 parallel annotation creates without lost writes or SQLite lock errors."""
+    """Verify 20 parallel annotation creates without lost writes or database lock errors."""
     client, doc_id, text, sentences, SessionFactory = concurrency_env
 
     def create_one(i: int):

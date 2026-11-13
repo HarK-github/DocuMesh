@@ -163,8 +163,10 @@ export function useJob(jobId) {
  */
 export function useChat(documentId) {
   return useMutation({
-    mutationFn: ({ question, history = [] }) =>
-      api.post(`/documents/${documentId}/chat`, { question, history }),
+    mutationFn: ({ question, history = [], mode = 'hybrid' }) => {
+      const url = documentId ? `/documents/${documentId}/chat` : '/chat';
+      return api.post(url, { question, history, mode });
+    },
   });
 }
 

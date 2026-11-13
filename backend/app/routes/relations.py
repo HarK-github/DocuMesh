@@ -6,7 +6,19 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 from backend.app.db import get_db
-from backend.app.models import Document, Annotation, Relation, Suggestion, RejectedPair
+from backend.app.models import (
+    Document,
+    Annotation,
+    Relation,
+    Suggestion,
+    RejectedPair,
+    ExtractionRun,
+    Proposition,
+    Concept,
+    GraphEdge,
+    EdgeEvidence,
+    LegacyEdgeReview,
+)
 from backend.app.taxonomy import is_valid_relation_type
 from backend.app.schemas import (
     RelationCreate,
@@ -18,8 +30,24 @@ from backend.app.schemas import (
     PathsResponse,
     PathItem,
     PathEdge,
+    PropositionResponse,
+    ConceptResponse,
+    GraphEdgeResponse,
+    EdgeEvidenceResponse,
+    ExtractionRunResponse,
+    GraphValidationResponse,
+    LegacyEdgeReviewRequest,
+    LegacyEdgeReviewResponse,
+    EdgeMappingReportResponse,
 )
 from backend.app.services.clean import snap_to_word_boundaries
+from backend.app.services.graph_versioning import (
+    validate_extraction_run,
+    activate_extraction_run,
+    rollback_extraction_run,
+    record_legacy_edge_review,
+    generate_edge_mapping_report,
+)
 
 from backend.app.services.jobs import create_job, submit_job
 from backend.app.services.llm import get_llm_client, LLMNotConfiguredError
@@ -116,6 +144,59 @@ def create_relation(
     db.add(relation)
     db.commit()
     db.refresh(relation)
+
+    # Sync with unified graph schema (GraphRelation and RelationEvidence)
+    try:
+        from backend.app.models import Mention, GraphRelation, RelationEvidence, Sentence
+        m_src = db.query(Mention).filter(Mention.id == payload.source_id).first()
+        m_tgt = db.query(Mention).filter(Mention.id == payload.target_id).first()
+        if m_src and m_tgt and m_src.node_id != m_tgt.node_id:
+            existing_g = (
+                db.query(GraphRelation)
+                .filter(
+                    GraphRelation.document_id == document_id,
+                    GraphRelation.source_node_id == m_src.node_id,
+                    GraphRelation.target_node_id == m_tgt.node_id,
+                    GraphRelation.relation_type == payload.type,
+                )
+                .first()
+            )
+            if not existing_g:
+                g_rel = GraphRelation(
+                    document_id=document_id,
+                    source_node_id=m_src.node_id,
+                    target_node_id=m_tgt.node_id,
+                    relation_type=payload.type,
+                    confidence=float(relation.cos_score) if relation.cos_score is not None else 1.0,
+                    status=relation.status,
+                    is_legacy=payload.type in ("relates_to", "similar_to"),
+                    reason=relation.reason,
+                    version=relation.version,
+                )
+                db.add(g_rel)
+                db.flush()
+                sent = (
+                    db.query(Sentence)
+                    .filter(
+                        Sentence.document_id == document_id,
+                        Sentence.start <= source_ann.start,
+                        Sentence.end >= source_ann.start,
+                    )
+                    .first()
+                )
+                evidence = RelationEvidence(
+                    relation_id=g_rel.id,
+                    document_id=document_id,
+                    sentence_id=sent.id if sent else None,
+                    verbatim_quote=source_ann.quote,
+                    start=source_ann.start,
+                    end=source_ann.end,
+                )
+                db.add(evidence)
+                db.commit()
+    except Exception:
+        pass
+
     return relation
 
 
@@ -201,15 +282,10 @@ def delete_relation(relation_id: int, db: Session = Depends(get_db)) -> None:
     return None
 
 
-@router.get("/documents/{document_id}/graph", response_model=GraphResponse)
-def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> GraphResponse:
-    """Retrieve full graph view: annotations (nodes), relations (edges), and pending suggestions as ghost nodes."""
-    doc = db.query(Document).filter(Document.id == document_id).first()
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document not found")
-
-    annotations = db.query(Annotation).filter(Annotation.document_id == document_id).all()
-    relations = db.query(Relation).filter(Relation.document_id == document_id).all()
+def _build_legacy_graph_response(doc: Document, db: Session) -> GraphResponse:
+    """Build legacy V1 graph view with annotations and relations."""
+    annotations = db.query(Annotation).filter(Annotation.document_id == doc.id).all()
+    relations = db.query(Relation).filter(Relation.document_id == doc.id).all()
 
     nodes: List[AnnotationResponse] = [
         AnnotationResponse(
@@ -249,7 +325,7 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
     pending_sugs = (
         db.query(Suggestion)
         .filter(
-            Suggestion.document_id == document_id,
+            Suggestion.document_id == doc.id,
             Suggestion.status == "pending",
         )
         .all()
@@ -292,7 +368,7 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
             )
             ghost_edge = RelationResponse(
                 id=-(sug.id),
-                document_id=document_id,
+                document_id=doc.id,
                 source_id=sug.id,
                 target_id=sug.seed_annotation_id,
                 type=dynamic_type,
@@ -304,7 +380,6 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
             edges.append(ghost_edge)
 
     # Phase D: Implied relation inference for transitive types (causes, precedes)
-    # ponytail: 2-hop transitive closure; BFS if multi-hop arbitrary closure needed
     transitive_types = {"causes", "precedes"}
     existing_pairs = {(r.source_id, r.target_id) for r in relations}
     existing_pairs.update({(r.target_id, r.source_id) for r in relations})
@@ -323,7 +398,7 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
                         edges.append(
                             RelationResponse(
                                 id=-(500000 + len(edges)),
-                                document_id=document_id,
+                                document_id=doc.id,
                                 source_id=a_id,
                                 target_id=c_id,
                                 type=t,
@@ -334,10 +409,388 @@ def get_document_graph(document_id: int, db: Session = Depends(get_db)) -> Graph
                         )
 
     return GraphResponse(
-        document_id=document_id,
+        document_id=doc.id,
         annotations=nodes,
         relations=edges,
+        graph_version=1,
+        run_id=None,
+        is_active=False,
     )
+
+
+def _build_v2_graph_response(
+    doc: Document,
+    run: ExtractionRun,
+    db: Session,
+    min_confidence: Optional[float] = None,
+    relation_type: Optional[str] = None,
+    include_review: bool = False,
+) -> GraphResponse:
+    """Build Epistemic Knowledge Graph V2 response."""
+    props = db.query(Proposition).filter(Proposition.run_id == run.id).all()
+    concepts = db.query(Concept).filter(Concept.run_id == run.id).all()
+
+    edges_query = db.query(GraphEdge).filter(GraphEdge.run_id == run.id)
+    if min_confidence is not None:
+        edges_query = edges_query.filter(GraphEdge.confidence >= min_confidence)
+    if relation_type:
+        edges_query = edges_query.filter(GraphEdge.relation_type == relation_type)
+    if not include_review:
+        edges_query = edges_query.filter(GraphEdge.review_status.in_(["accepted", "auto_candidate"]))
+
+    raw_edges = edges_query.all()
+
+    prop_responses: List[PropositionResponse] = [
+        PropositionResponse(
+            id=p.id,
+            document_id=p.document_id,
+            run_id=p.run_id,
+            canonical_statement=p.canonical_statement,
+            statement_type=p.statement_type,
+            summary=p.summary,
+            confidence=float(p.confidence),
+            review_status=p.review_status,
+            provenance_highlight_ids=[h.id for h in p.highlights],
+        )
+        for p in props
+    ]
+
+    concept_responses: List[ConceptResponse] = [
+        ConceptResponse(
+            id=c.id,
+            document_id=c.document_id,
+            run_id=c.run_id,
+            name=c.name,
+            canonical_name=c.canonical_name,
+            category=c.category,
+            description=c.description,
+        )
+        for c in concepts
+    ]
+
+    edge_responses: List[GraphEdgeResponse] = [
+        GraphEdgeResponse(
+            id=e.id,
+            run_id=e.run_id,
+            source_kind=e.source_kind,
+            source_id=e.source_id,
+            target_kind=e.target_kind,
+            target_id=e.target_id,
+            relation_type=e.relation_type,
+            direction=e.direction,
+            confidence=float(e.confidence),
+            rationale=e.rationale,
+            review_status=e.review_status,
+            extraction_method=e.extraction_method,
+            evidence=[
+                EdgeEvidenceResponse(
+                    id=ev.id,
+                    edge_id=ev.edge_id,
+                    highlight_id=ev.highlight_id,
+                    evidence_quote=ev.evidence_quote,
+                )
+                for ev in e.evidence_items
+            ],
+        )
+        for e in raw_edges
+    ]
+
+    # Map propositions to AnnotationResponse for backwards compatibility
+    compat_annotations: List[AnnotationResponse] = [
+        AnnotationResponse(
+            id=p.id,
+            document_id=doc.id,
+            start=0,
+            end=len(p.canonical_statement),
+            quote=p.canonical_statement,
+            label=p.statement_type,
+            note=p.summary or f"Proposition P{p.id}",
+            x=0.0,
+            y=0.0,
+            version=1,
+            created_at=p.created_at,
+            status="confirmed",
+        )
+        for p in props
+    ]
+
+    compat_relations: List[RelationResponse] = [
+        RelationResponse(
+            id=e.id,
+            document_id=doc.id,
+            source_id=e.source_id,
+            target_id=e.target_id,
+            type=e.relation_type,
+            status=e.review_status,
+            reason=e.rationale,
+            version=1,
+            score=float(e.confidence),
+            cos_score=float(e.confidence),
+        )
+        for e in raw_edges
+    ]
+
+    return GraphResponse(
+        document_id=doc.id,
+        annotations=compat_annotations,
+        relations=compat_relations,
+        graph_version=2,
+        run_id=run.id,
+        is_active=run.is_active,
+        propositions=prop_responses,
+        concepts=concept_responses,
+        edges=edge_responses,
+    )
+
+
+@router.get("/documents/{document_id}/graph", response_model=GraphResponse)
+def get_document_graph(
+    document_id: int,
+    graph_version: Optional[int] = Query(None, description="Graph version: 1 for legacy, 2 for epistemic V2"),
+    run_id: Optional[int] = Query(None, description="Specific extraction run ID to query"),
+    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0, description="Minimum edge confidence filter"),
+    relation_type: Optional[str] = Query(None, description="Filter edges by relation type"),
+    include_review: bool = Query(False, description="Whether to include needs_review edges in V2"),
+    db: Session = Depends(get_db),
+) -> GraphResponse:
+    """Retrieve graph view supporting both legacy V1 and epistemic V2 with safe version resolution."""
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # 1. Explicit V1 request
+    if graph_version == 1:
+        return _build_legacy_graph_response(doc, db)
+
+    # 2. Specific extraction run request
+    if run_id is not None:
+        run = (
+            db.query(ExtractionRun)
+            .filter(ExtractionRun.id == run_id, ExtractionRun.document_id == document_id)
+            .first()
+        )
+        if not run:
+            raise HTTPException(status_code=404, detail=f"Extraction run {run_id} not found for document {document_id}")
+        return _build_v2_graph_response(doc, run, db, min_confidence, relation_type, include_review)
+
+    # 3. Resolve active run
+    active_run = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.document_id == document_id, ExtractionRun.is_active == True)
+        .first()
+    )
+    if active_run:
+        return _build_v2_graph_response(doc, active_run, db, min_confidence, relation_type, include_review)
+
+    # 4. If no active run: if V2 explicitly asked, check for any latest run
+    if graph_version == 2:
+        latest_run = (
+            db.query(ExtractionRun)
+            .filter(ExtractionRun.document_id == document_id)
+            .order_by(ExtractionRun.created_at.desc())
+            .first()
+        )
+        if latest_run:
+            return _build_v2_graph_response(doc, latest_run, db, min_confidence, relation_type, include_review)
+        return GraphResponse(
+            document_id=doc.id,
+            annotations=[],
+            relations=[],
+            graph_version=2,
+            run_id=None,
+            is_active=False,
+            propositions=[],
+            concepts=[],
+            edges=[],
+        )
+
+    # 5. Default before cutover: return legacy V1 graph
+    return _build_legacy_graph_response(doc, db)
+
+
+# --- Epistemic Knowledge Graph V2 Admin Endpoints ---
+
+
+@router.get("/documents/{document_id}/graph/runs", response_model=List[ExtractionRunResponse])
+def list_extraction_runs(
+    document_id: int,
+    db: Session = Depends(get_db),
+) -> List[ExtractionRunResponse]:
+    """List all extraction runs for a document."""
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    runs = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.document_id == document_id)
+        .order_by(ExtractionRun.created_at.desc())
+        .all()
+    )
+    return [
+        ExtractionRunResponse(
+            id=r.id,
+            document_id=r.document_id,
+            graph_version=r.graph_version,
+            model_name=r.model_name,
+            prompt_version=r.prompt_version,
+            status=r.status,
+            is_active=r.is_active,
+            created_at=r.created_at,
+        )
+        for r in runs
+    ]
+
+
+@router.get("/documents/{document_id}/graph/runs/{run_id}/validate", response_model=GraphValidationResponse)
+def validate_run_endpoint(
+    document_id: int,
+    run_id: int,
+    max_out_degree: int = Query(5, ge=1, le=20, description="Maximum permitted outgoing edges per proposition"),
+    db: Session = Depends(get_db),
+) -> GraphValidationResponse:
+    """Run automated safety, evidence, and epistemic constraint checks on an extraction run."""
+    run = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.id == run_id, ExtractionRun.document_id == document_id)
+        .first()
+    )
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Extraction run {run_id} not found for document {document_id}")
+    is_valid, issues, metrics = validate_extraction_run(run_id, db, max_out_degree=max_out_degree)
+    return GraphValidationResponse(is_valid=is_valid, issues=issues, metrics=metrics)
+
+
+@router.post("/documents/{document_id}/graph/runs/{run_id}/activate", response_model=ExtractionRunResponse)
+def activate_run_endpoint(
+    document_id: int,
+    run_id: int,
+    activated_by: str = Query("admin", description="Identity activating the run"),
+    reason: Optional[str] = Query(None, description="Reason for activation"),
+    force: bool = Query(False, description="Bypass safety validation"),
+    db: Session = Depends(get_db),
+) -> ExtractionRunResponse:
+    """Transactionally activate an extraction run for production serving."""
+    run = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.id == run_id, ExtractionRun.document_id == document_id)
+        .first()
+    )
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Extraction run {run_id} not found for document {document_id}")
+    try:
+        activated = activate_extraction_run(
+            run_id=run_id,
+            activated_by=activated_by,
+            reason=reason,
+            db=db,
+            validate=(not force),
+        )
+        return ExtractionRunResponse(
+            id=activated.id,
+            document_id=activated.document_id,
+            graph_version=activated.graph_version,
+            model_name=activated.model_name,
+            prompt_version=activated.prompt_version,
+            status=activated.status,
+            is_active=activated.is_active,
+            created_at=activated.created_at,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/documents/{document_id}/graph/rollback", response_model=Optional[ExtractionRunResponse])
+def rollback_run_endpoint(
+    document_id: int,
+    rolled_back_by: str = Query("admin", description="Identity triggering rollback"),
+    reason: Optional[str] = Query(None, description="Reason for rollback"),
+    db: Session = Depends(get_db),
+) -> Optional[ExtractionRunResponse]:
+    """Transactionally rollback an active run to the previously active run."""
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    restored = rollback_extraction_run(
+        document_id=document_id,
+        rolled_back_by=rolled_back_by,
+        reason=reason,
+        db=db,
+    )
+    if restored:
+        return ExtractionRunResponse(
+            id=restored.id,
+            document_id=restored.document_id,
+            graph_version=restored.graph_version,
+            model_name=restored.model_name,
+            prompt_version=restored.prompt_version,
+            status=restored.status,
+            is_active=restored.is_active,
+            created_at=restored.created_at,
+        )
+    return None
+
+
+@router.get("/documents/{document_id}/graph/comparison", response_model=EdgeMappingReportResponse)
+def get_graph_comparison(
+    document_id: int,
+    run_id: int = Query(..., description="V2 Extraction run ID to compare against legacy V1"),
+    db: Session = Depends(get_db),
+) -> EdgeMappingReportResponse:
+    """Generate side-by-side comparison report between legacy V1 relations and V2 extraction."""
+    run = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.id == run_id, ExtractionRun.document_id == document_id)
+        .first()
+    )
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Extraction run {run_id} not found for document {document_id}")
+    report = generate_edge_mapping_report(document_id=document_id, run_id=run_id, db=db)
+    return EdgeMappingReportResponse(**report)
+
+
+@router.post("/documents/{document_id}/graph/legacy-review", response_model=LegacyEdgeReviewResponse)
+def review_legacy_edge_endpoint(
+    document_id: int,
+    payload: LegacyEdgeReviewRequest,
+    db: Session = Depends(get_db),
+) -> LegacyEdgeReviewResponse:
+    """Submit a reviewer evaluation for a legacy V1 relation."""
+    run = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.id == payload.run_id, ExtractionRun.document_id == document_id)
+        .first()
+    )
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Extraction run {payload.run_id} not found for document {document_id}")
+    rel = (
+        db.query(Relation)
+        .filter(Relation.id == payload.legacy_relation_id, Relation.document_id == document_id)
+        .first()
+    )
+    if not rel:
+        raise HTTPException(status_code=404, detail=f"Legacy relation {payload.legacy_relation_id} not found in document")
+    try:
+        record = record_legacy_edge_review(
+            run_id=payload.run_id,
+            legacy_relation_id=payload.legacy_relation_id,
+            classification=payload.classification,
+            reviewer_reason=payload.reviewer_reason,
+            mapped_edge_id=payload.mapped_edge_id,
+            reviewed_by=payload.reviewed_by or "reviewer",
+            db=db,
+        )
+        return LegacyEdgeReviewResponse(
+            id=record.id,
+            run_id=record.run_id,
+            legacy_relation_id=record.legacy_relation_id,
+            classification=record.classification,
+            reviewer_reason=record.reviewer_reason,
+            mapped_edge_id=record.mapped_edge_id,
+            reviewed_by=record.reviewed_by,
+            reviewed_at=record.reviewed_at,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/documents/{document_id}/paths", response_model=PathsResponse)

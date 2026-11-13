@@ -52,7 +52,17 @@ export default function App() {
   const [jobDescription, setJobDescription] = useState('');
   const [uploadError, setUploadError] = useState(null);
   const [autoHighlightMode, setAutoHighlightMode] = useState('llm');
+  const [docList, setDocList] = useState([]);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    api
+      .get('/documents')
+      .then((data) => {
+        if (Array.isArray(data)) setDocList(data);
+      })
+      .catch(() => {});
+  }, [selectedDocId]);
 
   // Health, taxonomy, and live server connection
   const { isOnline, isReconnecting, reconnect } = useHealth();
@@ -284,6 +294,36 @@ export default function App() {
               Editorial Document &amp; Semantic Mesh
             </span>
           </div>
+
+          {docList.length > 0 && (
+            <select
+              value={selectedDocId}
+              onChange={(e) => {
+                setSelectedDocId(Number(e.target.value));
+                setSelectedAnnotationId(null);
+                setSelectedRelationId(null);
+              }}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 0,
+                border: '1.5px solid #000000',
+                background: '#ffffff',
+                color: '#000000',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+              title="Select active document"
+            >
+              {docList.map((d) => (
+                <option key={d.id} value={d.id}>
+                  Doc #{d.id}: {d.filename}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Center: View Switcher */}
