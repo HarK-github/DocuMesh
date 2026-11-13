@@ -27,3 +27,14 @@ All modifications to eval questions, gold answers, judge rubrics, and acceptance
 - Merged duplicate nodes `[a89, a95]` and `[a107, a108]` with audit logging in `EntityMergeLog`.
 - Pruned 32 spurious relations (unconfirmed suggestions, rejected pairs, and relations below similarity floor) from Document 21.
 
+## 2026-11-13 - Phase 5 Milestone (Highlight & Citation Quality)
+- Generalized `is_forbidden_header_or_byline` to detect all-caps titles, author bylines, and section headers without document-specific hardcoding.
+- Added `strip_section_header_prefix` in `auto_highlighter.py` to prevent section headers like `1. The Imitation Game` from contaminating highlights.
+- Removed document title/byline annotation `a88` on Document 21 (`forbidden_highlights_count`: 5 -> 0).
+- In frontend `ChatPanel.jsx`, added interactive pills for `[aNN]`, `[cNN]`, `[sNN]`, and `[rNN]` citations without raw file links.
+
+## 2026-11-13 - Phase 6 Setup (Document 20 Gold Datasets)
+- Created `evals/data/doc_20_chat_qa.json` with 13 questions (8 dev, 5 held-out, 3 unanswerables) for Document 20 (`lab02.pdf`, SQL Filtering & Joins lab).
+- Created `evals/data/doc_20_highlight_gold.json` with 7 key pedagogical ideas and 9 must-not-highlight headers.
+- Created `evals/data/doc_20_graph_gold.json` with 11 labeled nodes and 6 ground-truth valid/invalid relation pairs.
+

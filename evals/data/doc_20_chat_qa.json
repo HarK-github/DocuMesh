@@ -1,0 +1,126 @@
+[
+  {
+    "id": "q1",
+    "split": "dev",
+    "type": "definitional",
+    "question": "What is the outer-join trap described in the lab?",
+    "gold_answer": "The outer-join trap occurs when filtering on a right-table column (such as teaches) in the WHERE clause during a LEFT JOIN, which silently turns the LEFT JOIN back into an inner join. To prevent this, such filter conditions must be placed in the ON clause instead.",
+    "gold_spans": [
+      "The outer-join trap: in Q17, if you filter on a teaches column in the WHERE clause, you silently turn the LEFT JOIN back into an inner join. Put such conditions in the ON clause."
+    ]
+  },
+  {
+    "id": "q2",
+    "split": "dev",
+    "type": "definitional",
+    "question": "What is the anti-join pattern according to the document?",
+    "gold_answer": "The anti-join pattern finds unmatched rows across tables using an outer join (such as LEFT JOIN ... WHERE ... IS NULL or NOT EXISTS).",
+    "gold_spans": [
+      "4. Outer joins and the “find the unmatched rows” (anti-join) pattern."
+    ]
+  },
+  {
+    "id": "q3",
+    "split": "dev",
+    "type": "factual",
+    "question": "What dataset and deliverable SQL file are used in Lab 2?",
+    "gold_answer": "The lab uses the dataset data/university.sql and the deliverable file is lab02_solution.sql.",
+    "gold_spans": [
+      "Dataset: data/university.sql · Deliverable: lab02_solution.sql"
+    ]
+  },
+  {
+    "id": "q4",
+    "split": "dev",
+    "type": "factual",
+    "question": "How do you enable foreign keys in SQLite for each session?",
+    "gold_answer": "Foreign keys are enabled in SQLite by running the command PRAGMA foreign_keys = ON; in every session.",
+    "gold_spans": [
+      "Enable foreign keys in every session (PRAGMA foreign_keys = ON;)."
+    ]
+  },
+  {
+    "id": "q5",
+    "split": "dev",
+    "type": "factual",
+    "question": "What is the checkpoint result for the top student in Q4?",
+    "gold_answer": "Q4's top student is Tanaka with 120 total credits (tot_cred).",
+    "gold_spans": [
+      "Checkpoint: Q4’s top student is Tanaka (120)."
+    ]
+  },
+  {
+    "id": "q6",
+    "split": "dev",
+    "type": "factual",
+    "question": "What is the result of the row-explosion demonstration in Q24?",
+    "gold_answer": "Q24 returns 105 rows, which equals 15 students multiplied by 7 departments from a Cartesian product.",
+    "gold_spans": [
+      "Checkpoint: Q24 returns 105 (15 × 7)."
+    ]
+  },
+  {
+    "id": "q7",
+    "split": "dev",
+    "type": "multi_hop",
+    "question": "How do you avoid self-pairs and mirror duplicates when finding pairs of instructors in the same department?",
+    "gold_answer": "By using the condition a.id < b.id in the join to eliminate self-pairs (a.id = b.id) and mirror duplicate pairs (b.id, a.id).",
+    "gold_spans": [
+      "All pairs of instructors in the same department, with no self-pairs and no mirror duplicates (a.id < b.id)."
+    ]
+  },
+  {
+    "id": "q8",
+    "split": "dev",
+    "type": "unanswerable",
+    "question": "What is the instructor's personal phone number or email address?",
+    "gold_answer": "I couldn't find this in the document. The lab text does not list any personal phone numbers or email addresses.",
+    "gold_spans": []
+  },
+  {
+    "id": "q9",
+    "split": "held_out",
+    "type": "factual",
+    "question": "Which instructors are listed when running python3 explore.py Physics?",
+    "gold_answer": "Running explore.py for the Physics department lists Einstein and Gold.",
+    "gold_spans": [
+      "Checkpoint: python3 explore.py Physics lists Einstein and Gold."
+    ]
+  },
+  {
+    "id": "q10",
+    "split": "held_out",
+    "type": "factual",
+    "question": "Which sections have no assigned instructor in Q18?",
+    "gold_answer": "Q18 returns two sections with no row in teaches: (CS-319, 2) and (MATH-101, 1).",
+    "gold_spans": [
+      "Checkpoint: Q18 returns two rows — (CS-319, 2) and (MATH-101, 1) — the sections with no row in teaches."
+    ]
+  },
+  {
+    "id": "q11",
+    "split": "held_out",
+    "type": "multi_hop",
+    "question": "Why should parameterized queries with question marks be used in explore.py instead of f-strings?",
+    "gold_answer": "In explore.py, the question mark (?) is filled safely by the database driver, preventing SQL injection vulnerabilities, which f-strings do not protect against.",
+    "gold_spans": [
+      "a parameterized query — the ? is filled safely by the driver"
+    ]
+  },
+  {
+    "id": "q12",
+    "split": "held_out",
+    "type": "unanswerable",
+    "question": "What is the exact calendar due date and submission timestamp for Lab 2?",
+    "gold_answer": "I couldn't find this in the document. The document lists the 2-hour time budget and submission files, but does not provide a calendar due date or submission timestamp.",
+    "gold_spans": []
+  },
+  {
+    "id": "q13",
+    "split": "held_out",
+    "type": "unanswerable",
+    "question": "What version of PostgreSQL is required to run the university schema?",
+    "gold_answer": "I couldn't find this in the document. The lab uses SQLite (sqlite3 lab2.db), not PostgreSQL.",
+    "gold_spans": []
+  }
+]

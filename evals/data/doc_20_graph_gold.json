@@ -1,0 +1,106 @@
+{
+  "document_id": 20,
+  "filename": "lab02.pdf",
+  "nodes": [
+    {
+      "id": "a66",
+      "expected_label": "Solution",
+      "rationale": "Single-table filtering, sorting, DISTINCT, LIMIT, and string functions"
+    },
+    {
+      "id": "a67",
+      "expected_label": "Definition",
+      "rationale": "Using conditional logic (CASE) and pattern matching (LIKE)"
+    },
+    {
+      "id": "a68",
+      "expected_label": "Problem",
+      "rationale": "Outer joins and anti-join pattern"
+    },
+    {
+      "id": "a69",
+      "expected_label": "Problem",
+      "rationale": "Recognizing and avoiding row-explosion pitfalls"
+    },
+    {
+      "id": "a72",
+      "expected_label": "Problem",
+      "rationale": "Titles of all courses in Comp. Sci."
+    },
+    {
+      "id": "a74",
+      "expected_label": "Solution",
+      "rationale": "Sort by name alphabetically on tie"
+    },
+    {
+      "id": "a75",
+      "expected_label": "Method",
+      "rationale": "Instructor courses join method"
+    },
+    {
+      "id": "a76",
+      "expected_label": "Solution",
+      "rationale": "Department buildings query"
+    },
+    {
+      "id": "a79",
+      "expected_label": "Method",
+      "rationale": "Outer join section-teaches query method"
+    },
+    {
+      "id": "a80",
+      "expected_label": "Solution",
+      "rationale": "Put such conditions in the ON clause"
+    },
+    {
+      "id": "a83",
+      "expected_label": "Result",
+      "rationale": "INNER vs LEFT counts comparison"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "a80",
+      "target_id": "a68",
+      "relation_type": "solves",
+      "is_valid": true,
+      "rationale": "Putting conditions in the ON clause resolves the outer join trap."
+    },
+    {
+      "source_id": "a66",
+      "target_id": "a69",
+      "relation_type": "solves",
+      "is_valid": true,
+      "rationale": "Filtering and distinct clauses solve row explosion."
+    },
+    {
+      "source_id": "a74",
+      "target_id": "a72",
+      "relation_type": "solves",
+      "is_valid": true,
+      "rationale": "Tie-breaker sorting provides a unique deterministic order."
+    },
+    {
+      "source_id": "a71",
+      "target_id": "a86",
+      "relation_type": "solves",
+      "is_valid": false,
+      "rationale": "Header 'Part 1' does not solve 'Submission' instructions."
+    },
+    {
+      "source_id": "a71",
+      "target_id": "a82",
+      "relation_type": "solves",
+      "is_valid": false,
+      "rationale": "Part 1 header does not solve Part 4 header."
+    },
+    {
+      "source_id": "a76",
+      "target_id": "a86",
+      "relation_type": "solves",
+      "is_valid": false,
+      "rationale": "Department query problem does not solve submission instructions."
+    }
+  ],
+  "duplicate_groups": []
+}

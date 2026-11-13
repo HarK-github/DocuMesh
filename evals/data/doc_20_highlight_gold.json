@@ -1,0 +1,95 @@
+{
+  "document_id": 20,
+  "filename": "lab02.pdf",
+  "must_highlight": [
+    {
+      "id": "h1",
+      "text": "The outer-join trap: in Q17, if you filter on a teaches column in the WHERE clause, you silently turn the LEFT JOIN back into an inner join.",
+      "label": "Problem",
+      "rationale": "Defines the outer-join trap concept."
+    },
+    {
+      "id": "h2",
+      "text": "Put such conditions in the ON clause.",
+      "label": "Solution",
+      "rationale": "Resolution to the outer-join trap."
+    },
+    {
+      "id": "h3",
+      "text": "Enable foreign keys in every session (PRAGMA foreign_keys = ON;).",
+      "label": "Method",
+      "rationale": "Required setup directive."
+    },
+    {
+      "id": "h4",
+      "text": "All pairs of instructors in the same department, with no self-pairs and no mirror duplicates (a.id < b.id).",
+      "label": "Method",
+      "rationale": "Key technique for self-joins without duplicates."
+    },
+    {
+      "id": "h5",
+      "text": "a parameterized query — the ? is filled safely by the driver",
+      "label": "Definition",
+      "rationale": "Safe parameterization definition."
+    },
+    {
+      "id": "h6",
+      "text": "4. Outer joins and the “find the unmatched rows” (anti-join) pattern.",
+      "label": "Definition",
+      "rationale": "Anti-join pattern specification."
+    },
+    {
+      "id": "h7",
+      "text": "Instructors who teach nothing (in instructor but not referenced by teaches) — via LEFT JOIN ... IS NULL or NOT EXISTS.",
+      "label": "Method",
+      "rationale": "Techniques for finding unreferenced records."
+    }
+  ],
+  "must_not_highlight": [
+    {
+      "id": "nh1",
+      "text": "Lab 2 — SQL Querying I: Filtering & Joins Module I · Week 2 · Duration: 2 hours",
+      "reason": "Document header and title metadata."
+    },
+    {
+      "id": "nh2",
+      "text": "Objectives",
+      "reason": "Section title header."
+    },
+    {
+      "id": "nh3",
+      "text": "Setup (≈10 min)",
+      "reason": "Section title header."
+    },
+    {
+      "id": "nh4",
+      "text": "Part 1 — Single-table queries (≈30 min)",
+      "reason": "Section title header."
+    },
+    {
+      "id": "nh5",
+      "text": "Part 2 — Inner joins (≈30 min)",
+      "reason": "Section title header."
+    },
+    {
+      "id": "nh6",
+      "text": "Part 3 — Outer joins & anti-joins (≈25 min)",
+      "reason": "Section title header."
+    },
+    {
+      "id": "nh7",
+      "text": "Part 4 — Self joins & gotchas (≈15 min)",
+      "reason": "Section title header."
+    },
+    {
+      "id": "nh8",
+      "text": "Part 5 — SQL from Python (≈10 min)",
+      "reason": "Section title header."
+    },
+    {
+      "id": "nh9",
+      "text": "Submission",
+      "reason": "Section title header."
+    }
+  ]
+}

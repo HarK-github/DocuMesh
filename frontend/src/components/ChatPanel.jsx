@@ -37,8 +37,15 @@ export function CitationChip({
       if (onJumpToRange && citation.start !== null && citation.end !== null) {
         onJumpToRange({ start: citation.start, end: citation.end });
       }
+    } else if (citation.type === 'chunk') {
+      if (onJumpToRange && citation.start !== null && citation.start !== undefined && citation.end !== null && citation.end !== undefined) {
+        onJumpToRange({ start: citation.start, end: citation.end });
+      }
     } else if (citation.type === 'relation') {
       if (onSelectRelation) onSelectRelation(citation.id);
+      if (onJumpToRange && citation.start !== null && citation.start !== undefined && citation.end !== null && citation.end !== undefined) {
+        onJumpToRange({ start: citation.start, end: citation.end });
+      }
     }
   };
 
@@ -50,6 +57,14 @@ export function CitationChip({
           border: '#000000',
           text: '#000000',
           label: `[s${citation.id}] Sentence`,
+          Icon: FileText,
+        };
+      case 'chunk':
+        return {
+          bg: '#ffffff',
+          border: '#000000',
+          text: '#000000',
+          label: `[c${citation.id}] Chunk`,
           Icon: FileText,
         };
       case 'annotation':
@@ -148,6 +163,78 @@ export function CitationChip({
   );
 }
 
+/**
+ * Render message content with inline clickable badges for citations like [a89], [c124], [s10], [r5].
+ * Does NOT treat filenames or URLs as links.
+ */
+export function renderMessageWithCitations(content, citations = [], handlers = {}) {
+  if (!content) return null;
+
+  const parts = content.split(/(\[[acsr]\d+\])/g);
+  return parts.map((part, index) => {
+    const match = part.match(/^\[([acsr])(\d+)\]$/);
+    if (!match) return part;
+
+    const prefix = match[1];
+    const id = parseInt(match[2], 10);
+    const typeMap = { a: 'annotation', c: 'chunk', s: 'sentence', r: 'relation' };
+    const type = typeMap[prefix] || 'annotation';
+
+    const citationMeta = citations.find(
+      (c) => c.type === type && Number(c.id) === id
+    );
+
+    const handleInlineClick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (type === 'annotation') {
+        if (handlers.onSelectAnnotation) handlers.onSelectAnnotation(id);
+        if (handlers.onJumpToRange && citationMeta?.start != null && citationMeta?.end != null) {
+          handlers.onJumpToRange({ start: citationMeta.start, end: citationMeta.end });
+        }
+      } else if (type === 'chunk' || type === 'sentence') {
+        if (handlers.onJumpToRange && citationMeta?.start != null && citationMeta?.end != null) {
+          handlers.onJumpToRange({ start: citationMeta.start, end: citationMeta.end });
+        }
+      } else if (type === 'relation') {
+        if (handlers.onSelectRelation) handlers.onSelectRelation(id);
+        if (handlers.onJumpToRange && citationMeta?.start != null && citationMeta?.end != null) {
+          handlers.onJumpToRange({ start: citationMeta.start, end: citationMeta.end });
+        }
+      }
+    };
+
+    const isAnnotation = type === 'annotation';
+    return (
+      <button
+        key={`inline-cit-${index}`}
+        type="button"
+        onClick={handleInlineClick}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          margin: '0 2px',
+          padding: '1px 5px',
+          border: '1px solid #000000',
+          borderRadius: 0,
+          background: isAnnotation ? '#000000' : '#f4f4f5',
+          color: isAnnotation ? '#ffffff' : '#000000',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '0.72rem',
+          fontWeight: 700,
+          cursor: 'pointer',
+          verticalAlign: 'baseline',
+          lineHeight: 1.2,
+          transition: 'none',
+        }}
+        title={`Jump to ${type} #${id}`}
+      >
+        [{prefix}{id}]
+      </button>
+    );
+  });
+}
+
 export default function ChatPanel({
   documentId,
   cleanText = '',
@@ -166,6 +253,7 @@ export default function ChatPanel({
     },
   ]);
   const [input, setInput] = useState('');
+  const [retrievalMode, setRetrievalMode] = useState('hybrid');
   const [errorMessage, setErrorMessage] = useState(null);
   const [savedSentenceIds, setSavedSentenceIds] = useState(new Set());
   const messagesEndRef = useRef(null);
@@ -194,7 +282,7 @@ export default function ChatPanel({
       .map((m) => ({ role: m.role, content: m.content }));
 
     chatMutation.mutate(
-      { question: query, history: historyTurns },
+      { question: query, history: historyTurns, mode: retrievalMode },
       {
         onSuccess: (data) => {
           setMessages((prev) => [
@@ -302,6 +390,61 @@ export default function ChatPanel({
         </div>
       </div>
 
+      {/* Retrieval Mode Selector */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '6px 12px',
+          borderBottom: '1px solid #000000',
+          background: '#fcfcfc',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            color: '#525252',
+            letterSpacing: '0.04em',
+            marginRight: '2px',
+          }}
+        >
+          Mode:
+        </span>
+        {[
+          { id: 'vector', label: 'Vector (Fast)' },
+          { id: 'graph', label: 'Graph (Relational)' },
+          { id: 'hybrid', label: 'Hybrid (Comprehensive)' },
+        ].map((m) => {
+          const active = retrievalMode === m.id;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setRetrievalMode(m.id)}
+              style={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.67rem',
+                fontWeight: active ? 700 : 500,
+                padding: '2px 8px',
+                background: active ? '#000000' : '#ffffff',
+                color: active ? '#ffffff' : '#000000',
+                border: '1px solid #000000',
+                cursor: 'pointer',
+                borderRadius: 0,
+                transition: 'none',
+              }}
+              title={`Switch retrieval mode to ${m.label}`}
+            >
+              {m.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Message history */}
       <div
         style={{
@@ -337,7 +480,13 @@ export default function ChatPanel({
                 wordBreak: 'break-word',
               }}
             >
-              {msg.content}
+              {msg.role === 'assistant'
+                ? renderMessageWithCitations(msg.content, msg.citations, {
+                    onSelectAnnotation,
+                    onSelectRelation,
+                    onJumpToRange,
+                  })
+                : msg.content}
             </div>
 
             {/* Citations list for assistant messages */}

@@ -1,7 +1,7 @@
 """Automated full-document top-down highlight and relationship knowledge graph builder."""
 
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import numpy as np
 from backend.app.settings import get_settings
 from backend.app.db import get_session_factory
@@ -14,7 +14,45 @@ from backend.app.services.embedder import get_embedder
 from backend.app.services.relation_suggester import process_suggest_relations_job
 from backend.app.services.ranker import intervals_overlap
 
+import re
+
 logger = logging.getLogger(__name__)
+
+
+def is_forbidden_header_or_byline(text: str) -> bool:
+    """Return True if the text is document front matter, title, byline, page marker, or section header."""
+    t = text.strip()
+    if not t or len(t) < 5:
+        return True
+    # All uppercase titles or short headers (e.g. "RESEARCH ARTICLE", "ABSTRACT", "INTRODUCTION")
+    if t.isupper() and len(t.split()) <= 12 and not any(char in t for char in ".!?"):
+        return True
+    # Document title + author bylines (e.g. "By Author Name", "PAPER TITLE By Author")
+    if re.match(r"^by\s+[A-Za-z\.\s,]+$", t, re.IGNORECASE):
+        return True
+    if re.match(r"^[A-Z0-9\s,:\-]{3,80}\s+by\s+[A-Z][a-zA-Z\.\s,]+$", t, re.IGNORECASE):
+        return True
+    # Standalone section numbers and titles: e.g. "1. Introduction", "2. Related Work", "Section 3.1"
+    if re.match(r"^(section\s+)?(\d+(\.\d+)*|[IVXLCDM]+)\.?\s+[A-Za-z\s\-_:]{2,50}$", t, re.IGNORECASE):
+        return True
+    # Markdown or text header syntax
+    if re.match(r"^#{1,6}\s+", t):
+        return True
+    # Page numbers or footer markers (e.g. "Page 1 of 5", "1 / 10", "Page 2")
+    if re.match(r"^(page\s+\d+(\s+of\s+\d+)?|\d+\s*/\s*\d+)$", t, re.IGNORECASE):
+        return True
+    return False
+
+
+def strip_section_header_prefix(text: str) -> tuple[str, int]:
+    """If text starts with a section header like '1. Section Title Sentence...', strip it and return (stripped_text, offset_delta)."""
+    match = re.match(r"^((?:(?:section\s+)?(?:\d+(?:\.\d+)*|[IVXLCDM]+)\.?\s+[A-Za-z\s\-_:]{2,40}\s+))([A-Z].*)$", text)
+    if match:
+        prefix = match.group(1)
+        remainder = match.group(2)
+        if len(remainder.split()) >= 3:
+            return remainder, len(prefix)
+    return text, 0
 
 
 LABEL_PROTOTYPES = {
@@ -26,6 +64,7 @@ LABEL_PROTOTYPES = {
     "Problem": "A major open problem, challenge, limitation, difficulty, or research gap remains unresolved.",
     "Solution": "We propose a novel framework, architectural solution, and algorithm that effectively solves this issue.",
 }
+
 
 
 def process_auto_highlight_job(
@@ -70,8 +109,8 @@ def process_auto_highlight_job(
             if any(intervals_overlap(s.start, s.end, es, ee) for es, ee in existing_intervals):
                 continue
             s_quote = clean_text[s.start:s.end].strip()
-            # Skip very short fragments (< 15 chars)
-            if len(s_quote) < 15:
+            # Skip very short fragments (< 15 chars) and headers/bylines
+            if len(s_quote) < 15 or is_forbidden_header_or_byline(s_quote):
                 continue
             sentences_to_process.append({
                 "id": s.id,
@@ -139,12 +178,22 @@ Permitted Taxonomy Labels:
 Classification Guidelines:
 - "Claim": Main assertion, hypothesis, central argument, or finding statement.
 - "Evidence": Empirical data, factual proof, quotation, statistic, or experimental measurement supporting a claim.
-- "Definition": Formal naming or conceptual definition of a term, system, or mechanism.
-- "Method": Description of algorithmic step, experimental procedure, technique, or protocol.
+- "Definition": Formal naming or conceptual definition of a term, system, mechanism, or coined framework.
+- "Method": Description of algorithmic step, experimental procedure, technique, or protocol of inquiry.
 - "Result": Quantitative outcome, observed performance, theorem proof, or benchmark score.
-- "Problem": Research gap, deficiency, limitation, paradox, objection, or question addressed.
+- "Problem": Research gap, deficiency, limitation, paradox, objection, or open question addressed. Do NOT label introducing a coined concept as Problem simply because the sentence mentions the word 'problem'.
 - "Solution": System design, proposal, resolution, algorithm, or theorem solving the problem.
-- null: Section titles, transitional sentences, filler commentary, acknowledgments, pure index references.
+- null: Document title, author byline, section headers (e.g. '1. Introduction', '2. Methodology'), page headers/footers, acknowledgments, transitional commentary, or reference citations. These MUST be returned as null.
+
+Few-Shot Examples:
+- "ATTENTION IS ALL YOU NEED By Ashish Vaswani et al." -> null (Document title and author byline)
+- "1. Introduction and Related Work" -> null (Section header)
+- "Existing sequence transduction models rely heavily on complex recurrent or convolutional neural networks." -> "Problem" (Describes existing limitations and research gap)
+- "We define an attention function as mapping a query and a set of key-value pairs to an output." -> "Definition" (Formal conceptual definition of a mechanism)
+- "The Transformer allows for significantly more parallelization and reaches a new state of the art in translation quality." -> "Result" (Experimental finding and empirical score)
+- "We evaluated the model on the WMT 2014 English-to-German translation task using standard BLEU metrics." -> "Method" (Procedural experimental protocol)
+- "Table 1 shows that our model achieves 28.4 BLEU, outperforming previous ensembles by over 2.0 BLEU." -> "Evidence" (Empirical quantitative proof supporting the claim)
+- "We propose the Transformer, a model architecture eschewing recurrence and entirely relying on self-attention." -> "Solution" (Architectural solution addressing the problem)
 
 Instructions:
 1. For each sentence, assign a label or null.
@@ -171,11 +220,6 @@ Sentences to classify:
                             c_label = item.get("label")
                             if c_label in labels:
                                 classifications[item["idx"]] = c_label
-                except Exception:
-                    # In case of LLM error on chunk, fall back to embedding classification for this chunk
-                    pass
-                    if classifications:
-                        llm_success_chunks += 1
                 except Exception as exc:
                     logger.warning(
                         "LLM auto-highlight chunk %d classification failed: %s. Falling back to embedding prototype classification.",
@@ -183,6 +227,9 @@ Sentences to classify:
                         exc,
                     )
                     llm_failed_chunks += 1
+                else:
+                    if classifications:
+                        llm_success_chunks += 1
 
             # Embedding fallback for unclassified sentences in chunk
             if not use_llm or (use_llm and len(classifications) == 0):
@@ -199,9 +246,9 @@ Sentences to classify:
                     if s["idx"] in classifications:
                         continue
                     s_vec = None
-                    if s["embedding"]:
+                    if s["embedding"] is not None:
                         try:
-                            s_vec = np.frombuffer(s["embedding"], dtype=np.float32)
+                            s_vec = np.asarray(s["embedding"], dtype=np.float32)
                         except Exception:
                             s_vec = None
                     if s_vec is None:
@@ -225,6 +272,8 @@ Sentences to classify:
             # Persist annotations for classified sentences in this chunk
             with session_factory() as session:
                 for s in chunk:
+                    if is_forbidden_header_or_byline(s["text"]):
+                        continue
                     chosen_label = classifications.get(s["idx"])
                     if not chosen_label or chosen_label not in labels:
                         continue
@@ -234,6 +283,12 @@ Sentences to classify:
                     quote_text = clean_text[snapped_s:snapped_e].strip()
                     if not quote_text:
                         continue
+
+                    # Strip any leading section header prefix (e.g. "1. Section Name ")
+                    stripped_quote, offset_delta = strip_section_header_prefix(quote_text)
+                    if offset_delta > 0:
+                        snapped_s += offset_delta
+                        quote_text = stripped_quote
 
                     # Check duplicate
                     exists = (
