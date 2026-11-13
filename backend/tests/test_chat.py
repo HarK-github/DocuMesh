@@ -2,11 +2,10 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.main import create_app
-from backend.app.db import get_db, init_db, reset_engine
+from backend.app.db import get_db
 from backend.app.models import Document, Sentence, Annotation, Relation
 from backend.app.services.chat_context import (
     retrieve_chat_context,
@@ -15,16 +14,21 @@ from backend.app.services.chat_context import (
     ChatContextResult,
 )
 from backend.app.services.embedder import FakeEmbedder, set_shared_embedder
-from backend.app.services.llm import FakeLLMClient, set_shared_llm_client, OpenAILLMClient
+from backend.app.services.llm import FakeLLMClient, set_shared_llm_client
 from backend.app.settings import get_settings
 
 
 @pytest.fixture
-def chat_test_setup(tmp_path, monkeypatch):
-    """Set up temporary database with document, sentences, annotations, and relations."""
-    db_file = tmp_path / "test_chat.db"
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
-    monkeypatch.setenv("DB_PATH", str(db_file))
+def chat_test_setup(engine, monkeypatch):
+    """Set up database with document, sentences, annotations, and relations."""
+    connection = engine.connect()
+    transaction = connection.begin()
+    TestingSession = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
+
+    import backend.app.db as app_db
+    monkeypatch.setattr(app_db, "get_session_factory", lambda eng=None: TestingSession)
+    monkeypatch.setattr(app_db, "_SessionLocal", TestingSession)
+    monkeypatch.setenv("DATABASE_URL", engine.url.render_as_string(hide_password=False))
     monkeypatch.setenv("LLM_PROVIDER", "fake")
     monkeypatch.setenv("EMBEDDING_MODEL_NAME", "fake")
     monkeypatch.setenv("CHAT_TOP_K_SENTENCES", "3")
@@ -32,15 +36,11 @@ def chat_test_setup(tmp_path, monkeypatch):
     monkeypatch.setenv("CHAT_NEIGHBOR_HOPS", "2")
     monkeypatch.setenv("CHAT_MAX_HISTORY", "3")
     monkeypatch.setenv("CHAT_MAX_CONTEXT_CHARS", "2000")
+    monkeypatch.setenv("CHAT_MIN_RELEVANCE", "-1.0")
 
     get_settings.cache_clear()
-    reset_engine()
 
-    engine = create_engine(f"sqlite:///{db_file}")
-    init_db(engine_override=engine)
-    TestingSession = sessionmaker(bind=engine)
-
-    fake_embedder = FakeEmbedder(dim=16)
+    fake_embedder = FakeEmbedder()
     set_shared_embedder(fake_embedder)
 
     clean_text = (
@@ -72,7 +72,7 @@ def chat_test_setup(tmp_path, monkeypatch):
         s_objects = []
         for idx, (st, en) in enumerate(sent_spans):
             text = clean_text[st:en]
-            emb = fake_embedder.embed([text])[0].tobytes()
+            emb = fake_embedder.embed([text])[0]
             s_objects.append(
                 Sentence(
                     document_id=doc_id,
@@ -158,7 +158,6 @@ def chat_test_setup(tmp_path, monkeypatch):
         session.commit()
 
         yield {
-            "db_file": db_file,
             "engine": engine,
             "TestingSession": TestingSession,
             "doc_id": doc_id,
@@ -168,13 +167,16 @@ def chat_test_setup(tmp_path, monkeypatch):
 
     set_shared_embedder(None)
     set_shared_llm_client(None)
+    transaction.rollback()
+    connection.close()
+    app_db.reset_engine()
 
 
 def test_retrieval_returns_expected_items_and_neighbors(chat_test_setup):
     """Verify retrieval finds relevant sentences, seed annotations, and expands graph neighbors."""
     TestingSession = chat_test_setup["TestingSession"]
     doc_id = chat_test_setup["doc_id"]
-    fake_embedder = FakeEmbedder(dim=16)
+    fake_embedder = FakeEmbedder()
 
     with TestingSession() as session:
         # Ask question directly matching a1's quote
@@ -202,7 +204,7 @@ def test_neighbor_expansion_respects_hops(chat_test_setup):
     """Verify BFS traversal terminates at CHAT_NEIGHBOR_HOPS."""
     TestingSession = chat_test_setup["TestingSession"]
     doc_id = chat_test_setup["doc_id"]
-    fake_embedder = FakeEmbedder(dim=16)
+    fake_embedder = FakeEmbedder()
     ann_ids = chat_test_setup["ann_ids"]  # a1 -> a2 -> a3 -> a4
 
     with TestingSession() as session:
@@ -292,7 +294,6 @@ def test_citation_validation_drops_unknown_ids():
 def test_no_context_shortcut_does_not_call_llm(chat_test_setup):
     """Verify questions with no relevant context return shortcut answer without calling LLM."""
     TestingSession = chat_test_setup["TestingSession"]
-    doc_id = chat_test_setup["doc_id"]
 
     # Configure FakeLLMClient to fail if called
     failing_llm = FakeLLMClient(fail=True)
@@ -427,3 +428,62 @@ def test_fake_llm_citation_ordering_and_deduplication() -> None:
     ]
     resp = client.complete(messages)
     assert "[s3] [s1] [a2]" in resp
+
+
+def test_hydration_guarantee_no_dangling_ids():
+    """Verify build_chat_context produces zero dangling IDs referenced in edges without text."""
+    from backend.app.services.chat_context import ChatContextResult, build_chat_context
+    from evals.metrics import analyze_context_structure
+
+    result = ChatContextResult(
+        chunks=[{"id": 1, "page": 1, "text": "This is chunk one text.", "score": 0.8}],
+        annotations=[
+            {"id": 92, "label": "Definition", "quote": "Imitation game is defined.", "score": 0.9, "start": 0, "end": 20},
+            {"id": 89, "label": "Problem", "quote": "Can machines think?", "score": 0.7, "start": 30, "end": 50},
+        ],
+        relations=[
+            {"id": 1, "source_id": 92, "target_id": 89, "type": "solves", "status": "confirmed", "reason": "Test edge", "score": 0.85}
+        ],
+    )
+    formatted = build_chat_context(result)
+    stats = analyze_context_structure(formatted.context_text)
+    assert stats["dangling_refs_count"] == 0
+    assert stats["dangling_id_rate"] == 0.0
+
+
+def test_drop_similar_to_from_prompt_context():
+    """Verify build_chat_context drops similar_to relations from prompt context."""
+    from backend.app.services.chat_context import ChatContextResult, build_chat_context
+
+    result = ChatContextResult(
+        chunks=[],
+        annotations=[
+            {"id": 1, "label": "Claim", "quote": "Passage 1", "score": 0.9, "start": 0, "end": 10},
+            {"id": 2, "label": "Claim", "quote": "Passage 2", "score": 0.8, "start": 20, "end": 30},
+        ],
+        relations=[
+            {"id": 10, "source_id": 1, "target_id": 2, "type": "similar_to", "status": "confirmed", "score": 0.7},
+            {"id": 11, "source_id": 1, "target_id": 2, "type": "supports", "status": "confirmed", "score": 0.85},
+        ],
+    )
+    formatted = build_chat_context(result)
+    assert "similar_to" not in formatted.context_text
+    assert "--supports-->" in formatted.context_text
+
+
+def test_chunk_citation_validation():
+    """Verify validate_citations parses and returns chunk [c..] citations."""
+    from backend.app.services.chat_context import validate_citations
+
+    active_ids = {"c10", "a20"}
+    items_by_id = {
+        "c10": {"type": "chunk", "id": 10, "page": 2, "start": 100, "end": 300},
+        "a20": {"type": "annotation", "id": 20, "page": 1, "start": 50, "end": 80},
+    }
+    answer = "According to [c10], digital computers simulate discrete state machines, as claimed in [a20]."
+    citations = validate_citations(answer, active_ids, items_by_id)
+    assert len(citations) == 2
+    assert citations[0]["type"] == "chunk"
+    assert citations[0]["id"] == 10
+    assert citations[0]["page"] == 2
+
