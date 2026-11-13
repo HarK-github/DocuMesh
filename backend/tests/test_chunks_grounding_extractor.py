@@ -119,9 +119,10 @@ def test_chunk_storage_and_annotation_linking(db_session):
     from backend.app.models import Document, Annotation, Chunk, AnnotationChunk
     from backend.app.services.chunks import store_chunks_for_document
 
+    import uuid
     doc = Document(
         filename="lexical_test.pdf",
-        file_hash="hash_lex_1",
+        file_hash=f"hash_{uuid.uuid4().hex}",
         status="ready",
         clean_text="Sentence one is introductory. Sentence two defines the method. Sentence three concludes.",
     )
