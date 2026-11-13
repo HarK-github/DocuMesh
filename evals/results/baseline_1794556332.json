@@ -1,0 +1,3241 @@
+{
+  "document_id": 21,
+  "tag": "baseline",
+  "timestamp": "2026-11-13T07:52:12.503976+00:00",
+  "summary": {
+    "overall": {
+      "count": 22,
+      "gold_span_recall": 0.3611,
+      "mrr": 0.5042,
+      "dangling_id_rate": 0.3473,
+      "similar_to_share": 0.5243,
+      "correctness": 4.65,
+      "faithfulness": 4.61,
+      "citation_support": 4.76,
+      "completeness": 4.65,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 1
+    },
+    "dev": {
+      "count": 14,
+      "gold_span_recall": 0.3472,
+      "mrr": 0.4474,
+      "dangling_id_rate": 0.3211,
+      "similar_to_share": 0.5547,
+      "correctness": 4.59,
+      "faithfulness": 4.52,
+      "citation_support": 4.69,
+      "completeness": 4.59,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 1
+    },
+    "held_out": {
+      "count": 8,
+      "gold_span_recall": 0.3889,
+      "mrr": 0.6176,
+      "dangling_id_rate": 0.393,
+      "similar_to_share": 0.4711,
+      "correctness": 4.75,
+      "faithfulness": 4.75,
+      "citation_support": 4.88,
+      "completeness": 4.75,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 0
+    }
+  },
+  "graph_quality": {
+    "node_count": 23,
+    "node_label_accuracy": 0.3913,
+    "per_class_accuracy": {
+      "Problem": {
+        "correct": 3,
+        "total": 3
+      },
+      "Method": {
+        "correct": 0,
+        "total": 3
+      },
+      "Claim": {
+        "correct": 0,
+        "total": 4
+      },
+      "Definition": {
+        "correct": 4,
+        "total": 6
+      },
+      "Evidence": {
+        "correct": 1,
+        "total": 3
+      },
+      "Result": {
+        "correct": 0,
+        "total": 2
+      },
+      "Solution": {
+        "correct": 1,
+        "total": 1
+      }
+    },
+    "total_edges": 54,
+    "valid_edges": 14,
+    "invalid_edges_count": 40,
+    "invalid_edges": [
+      {
+        "source": "a110",
+        "target": "a89",
+        "type": "solves",
+        "reason": "Spurious rule edge: a universal computer does not directly solve 'Can machines think?' without intermediate reasoning"
+      },
+      {
+        "source": "a89",
+        "target": "a95",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a89",
+        "target": "a97",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a89",
+        "target": "a98",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a90",
+        "target": "a89",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a89",
+        "target": "a92",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a89",
+        "target": "a94",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a107",
+        "target": "a89",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a110",
+        "target": "a92",
+        "type": "solves",
+        "reason": "Spurious rule edge (cos_sim=0.271) claiming digital computer solves the imitation game"
+      },
+      {
+        "source": "a92",
+        "target": "a97",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      }
+    ],
+    "edge_precision": 0.2593,
+    "edges_below_floor_confirmed": 0,
+    "duplicate_rate": 1.0
+  },
+  "highlight_quality": {
+    "annotations_count": 23,
+    "key_ideas_total": 13,
+    "key_ideas_covered": 11,
+    "key_idea_recall": 0.8462,
+    "forbidden_highlights_count": 5,
+    "forbidden_samples": [
+      {
+        "id": 88,
+        "quote": "COMPUTING MACHINERY AND INTELLIGENCE By A. M. Turing",
+        "reason": "Title and author byline header."
+      },
+      {
+        "id": 89,
+        "quote": "1. The Imitation Game I propose to consider the question, 'Can machines think?'",
+        "reason": "Section title header."
+      },
+      {
+        "id": 96,
+        "quote": "2. Critique of the New Problem As well as asking, 'What is the answer to this new form of the question', one may ask, 'Is this new question a worthy one to investigate?'",
+        "reason": "Section title header."
+      },
+      {
+        "id": 99,
+        "quote": "3. The Digital Computers The idea behind digital computers may be explained by saying that these machines are intended to carry out any operations which could be done by a human computer.",
+        "reason": "Section title header."
+      },
+      {
+        "id": 106,
+        "quote": "4. Universality of Digital Computers Digital computers can be constructed, and indeed have been constructed, according to these principles.",
+        "reason": "Section title header."
+      }
+    ],
+    "density_per_100_words": 4.24,
+    "percent_sentences_highlighted": 67.65,
+    "boundary_quality": 0.913
+  },
+  "qa_details": [
+    {
+      "id": "q1",
+      "question": "What is the imitation game?",
+      "type": "definitional",
+      "split": "dev",
+      "answer": "The imitation game is described as a game that we call the 'imitation game' [a92]. This game is used to investigate the question of whether machines can think [a89]. The advantages of the imitation game are considered in [a97].",
+      "latency_seconds": 2.75,
+      "retrieval": {
+        "gold_spans_total": 4,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.25,
+        "mrr": 0.1542,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.25,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2946,
+        "context_approx_tokens": 370,
+        "total_edge_lines": 20,
+        "similar_to_edges": 13,
+        "similar_to_share": 0.65,
+        "total_edge_refs": 40,
+        "dangling_refs_count": 13,
+        "dangling_ids": [
+          "a107",
+          "a108",
+          "a109",
+          "a110",
+          "a88",
+          "a90",
+          "a93",
+          "a94",
+          "a95",
+          "a99"
+        ],
+        "dangling_id_rate": 0.325
+      },
+      "deterministic_citations": {
+        "total_citations": 3,
+        "valid_citations_count": 3,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.33,
+        "correctness_spread": 1.0,
+        "faithfulness_mean": 4.33,
+        "faithfulness_spread": 1.0,
+        "citation_support_mean": 4.67,
+        "completeness_mean": 4.33,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly describes the imitation game, but minor details are omitted.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly describes the imitation game, but minor details are omitted.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but at most one minor extrapolated word/phrasing does not alter meaning.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but some minor details are omitted."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately describes the imitation game and its purpose.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a clear and accurate response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly describes the imitation game, but omits some minor details.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but contains one minor extrapolated word/phrasing.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer's citations are mostly accurate, but at least one cited ID does not directly support the accompanying sentence.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but does not address all aspects of the user's query."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q2",
+      "question": "What does the interrogator do?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman. [a93]",
+      "latency_seconds": 2.43,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.5,
+        "mrr": 0.75,
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2976,
+        "context_approx_tokens": 387,
+        "total_edge_lines": 17,
+        "similar_to_edges": 7,
+        "similar_to_share": 0.4118,
+        "total_edge_refs": 34,
+        "dangling_refs_count": 12,
+        "dangling_ids": [
+          "a103",
+          "a106",
+          "a108",
+          "a110",
+          "a89",
+          "a95",
+          "a99"
+        ],
+        "dangling_id_rate": 0.3529
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 4.67,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but it omits some minor details. The core response is accurate, but it does not provide the full context of the interrogator's role.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it omits some minor details. The core response is accurate, but it does not provide the full context of the interrogator's role.",
+              "failed_claims": [
+                {
+                  "claim": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman.",
+                  "reason": "The claim is mostly correct, but it lacks the nuance of the interrogator's role in the imitation game."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it omits some minor details. The core response is supported by the provided context, but it does not provide the full context of the interrogator's role.",
+              "failed_claims": [
+                {
+                  "claim": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman.",
+                  "reason": "The claim is mostly correct, but it lacks the nuance of the interrogator's role in the imitation game."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer is supported by the cited context, and the citation [a93] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but it omits some minor details. The core response answers the main question directly, but it does not provide the full context of the interrogator's role.",
+              "failed_claims": [
+                {
+                  "claim": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman.",
+                  "reason": "The claim is mostly correct, but it lacks the nuance of the interrogator's role in the imitation game."
+                }
+              ]
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer provides a response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but omits minor non-critical details. The interrogator's objective is accurately described, but the context does not provide enough information to include all nuances.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but contains a minor extrapolated word/phrasing that does not alter meaning. The interrogator's objective is accurately supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The cited bracketed ID [a93] directly supports the specific claim or sentence it is attached to, but at most one minor extrapolated word/phrasing that does not alter meaning.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but omits minor non-critical details. The interrogator's objective is accurately described, but the context does not provide enough information to include all nuances."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it omits some minor details. The core response is accurate, but it does not provide the full context of the interrogator's role.",
+              "failed_claims": [
+                {
+                  "claim": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman.",
+                  "reason": "The claim is mostly correct, but it lacks the nuance of the interrogator's role in the imitation game."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it omits some minor details. The core response is supported by the provided context, but it does not provide the full context of the interrogator's role.",
+              "failed_claims": [
+                {
+                  "claim": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman.",
+                  "reason": "The claim is mostly correct, but it lacks the nuance of the interrogator's role in the imitation game."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer is supported by the cited context, and the citation [a93] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but it omits some minor details. The core response answers the main question directly, but it does not provide the full context of the interrogator's role.",
+              "failed_claims": [
+                {
+                  "claim": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman.",
+                  "reason": "The claim is mostly correct, but it lacks the nuance of the interrogator's role in the imitation game."
+                }
+              ]
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer provides a response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q3",
+      "question": "Why does Turing replace 'Can machines think?'",
+      "type": "why_purpose",
+      "split": "dev",
+      "answer": "According to the document, Turing replaces 'Can machines think?' with new questions [a95]. This is because these replacement questions solve the ambiguity of the original question [r296].",
+      "latency_seconds": 2.13,
+      "retrieval": {
+        "gold_spans_total": 4,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.25,
+        "mrr": 0.3304,
+        "recall_at_1": 0.25,
+        "recall_at_3": 0.25,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2920,
+        "context_approx_tokens": 349,
+        "total_edge_lines": 22,
+        "similar_to_edges": 16,
+        "similar_to_share": 0.7273,
+        "total_edge_refs": 44,
+        "dangling_refs_count": 18,
+        "dangling_ids": [
+          "a107",
+          "a108",
+          "a109",
+          "a110",
+          "a90",
+          "a92",
+          "a94",
+          "a97",
+          "a98",
+          "a99"
+        ],
+        "dangling_id_rate": 0.4091
+      },
+      "deterministic_citations": {
+        "total_citations": 2,
+        "valid_citations_count": 2,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 4.33,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly states that Turing replaces the question 'Can machines think?' with new questions, but it inaccurately states that these replacement questions solve the ambiguity of the original question.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly states that Turing replaces the question 'Can machines think?' with new questions, but it inaccurately states that these replacement questions solve the ambiguity of the original question.",
+              "failed_claims": [
+                "The replacement questions do not solve the ambiguity of the original question."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but it inaccurately states that the replacement questions solve the ambiguity of the original question.",
+              "failed_claims": [
+                "The replacement questions do not solve the ambiguity of the original question."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer mostly accurately cites the relevant context, but it inaccurately states that the replacement questions solve the ambiguity of the original question.",
+              "invalid_citations": [
+                "The citation [r296] is not directly relevant to the claim that the replacement questions solve the ambiguity of the original question."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but it inaccurately states that the replacement questions solve the ambiguity of the original question."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly states that Turing replaces the question 'Can machines think?' with new questions, but it inaccurately states that these replacement questions solve the ambiguity of the original question.",
+              "failed_claims": [
+                "The replacement questions do not solve the ambiguity of the original question."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but it inaccurately states that the replacement questions solve the ambiguity of the original question.",
+              "failed_claims": [
+                "The replacement questions do not solve the ambiguity of the original question."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer mostly accurately cites the relevant context, but it inaccurately states that the replacement questions solve the ambiguity of the original question.",
+              "invalid_citations": [
+                "The citation [r296] is not directly relevant to the claim that the replacement questions solve the ambiguity of the original question."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but it inaccurately states that the replacement questions solve the ambiguity of the original question."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly states that Turing replaces the question 'Can machines think?' with new questions, but minor non-critical detail is omitted.",
+              "failed_claims": [
+                {
+                  "claim": "The replacement questions solve the ambiguity of the original question",
+                  "reason": "While the replacement questions do address the ambiguity, the generated answer does not explicitly state this."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but contains a minor extrapolated phrase that does not alter the meaning.",
+              "failed_claims": [
+                {
+                  "claim": "The replacement questions solve the ambiguity of the original question",
+                  "reason": "While the replacement questions do address the ambiguity, the generated answer does not explicitly state this."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but does not exhaustively address all aspects of the user's question.",
+              "failed_claims": [
+                {
+                  "claim": "The replacement questions solve the ambiguity of the original question",
+                  "reason": "While the replacement questions do address the ambiguity, the generated answer does not explicitly state this."
+                }
+              ]
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating that the document contains the answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q4",
+      "question": "What advantage does the imitation game have?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "The imitation game has the advantage of drawing a fairly sharp line between the physical and the intellectual capacities of a human being [a98].",
+      "latency_seconds": 1.69,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2932,
+        "context_approx_tokens": 370,
+        "total_edge_lines": 19,
+        "similar_to_edges": 11,
+        "similar_to_share": 0.5789,
+        "total_edge_refs": 38,
+        "dangling_refs_count": 9,
+        "dangling_ids": [
+          "a107",
+          "a109",
+          "a110",
+          "a88",
+          "a90",
+          "a93",
+          "a94",
+          "a99"
+        ],
+        "dangling_id_rate": 0.2368
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a correct answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a correct answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q5",
+      "question": "What happens when a machine takes the part of A?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to the document annotations, the question \"What will happen when a machine takes the part of A in this game?\" is noted as [a94]. However, the document does not provide a direct answer to this question. Nevertheless, based on the relationship graph, [r308] establishes a connection between [a110] (solution) and [a94] (problem), indicating that a single universal computer suitably programmed can solve the machine player role in the imitation game, which is related to the machine taking the part of A.",
+      "latency_seconds": 4.86,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.5,
+        "mrr": 0.5,
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2974,
+        "context_approx_tokens": 367,
+        "total_edge_lines": 19,
+        "similar_to_edges": 14,
+        "similar_to_share": 0.7368,
+        "total_edge_refs": 38,
+        "dangling_refs_count": 12,
+        "dangling_ids": [
+          "a106",
+          "a107",
+          "a108",
+          "a88",
+          "a90",
+          "a92",
+          "a97",
+          "a98",
+          "a99"
+        ],
+        "dangling_id_rate": 0.3158
+      },
+      "deterministic_citations": {
+        "total_citations": 4,
+        "valid_citations_count": 4,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 3.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 4.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "fail",
+        "judge_reasons": "The generated answer is mostly correct, but minor non-critical detail is omitted. The core response is accurate, but the model fails to provide a direct answer to the question.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail is omitted. The core response is accurate, but the model fails to provide a direct answer to the question.",
+              "failed_claims": [
+                "The model fails to provide a direct answer to the question."
+              ]
+            },
+            "faithfulness": {
+              "score": 3,
+              "reasons": "The generated answer contains some claims not found in the context. The model attempts to infer information not explicitly stated in the document.",
+              "failed_claims": [
+                "The model infers information not explicitly stated in the document."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The cited bracketed IDs mostly support the specific claims or sentences they are attached to. However, at least one cited ID does not support the accompanying sentence.",
+              "invalid_citations": [
+                "[r308] does not directly support the specific claim it is attached to."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially addresses the main question directly, but leaves out some minor details.",
+              "failed_claims": [
+                "The model fails to provide a direct answer to the question."
+              ]
+            },
+            "abstention": {
+              "verdict": "fail",
+              "reasons": "The model does not explicitly and clearly state that the document or context does not contain the answer. Instead, it attempts to infer information not explicitly stated in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail is omitted. The core response is accurate, but the model fails to provide a direct answer to the question.",
+              "failed_claims": [
+                "The model fails to provide a direct answer to the question."
+              ]
+            },
+            "faithfulness": {
+              "score": 3,
+              "reasons": "The generated answer contains some claims not found in the context. The model attempts to infer information not explicitly stated in the document.",
+              "failed_claims": [
+                "The model infers information not explicitly stated in the document."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The cited bracketed IDs mostly support the specific claims or sentences they are attached to. However, at least one cited ID does not support the accompanying sentence.",
+              "invalid_citations": [
+                "[r308] does not directly support the specific claim it is attached to."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially addresses the main question directly, but leaves out some minor details.",
+              "failed_claims": [
+                "The model fails to provide a direct answer to the question."
+              ]
+            },
+            "abstention": {
+              "verdict": "fail",
+              "reasons": "The model does not explicitly and clearly state that the document or context does not contain the answer. Instead, it attempts to infer information not explicitly stated in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail is omitted. The core response is accurate, but the model fails to provide a direct answer to the question.",
+              "failed_claims": [
+                "The model fails to provide a direct answer to the question."
+              ]
+            },
+            "faithfulness": {
+              "score": 3,
+              "reasons": "The generated answer contains some claims not found in the context. The model attempts to infer information not explicitly stated in the document.",
+              "failed_claims": [
+                "The model infers information not explicitly stated in the document."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The cited bracketed IDs mostly support the specific claims or sentences they are attached to. However, at least one cited ID does not support the accompanying sentence.",
+              "invalid_citations": [
+                "[r308] does not directly support the specific claim it is attached to."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially addresses the main question directly, but leaves out some minor details.",
+              "failed_claims": [
+                "The model fails to provide a direct answer to the question."
+              ]
+            },
+            "abstention": {
+              "verdict": "fail",
+              "reasons": "The model does not explicitly and clearly state that the document or context does not contain the answer. Instead, it attempts to infer information not explicitly stated in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q6",
+      "question": "What are the three parts of a digital computer?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to the document, a digital computer can be regarded as consisting of three parts: [a102] (i) Store of information, [a103] (ii) Executive unit which carries out operations, and [a104] (iii) Control which ensures instructions are obeyed correctly. [a102]",
+      "latency_seconds": 5.1,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 0.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2953,
+        "context_approx_tokens": 365,
+        "total_edge_lines": 18,
+        "similar_to_edges": 5,
+        "similar_to_share": 0.2778,
+        "total_edge_refs": 36,
+        "dangling_refs_count": 10,
+        "dangling_ids": [
+          "a108",
+          "a109",
+          "a110",
+          "a89",
+          "a90",
+          "a95"
+        ],
+        "dangling_id_rate": 0.2778
+      },
+      "deterministic_citations": {
+        "total_citations": 4,
+        "valid_citations_count": 4,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable and the model provides a correct answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the gold answer, with all essential facts and nuances present.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context, with no hallucination.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a complete and accurate response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable and the model provides a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q7",
+      "question": "What is a universal machine according to Turing?",
+      "type": "definitional",
+      "split": "dev",
+      "answer": "According to [a108], a universal machine is described by Turing as a special property of digital computers, that they can simulate any discrete state machine. [a108] is also confirmed to be defined by [a106] and [a99] in the relationship graph [r273] and [r267] respectively.",
+      "latency_seconds": 2.75,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.5,
+        "mrr": 0.5385,
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2962,
+        "context_approx_tokens": 354,
+        "total_edge_lines": 19,
+        "similar_to_edges": 10,
+        "similar_to_share": 0.5263,
+        "total_edge_refs": 38,
+        "dangling_refs_count": 13,
+        "dangling_ids": [
+          "a102",
+          "a107",
+          "a110",
+          "a89",
+          "a90",
+          "a95",
+          "a99"
+        ],
+        "dangling_id_rate": 0.3421
+      },
+      "deterministic_citations": {
+        "total_citations": 6,
+        "valid_citations_count": 5,
+        "invented_citations_count": 1,
+        "invented_citations": [
+          "a99"
+        ],
+        "citation_accuracy": 0.8333,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 4.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer mostly correctly describes the universal machine according to Turing, but omits some minor details. The definition of a universal machine is mostly accurate, but the mention of simulating any discrete state machine is a minor non-critical detail.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly describes the universal machine according to Turing, but omits some minor details. The definition of a universal machine is mostly accurate, but the mention of simulating any discrete state machine is a minor non-critical detail.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but contains a minor extrapolated phrase that does not alter the meaning. The core response is fully supported by the provided context text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer's citations are mostly accurate, and all cited IDs exist. However, at least one cited ID does not directly support the accompanying sentence. The citations to [a108] are mostly accurate, but the mention of [a106] and [a99] is not directly relevant to the definition of a universal machine.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but answers the main question directly. The definition of a universal machine is mostly complete, but some minor details are omitted.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the question is answerable."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly describes the universal machine according to Turing, but omits some minor details. The definition of a universal machine is mostly accurate, but the mention of simulating any discrete state machine is a minor non-critical detail.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but contains a minor extrapolated phrase that does not alter the meaning. The core response is fully supported by the provided context text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer's citations are mostly accurate, and all cited IDs exist. However, at least one cited ID does not directly support the accompanying sentence. The citations to [a108] are mostly accurate, but the mention of [a106] and [a99] is not directly relevant to the definition of a universal machine.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but answers the main question directly. The definition of a universal machine is mostly complete, but some minor details are omitted.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the question is answerable."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly describes the universal machine according to Turing, but omits some minor details. The definition of a universal machine is mostly accurate, but the mention of simulating any discrete state machine is a minor non-critical detail.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but contains a minor extrapolated phrase that does not alter the meaning. The core response is fully supported by the provided context text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer's citations are mostly accurate, and all cited IDs exist. However, at least one cited ID does not directly support the accompanying sentence. The citations to [a108] are mostly accurate, but the mention of [a106] and [a99] is not directly relevant to the definition of a universal machine.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but answers the main question directly. The definition of a universal machine is mostly complete, but some minor details are omitted.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the question is answerable."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q8",
+      "question": "How does the human computer operate according to the text?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "I cannot find this information in the document.",
+      "latency_seconds": 2.06,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 0.0,
+        "mrr": 0.1111,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.3333,
+        "recall_at_5": 0.3333
+      },
+      "context_structure": {
+        "context_chars": 2969,
+        "context_approx_tokens": 373,
+        "total_edge_lines": 17,
+        "similar_to_edges": 8,
+        "similar_to_share": 0.4706,
+        "total_edge_refs": 34,
+        "dangling_refs_count": 8,
+        "dangling_ids": [
+          "a102",
+          "a106",
+          "a108",
+          "a92",
+          "a97",
+          "a98"
+        ],
+        "dangling_id_rate": 0.2353
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that the information cannot be found in the document.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the information cannot be found in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in the provided context and does not contain any hallucinated claims.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no need to evaluate citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question and provides a clear and concise response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when it cannot find the information in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the information cannot be found in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in the provided context and does not contain any hallucinated claims.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no need to evaluate citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question and provides a clear and concise response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when it cannot find the information in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the information cannot be found in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it accurately reflects the information provided.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer does not rely on any specific claims or sentences.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete, as it accurately reflects the information provided in the context."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly abstains from providing a specific answer, stating that the information cannot be found in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q9",
+      "question": "Why is it unnecessary to design various new machines for different computing processes?",
+      "type": "why_purpose",
+      "split": "dev",
+      "answer": "According to [a109], \"The existence of machines with this property has the important consequence that, considerations of speed apart, it is unnecessary to design various new machines to do various computing processes.\"",
+      "latency_seconds": 2.54,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.5,
+        "mrr": 0.55,
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2894,
+        "context_approx_tokens": 348,
+        "total_edge_lines": 19,
+        "similar_to_edges": 15,
+        "similar_to_share": 0.7895,
+        "total_edge_refs": 38,
+        "dangling_refs_count": 13,
+        "dangling_ids": [
+          "a106",
+          "a108",
+          "a110",
+          "a90",
+          "a92",
+          "a94",
+          "a97",
+          "a98",
+          "a99"
+        ],
+        "dangling_id_rate": 0.3421
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer accurately reflects the ground-truth gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the ground-truth gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer is accurate."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the ground-truth gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer is accurate."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is a direct quote from the gold answer, with no contradictions or omissions.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is a direct quote from the gold answer, with no hallucinations or unsupported claims.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer is a direct quote from the gold answer, with no citations or irrelevant information.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer fully addresses the question, with no omissions or superficial information."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer provides a complete and accurate response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q10",
+      "question": "Can engineers or chemists make artificial human skin according to the author?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "I cannot find any information in the provided context about engineers or chemists making artificial human skin according to the author. The context appears to be about the Imitation Game and its relation to the question of whether machines can think.",
+      "latency_seconds": 2.33,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 0.0,
+        "mrr": 0.75,
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2946,
+        "context_approx_tokens": 370,
+        "total_edge_lines": 20,
+        "similar_to_edges": 13,
+        "similar_to_share": 0.65,
+        "total_edge_refs": 40,
+        "dangling_refs_count": 13,
+        "dangling_ids": [
+          "a107",
+          "a108",
+          "a109",
+          "a110",
+          "a88",
+          "a90",
+          "a93",
+          "a94",
+          "a95",
+          "a99"
+        ],
+        "dangling_id_rate": 0.325
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer is completely correct and accurately reflects the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and accurately reflects the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and accurately reflects the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find any information in the provided context about engineers or chemists making artificial human skin according to the author.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer strictly adheres to the provided context and does not contain any claims not found in the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer does not contain any citations, and therefore, there are no citations to evaluate.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is exhaustive and direct, answering all components of the question."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when it cannot find any information in the provided context about engineers or chemists making artificial human skin according to the author."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q11",
+      "question": "How does the imitation game separate physical capacities from intellectual capacities?",
+      "type": "multi_hop",
+      "split": "dev",
+      "answer": "According to [a98], the imitation game has the advantage of drawing a fairly sharp line between the physical and the intellectual capacities of a human being.",
+      "latency_seconds": 3.52,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.3333,
+        "mrr": 0.3333,
+        "recall_at_1": 0.3333,
+        "recall_at_3": 0.3333,
+        "recall_at_5": 0.3333
+      },
+      "context_structure": {
+        "context_chars": 2965,
+        "context_approx_tokens": 371,
+        "total_edge_lines": 20,
+        "similar_to_edges": 13,
+        "similar_to_share": 0.65,
+        "total_edge_refs": 40,
+        "dangling_refs_count": 13,
+        "dangling_ids": [
+          "a107",
+          "a108",
+          "a109",
+          "a110",
+          "a88",
+          "a90",
+          "a94",
+          "a95",
+          "a99"
+        ],
+        "dangling_id_rate": 0.325
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 4.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but it lacks the nuance of keeping the interrogator in a separate room.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it lacks the nuance of keeping the interrogator in a separate room.",
+              "failed_claims": [
+                "The generated answer does not mention the interrogator being in a separate room."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it slightly misinterprets the advantages of the imitation game.",
+              "failed_claims": [
+                "The generated answer implies that the imitation game focuses purely on intellectual capacity, but it does not explicitly state this."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer cites [a98] accurately, but it does not provide a clear connection between the citation and the claim.",
+              "invalid_citations": [
+                "[a98] is cited, but its relevance to the claim is unclear."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but it does not address all aspects of the question."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it lacks the nuance of keeping the interrogator in a separate room.",
+              "failed_claims": [
+                "The generated answer does not mention the interrogator being in a separate room."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it slightly misinterprets the advantages of the imitation game.",
+              "failed_claims": [
+                "The generated answer implies that the imitation game focuses purely on intellectual capacity, but it does not explicitly state this."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer cites [a98] accurately, but it does not provide a clear connection between the citation and the claim.",
+              "invalid_citations": [
+                "[a98] is cited, but its relevance to the claim is unclear."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but it does not address all aspects of the question."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail omitted. The imitation game does separate physical capacities from intellectual capacities, but the answer could be more precise.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The core response is fully supported by the provided context text. However, the answer could be more precise and detailed.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "Mostly accurate citations are provided, but at least one cited ID does not support the accompanying sentence. The citation [a98] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The answer addresses all aspects of the user's question based on the document, but could be more thorough.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information, but the answer could be more precise."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q12",
+      "question": "What connects the rules supplied in a book to the operations of a digital computer?",
+      "type": "multi_hop",
+      "split": "dev",
+      "answer": "I cannot find this in the document.",
+      "latency_seconds": 1.27,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.3333,
+        "mrr": 0.3519,
+        "recall_at_1": 0.3333,
+        "recall_at_3": 0.3333,
+        "recall_at_5": 0.3333
+      },
+      "context_structure": {
+        "context_chars": 2940,
+        "context_approx_tokens": 366,
+        "total_edge_lines": 17,
+        "similar_to_edges": 6,
+        "similar_to_share": 0.3529,
+        "total_edge_refs": 34,
+        "dangling_refs_count": 10,
+        "dangling_ids": [
+          "a102",
+          "a107",
+          "a108",
+          "a110",
+          "a95"
+        ],
+        "dangling_id_rate": 0.2941
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that it cannot find the information in the document.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer is a statement of inability to find information.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete, as it correctly states that it cannot find the information in the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that it cannot find the information in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context and does not make any claims not supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no citation support to evaluate.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete in that it explicitly states that it cannot find the information in the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly abstains from providing a specific answer and instead states that it cannot find the information in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer is a statement of inability to find information.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete, as it correctly states that it cannot find the information in the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that it cannot find the information in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q13",
+      "question": "What year was the Turing machine first built in hardware?",
+      "type": "unanswerable",
+      "split": "dev",
+      "answer": "I cannot find this information in the provided context.",
+      "latency_seconds": 1.99,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2880,
+        "context_approx_tokens": 344,
+        "total_edge_lines": 18,
+        "similar_to_edges": 11,
+        "similar_to_share": 0.6111,
+        "total_edge_refs": 36,
+        "dangling_refs_count": 12,
+        "dangling_ids": [
+          "a102",
+          "a107",
+          "a108",
+          "a110",
+          "a90",
+          "a99"
+        ],
+        "dangling_id_rate": 0.3333
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that the information cannot be found in the document.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the information cannot be found in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer does not make any claims that require citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly abstains from providing an answer, stating that the information cannot be found in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the provided context.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate for accuracy, as the answer correctly states it cannot find the information.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question, stating that it cannot find the information in the provided context."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly states that it cannot find the information in the provided context."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the information cannot be found in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer does not make any claims that require citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly abstains from providing an answer, stating that the information cannot be found in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q14",
+      "question": "What programming language was used to program the digital computer?",
+      "type": "unanswerable",
+      "split": "dev",
+      "answer": "I cannot find this information in the document.",
+      "latency_seconds": 1.53,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2984,
+        "context_approx_tokens": 364,
+        "total_edge_lines": 21,
+        "similar_to_edges": 7,
+        "similar_to_share": 0.3333,
+        "total_edge_refs": 42,
+        "dangling_refs_count": 16,
+        "dangling_ids": [
+          "a103",
+          "a104",
+          "a105",
+          "a107",
+          "a108",
+          "a109",
+          "a110",
+          "a89",
+          "a90",
+          "a95"
+        ],
+        "dangling_id_rate": 0.381
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that it cannot find the information in the document.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it accurately reflects the information provided.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer does not reference any specific claims or sentences.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses the question, providing a clear and accurate response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer, stating that it cannot find the information in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no citation support to evaluate.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model explicitly and clearly states that the document or context does not contain the answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q15",
+      "question": "Can digital computers mimic discrete state machines?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "According to the document, digital computers can indeed mimic the actions of any other discrete state machine [a107]. This property is also described as the \"special property of digital computers\" that allows them to simulate any discrete state machine, making them \"universal machines\" [a108].",
+      "latency_seconds": 3.29,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2903,
+        "context_approx_tokens": 353,
+        "total_edge_lines": 19,
+        "similar_to_edges": 11,
+        "similar_to_share": 0.5789,
+        "total_edge_refs": 38,
+        "dangling_refs_count": 13,
+        "dangling_ids": [
+          "a106",
+          "a109",
+          "a110",
+          "a92",
+          "a95",
+          "a97",
+          "a98",
+          "a99"
+        ],
+        "dangling_id_rate": 0.3421
+      },
+      "deterministic_citations": {
+        "total_citations": 2,
+        "valid_citations_count": 2,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer accurately reflects the gold answer, stating that digital computers can indeed mimic the actions of any other discrete state machine.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the gold answer, stating that digital computers can indeed mimic the actions of any other discrete state machine.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context, with all claims and clauses being completely supported by the provided text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID (e.g., [a107], [a108]) directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses all aspects of the user's question based on the document, providing a comprehensive and direct response."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provided a clear and accurate response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the gold answer, stating that digital computers can indeed mimic the actions of any other discrete state machine.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context, with all claims and clauses being completely supported by the provided text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID (e.g., [a107], [a108]) directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses all aspects of the user's question based on the document, providing a comprehensive and direct response."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provided a clear and accurate response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the gold answer, with no contradictions or omissions.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context text, with no hallucination.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Each cited bracketed ID directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a clear and accurate response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q16",
+      "question": "What role does the 'Store' play in a digital computer?",
+      "type": "definitional",
+      "split": "held_out",
+      "answer": "I cannot verify the role of the 'Store' in a digital computer.",
+      "latency_seconds": 1.29,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 0.0,
+        "mrr": 0.3333,
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2903,
+        "context_approx_tokens": 357,
+        "total_edge_lines": 20,
+        "similar_to_edges": 7,
+        "similar_to_share": 0.35,
+        "total_edge_refs": 40,
+        "dangling_refs_count": 15,
+        "dangling_ids": [
+          "a103",
+          "a104",
+          "a105",
+          "a108",
+          "a109",
+          "a110",
+          "a89",
+          "a90",
+          "a95"
+        ],
+        "dangling_id_rate": 0.375
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that it cannot verify the role of the 'Store' in a digital computer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot verify the role of the 'Store' in a digital computer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in the provided context and does not contain any hallucinated claims.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer does not contain any citations, which is appropriate given the context.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses the question directly and provides a clear response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that it cannot verify the role of the 'Store' in a digital computer, indicating that the context does not contain the answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot verify the role of the 'Store' in a digital computer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in the provided context and does not contain any hallucinated claims.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer does not contain any citations, which is appropriate given the context.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses the question directly and provides a clear response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that it cannot verify the role of the 'Store' in a digital computer, indicating that the context does not contain the answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly abstains from providing a specific role of the 'Store' in a digital computer, acknowledging the inability to verify it.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states it cannot verify the role of the 'Store' in a digital computer.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer does not contain any citations, making it 5 for citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer exhaustively addresses all aspects of the user's question by correctly stating it cannot verify the role of the 'Store' in a digital computer."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing a specific role of the 'Store' in a digital computer, acknowledging the inability to verify it."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q17",
+      "question": "What is the function of the executive unit in a digital computer?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "According to the document, the executive unit is defined as [a104] \"(ii) Executive unit which carries out operations.\" This suggests that the executive unit is responsible for carrying out operations, which is a key function in a digital computer.",
+      "latency_seconds": 8.81,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 3000,
+        "context_approx_tokens": 369,
+        "total_edge_lines": 20,
+        "similar_to_edges": 7,
+        "similar_to_share": 0.35,
+        "total_edge_refs": 40,
+        "dangling_refs_count": 14,
+        "dangling_ids": [
+          "a103",
+          "a105",
+          "a108",
+          "a109",
+          "a110",
+          "a89",
+          "a90",
+          "a95"
+        ],
+        "dangling_id_rate": 0.35
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly identifies the function of the executive unit in a digital computer, but omits some minor details.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly identifies the function of the executive unit in a digital computer, but omits some minor details.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but contains a minor extrapolated word/phrasing that does not alter meaning.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but does not address all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "This is an answerable question, and the model provides a generated answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly identifies the function of the executive unit in a digital computer, but omits some minor details.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but contains one minor extrapolated word/phrasing that does not alter meaning.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but omits some minor details.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a response."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly identifies the function of the executive unit in a digital computer, but omits some minor details.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but contains one minor extrapolated word/phrasing that does not alter meaning.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer accurately cites the definition of the executive unit from the provided context.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly complete, but could be more exhaustive."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer provides a clear response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q18",
+      "question": "What does the control component do in a digital computer?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "I cannot find this information in the document.",
+      "latency_seconds": 2.75,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 0.0,
+        "mrr": 0.3333,
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2981,
+        "context_approx_tokens": 366,
+        "total_edge_lines": 21,
+        "similar_to_edges": 7,
+        "similar_to_share": 0.3333,
+        "total_edge_refs": 42,
+        "dangling_refs_count": 17,
+        "dangling_ids": [
+          "a103",
+          "a104",
+          "a105",
+          "a106",
+          "a107",
+          "a109",
+          "a110",
+          "a89",
+          "a90"
+        ],
+        "dangling_id_rate": 0.4048
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that the information cannot be found in the document.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the information cannot be found in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context and does not contain any claims not supported by the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "No citations are provided, which is correct given the nature of the question.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses the question directly and provides a clear response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the information is not present in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the information cannot be found in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context and does not contain any claims not supported by the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "No citations are provided, which is correct given the nature of the question.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses the question directly and provides a clear response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the information is not present in the document."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that it cannot find the information.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer does not contain any claims that require citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete, as it correctly states that it cannot find the information in the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that it cannot find the information in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q19",
+      "question": "Why would dressing a thinking machine in artificial flesh be of little interest?",
+      "type": "why_purpose",
+      "split": "held_out",
+      "answer": "I cannot find this question in the document.",
+      "latency_seconds": 1.51,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 0.0,
+        "mrr": 0.6,
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2821,
+        "context_approx_tokens": 336,
+        "total_edge_lines": 22,
+        "similar_to_edges": 16,
+        "similar_to_share": 0.7273,
+        "total_edge_refs": 44,
+        "dangling_refs_count": 20,
+        "dangling_ids": [
+          "a107",
+          "a108",
+          "a109",
+          "a110",
+          "a88",
+          "a90",
+          "a92",
+          "a94",
+          "a97",
+          "a98",
+          "a99"
+        ],
+        "dangling_id_rate": 0.4545
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that the document does not contain the answer to the question.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the document does not contain the answer to the question.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that the document does not contain the answer.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer is a statement of absence.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete, as it accurately states the absence of the answer in the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that the document does not contain the answer to the question."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the document does not contain the answer to the question.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that the document does not contain the answer.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer is a statement of absence.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete, as it accurately states the absence of the answer in the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that the document does not contain the answer to the question."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that it cannot find the information in the document.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations to evaluate, as the generated answer is a statement of inability to find information.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete in its statement of inability to find information."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly states that it cannot find the information in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q20",
+      "question": "Compare the role of the human computer with the digital computer.",
+      "type": "comparison",
+      "split": "held_out",
+      "answer": "According to the document, the human computer and the digital computer have a similar role in that they can carry out any operations that could be done by the other. This is stated in [a99], which says that digital computers are intended to carry out any operations which could be done by a human computer.",
+      "latency_seconds": 4.03,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 0.3333,
+        "mrr": 0.4389,
+        "recall_at_1": 0.3333,
+        "recall_at_3": 0.3333,
+        "recall_at_5": 0.6667
+      },
+      "context_structure": {
+        "context_chars": 2940,
+        "context_approx_tokens": 366,
+        "total_edge_lines": 17,
+        "similar_to_edges": 6,
+        "similar_to_share": 0.3529,
+        "total_edge_refs": 34,
+        "dangling_refs_count": 10,
+        "dangling_ids": [
+          "a102",
+          "a107",
+          "a108",
+          "a110",
+          "a95"
+        ],
+        "dangling_id_rate": 0.2941
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 4.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly identifies the similarity in roles between human and digital computers, but omits some nuances.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly identifies the similarity in roles between human and digital computers, but omits some nuances.",
+              "failed_claims": [
+                "The generated answer does not accurately capture the full scope of the similarity in roles between human and digital computers."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but makes some minor extrapolations.",
+              "failed_claims": [
+                "The generated answer does not accurately capture the full scope of the similarity in roles between human and digital computers."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer cites [a99] to support the claim, but does not accurately capture the full scope of the similarity in roles between human and digital computers.",
+              "invalid_citations": [
+                "[a99] is cited to support the claim, but the citation does not accurately capture the full scope of the similarity in roles between human and digital computers."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but does not accurately capture the full scope of the similarity in roles between human and digital computers."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly identifies the similarity in roles between human and digital computers, but omits some nuances.",
+              "failed_claims": [
+                "The generated answer does not accurately capture the full scope of the similarity in roles between human and digital computers."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but makes some minor extrapolations.",
+              "failed_claims": [
+                "The generated answer does not accurately capture the full scope of the similarity in roles between human and digital computers."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer cites [a99] to support the claim, but does not accurately capture the full scope of the similarity in roles between human and digital computers.",
+              "invalid_citations": [
+                "[a99] is cited to support the claim, but the citation does not accurately capture the full scope of the similarity in roles between human and digital computers."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but does not accurately capture the full scope of the similarity in roles between human and digital computers."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly states that the human computer and digital computer have a similar role, but it deviates from the gold answer by not mentioning the fixed rules from a book without deviation.",
+              "failed_claims": [
+                "The generated answer does not mention the fixed rules from a book without deviation."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it contains a minor extrapolation by stating that the digital computer can carry out any operations that could be done by the human computer, which is not explicitly stated in the context.",
+              "failed_claims": [
+                "The generated answer contains a minor extrapolation by stating that the digital computer can carry out any operations that could be done by the human computer."
+              ]
+            },
+            "citation_support": {
+              "score": 4,
+              "reasons": "The generated answer contains mostly accurate citations, but it does not directly support the specific claim or sentence it is attached to.",
+              "invalid_citations": [
+                "[a99] does not directly support the specific claim or sentence it is attached to."
+              ]
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but it does not address all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q21",
+      "question": "How many vacuum tubes or transistors did Turing's computer use?",
+      "type": "unanswerable",
+      "split": "held_out",
+      "answer": "I cannot find this information in the provided document.",
+      "latency_seconds": 1.97,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2924,
+        "context_approx_tokens": 355,
+        "total_edge_lines": 20,
+        "similar_to_edges": 11,
+        "similar_to_share": 0.55,
+        "total_edge_refs": 40,
+        "dangling_refs_count": 18,
+        "dangling_ids": [
+          "a102",
+          "a106",
+          "a107",
+          "a108",
+          "a110",
+          "a89",
+          "a90",
+          "a95"
+        ],
+        "dangling_id_rate": 0.45
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer correctly states that the document does not contain the answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the document does not contain the answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, which is correct for this unanswerable question.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly states that the document does not contain the answer."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the document does not contain the answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context and does not contain any claims not supported by the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no need to evaluate citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete and addresses all aspects of the user's question."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer, stating that the document does not contain the information."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer correctly states that the document does not contain the answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context and does not contain any claims not supported by the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no need to evaluate citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete and addresses all aspects of the user's question."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer, stating that the document does not contain the information."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q22",
+      "question": "Who was the first female programmer mentioned in the text?",
+      "type": "unanswerable",
+      "split": "held_out",
+      "answer": "I cannot find any information about a female programmer in the provided text.",
+      "latency_seconds": 1.82,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2901,
+        "context_approx_tokens": 373,
+        "total_edge_lines": 19,
+        "similar_to_edges": 10,
+        "similar_to_share": 0.5263,
+        "total_edge_refs": 38,
+        "dangling_refs_count": 18,
+        "dangling_ids": [
+          "a102",
+          "a106",
+          "a108",
+          "a109",
+          "a110",
+          "a89",
+          "a90",
+          "a95",
+          "a97",
+          "a98"
+        ],
+        "dangling_id_rate": 0.4737
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer is completely correct and accurately reflects the unanswerable nature of the question.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and accurately reflects the unanswerable nature of the question.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context and does not contain any claims not supported by the provided text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, and therefore, there is no need to evaluate citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete and addresses all aspects of the question, accurately reflecting the unanswerable nature of the question."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly abstains from providing a specific answer, stating that it cannot find the information."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is fully supported by the provided context and does not contain any claims not found in the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no need to evaluate citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question and provides a complete response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the document does not contain the information."
+            }
+          },
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and accurately reflects the unanswerable nature of the question.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context and does not contain any claims not supported by the provided text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, and therefore, there is no need to evaluate citation support.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer is complete and addresses all aspects of the question, accurately reflecting the unanswerable nature of the question."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly abstains from providing a specific answer, stating that it cannot find the information."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
