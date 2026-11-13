@@ -1,10 +1,7 @@
-"""Database engine, session management, and schema initialization."""
+"""Database engine, session management, and schema initialization (PostgreSQL + pgvector)."""
 
-import json
-import os
-from pathlib import Path
 from typing import Generator
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from backend.app.settings import get_settings
 from backend.app.models import Base
@@ -20,38 +17,40 @@ def reset_engine() -> None:
     _SessionLocal = None
 
 
+def normalize_database_url(url: str) -> str:
+    """Normalize PostgreSQL URLs for SQLAlchemy and psycopg2 driver compatibility.
+
+    Render and older configs provide postgres://, and generic configs provide postgresql://,
+    which in SQLAlchemy 2.0+ default to the psycopg3 driver. This normalizes both to postgresql+psycopg2://.
+    """
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg2://", 1)
+    if url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
 def get_engine(database_url: str = None):
-    """Create or return SQLAlchemy engine configured for SQLite WAL safety."""
+    """Create or return a pooled PostgreSQL SQLAlchemy engine."""
     global _engine, _SessionLocal
     settings = get_settings()
-    url = database_url or settings.database_url
+    raw_url = database_url or settings.database_url
+    url = normalize_database_url(raw_url)
 
     if database_url is None and _engine is not None and str(_engine.url) == url:
         return _engine
 
-    # Ensure parent directory exists for file-based SQLite
-    if url.startswith("sqlite:///") and not url.startswith("sqlite:///:memory:"):
-        db_file = url.replace("sqlite:///", "")
-        Path(db_file).parent.mkdir(parents=True, exist_ok=True)
-
-    connect_args = {}
+    engine_kwargs = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
+        engine_kwargs["connect_args"] = {"check_same_thread": False}
+    else:
+        engine_kwargs["pool_size"] = settings.db_pool_size
+        engine_kwargs["max_overflow"] = settings.db_max_overflow
 
-    engine = create_engine(url, connect_args=connect_args)
-
-    if url.startswith("sqlite"):
-        @event.listens_for(engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
-            cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA journal_mode=WAL;")
-            cursor.execute(f"PRAGMA busy_timeout={settings.sqlite_busy_timeout_ms};")
-            cursor.execute("PRAGMA foreign_keys=ON;")
-            cursor.close()
+    engine = create_engine(url, **engine_kwargs)
 
     if database_url is None:
         _engine = engine
-        _SessionLocal = None
     return engine
 
 
@@ -79,37 +78,26 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def init_db(engine_override=None, config_path: str = None) -> None:
-    """Create all database tables and run incremental migrations."""
+def init_db(engine_override=None) -> None:
+    """Ensure vector extension is loaded and create all database tables."""
     target_engine = engine_override or get_engine()
+    if not str(target_engine.url).startswith("sqlite"):
+        with target_engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.commit()
     Base.metadata.create_all(bind=target_engine)
 
-    # Migrate suggestions table with new columns if needed
-    try:
+    # Safe migration for existing SQLite databases
+    if str(target_engine.url).startswith("sqlite"):
         with target_engine.connect() as conn:
-            res = conn.exec_driver_sql("PRAGMA table_info(suggestions)").fetchall()
-            existing_cols = {row[1] for row in res}
-            if existing_cols:
-                if "seed_annotation_id" not in existing_cols:
-                    conn.exec_driver_sql(
-                        "ALTER TABLE suggestions ADD COLUMN seed_annotation_id INTEGER REFERENCES annotations(id) ON DELETE SET NULL"
-                    )
-                if "label" not in existing_cols:
-                    conn.exec_driver_sql(
-                        "ALTER TABLE suggestions ADD COLUMN label VARCHAR(64)"
-                    )
-                if "scope" not in existing_cols:
-                    conn.exec_driver_sql(
-                        "ALTER TABLE suggestions ADD COLUMN scope VARCHAR(32) DEFAULT 'passage'"
-                    )
+            for col_stmt in [
+                "ALTER TABLE chunks ADD COLUMN page INTEGER DEFAULT 1;",
+                "ALTER TABLE chunks ADD COLUMN text TEXT;",
+            ]:
+                try:
+                    conn.execute(text(col_stmt))
+                    conn.commit()
+                except Exception:
+                    pass
 
-            # Migrate relations table with cos_score if needed
-            res_rel = conn.exec_driver_sql("PRAGMA table_info(relations)").fetchall()
-            rel_cols = {row[1] for row in res_rel}
-            if rel_cols and "cos_score" not in rel_cols:
-                conn.exec_driver_sql("ALTER TABLE relations ADD COLUMN cos_score REAL")
-
-            conn.commit()
-    except Exception:
-        pass
 

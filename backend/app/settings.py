@@ -7,28 +7,28 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Central configuration for backend services and storage."""
+    """Central configuration for backend services and storage (PostgreSQL)."""
 
     # Storage and database
     database_url: str = Field(
-        default="sqlite:///./data/app.db",
+        default="postgresql://user:password@localhost:5432/documesh",
         alias="DATABASE_URL",
-        description="SQLAlchemy database connection string",
-    )
-    db_path: str = Field(
-        default="./data/app.db",
-        alias="DB_PATH",
-        description="Path to SQLite database file",
+        description="SQLAlchemy PostgreSQL connection string",
     )
     upload_dir: str = Field(
         default="./uploads",
         alias="UPLOAD_DIR",
         description="Directory for uploaded PDF files",
     )
-    sqlite_busy_timeout_ms: int = Field(
-        default=5000,
-        alias="SQLITE_BUSY_TIMEOUT_MS",
-        description="Busy timeout in ms for SQLite WAL concurrency",
+    db_pool_size: int = Field(
+        default=5,
+        alias="DB_POOL_SIZE",
+        description="PostgreSQL connection pool size",
+    )
+    db_max_overflow: int = Field(
+        default=10,
+        alias="DB_MAX_OVERFLOW",
+        description="PostgreSQL max overflow connections above pool_size",
     )
 
     # Ingestion limits
@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     llm_provider: str = Field(
         default="fake",
         alias="LLM_PROVIDER",
-        description="LLM provider: fake, openai, huggingface",
+        description="LLM provider: fake, openai, huggingface, openrouter",
     )
     llm_model: str = Field(
         default="gpt-4o-mini",
@@ -100,6 +100,16 @@ class Settings(BaseSettings):
         default="",
         alias="LLM_API_KEY",
         description="API key for chosen LLM provider",
+    )
+    openrouter_key: str = Field(
+        default="",
+        alias="OPENROUTER_KEY",
+        description="OpenRouter API key for LLM chat and relation suggestion",
+    )
+    openrouter_endpoint: str = Field(
+        default="https://openrouter.ai/api/v1/chat/completions",
+        alias="OPENROUTER_ENDPOINT",
+        description="OpenRouter chat completions API endpoint",
     )
     hf_token: str = Field(
         default="",
@@ -132,9 +142,24 @@ class Settings(BaseSettings):
         description="Cap on annotation pairs checked per relation suggestion run",
     )
     min_relation_cos_sim: float = Field(
-        default=0.25,
+        default=0.40,
         alias="MIN_RELATION_COS_SIM",
-        description="Minimum cosine similarity floor for candidate relation pairs",
+        description="Minimum cosine similarity floor for candidate relation pairs (0.40 empirically separates semantic links from noise)",
+    )
+    chunk_target_tokens: int = Field(
+        default=250,
+        alias="CHUNK_TARGET_TOKENS",
+        description="Target BPE token size per lexical chunk (aligned with 256-token sentence-transformers capacity)",
+    )
+    chunk_overlap_tokens: int = Field(
+        default=50,
+        alias="CHUNK_OVERLAP_TOKENS",
+        description="Overlap BPE tokens between consecutive lexical chunks (~20% overlap prevents boundary loss)",
+    )
+    chat_top_k_chunks: int = Field(
+        default=4,
+        alias="CHAT_TOP_K_CHUNKS",
+        description="Top lexical chunks retrieved for grounding chat questions",
     )
     auto_highlight_batch_size: int = Field(
         default=20,
@@ -177,6 +202,11 @@ class Settings(BaseSettings):
         default=3000,
         alias="CHAT_MAX_CONTEXT_CHARS",
         description="Max character budget for compacted context passed to LLM",
+    )
+    chat_min_relevance: float = Field(
+        default=0.15,
+        alias="CHAT_MIN_RELEVANCE",
+        description="Minimum cosine relevance floor for vector chat context",
     )
 
     # Threading and concurrency
