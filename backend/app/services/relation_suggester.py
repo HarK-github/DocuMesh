@@ -26,6 +26,20 @@ HIGH_PRIORITY_LABEL_PAIRS = {
     frozenset({"Problem", "Solution"}),
 }
 
+RELATION_SIMILARITY_FLOORS: Dict[str, float] = {
+    "defines": 0.50,
+    "solves": 0.45,
+    "supports": 0.40,
+    "causes": 0.45,
+    "enables": 0.45,
+    "elaborates": 0.40,
+    "part_of": 0.40,
+    "contrasts_with": 0.35,
+    "conditional_on": 0.40,
+    "refutes": 0.40,
+}
+DEFAULT_SIMILARITY_FLOOR = 0.40
+
 
 def make_relation_cache_key(
     quote1: str, label1: str, quote2: str, label2: str, taxonomy_version: str
@@ -567,19 +581,22 @@ def process_suggest_relations_job(
         for a_ann, cands in anchors_to_call:
             for c in cands:
                 s_id, t_id, dyn_type = infer_dynamic_relation(
-                    a_ann.get("label"), c.get("label"), a_ann["id"], c["id"]
+                    a_ann.get("label"), c.get("label"), a_ann["id"], c["id"],
+                    seed_quote=a_ann.get("quote"), target_quote=c.get("quote"),
                 )
-                if dyn_type in taxonomy_types:
+                if dyn_type in taxonomy_types and dyn_type != "similar_to":
                     pair_key = (min(a_ann["id"], c["id"]), max(a_ann["id"], c["id"]))
                     cos_sim = pair_cos_map.get(pair_key, 0.0)
-                    successful_relations.append({
-                        "document_id": document_id,
-                        "source_id": s_id,
-                        "target_id": t_id,
-                        "type": dyn_type,
-                        "reason": f"Semantic link established by taxonomy rules (cos_sim={round(cos_sim, 3)})",
-                        "cos_score": cos_sim,
-                    })
+                    floor = RELATION_SIMILARITY_FLOORS.get(dyn_type, DEFAULT_SIMILARITY_FLOOR)
+                    if cos_sim >= floor:
+                        successful_relations.append({
+                            "document_id": document_id,
+                            "source_id": s_id,
+                            "target_id": t_id,
+                            "type": dyn_type,
+                            "reason": f"Semantic link established by taxonomy rules (cos_sim={round(cos_sim, 3)})",
+                            "cos_score": cos_sim,
+                        })
 
     if job_id:
         update_job_status(job_id, progress=p_start + int(0.85 * (p_end - p_start)))
@@ -598,12 +615,23 @@ def process_suggest_relations_job(
                 .first()
             )
             if not exists:
+                cos_score = item.get("cos_score") or 0.0
+                floor = RELATION_SIMILARITY_FLOORS.get(item["type"], DEFAULT_SIMILARITY_FLOOR)
+                # Ensure rule/taxonomy edges below floor are NEVER marked 'confirmed'
+                # and similar_to is NEVER marked 'confirmed'
+                if item["type"] == "similar_to":
+                    eff_status = "suggested"
+                elif cos_score < floor and ("taxonomy rules" in str(item.get("reason", "")) or "dynamic" in str(item.get("reason", ""))):
+                    eff_status = "suggested"
+                else:
+                    eff_status = target_status
+
                 rel = Relation(
                     document_id=item["document_id"],
                     source_id=item["source_id"],
                     target_id=item["target_id"],
                     type=item["type"],
-                    status=target_status,
+                    status=eff_status,
                     reason=item["reason"],
                     cos_score=item.get("cos_score"),
                     version=1,

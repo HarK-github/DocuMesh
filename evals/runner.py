@@ -142,7 +142,11 @@ def run_document_evaluation(
             raise ValueError(f"Document {document_id} not found in database")
         clean_text = doc.clean_text or ""
         ann_rows = session.query(Annotation).filter(Annotation.document_id == document_id).all()
-        rel_rows = session.query(Relation).filter(Relation.document_id == document_id).all()
+        rel_rows = (
+            session.query(Relation)
+            .filter(Relation.document_id == document_id, Relation.status == "confirmed")
+            .all()
+        )
 
         current_annotations = [
             {"id": a.id, "quote": a.quote, "label": a.label, "start": a.start, "end": a.end, "note": a.note}

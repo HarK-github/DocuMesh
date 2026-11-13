@@ -139,6 +139,59 @@ def create_annotation(
 
     db.commit()
     db.refresh(annotation)
+
+    # 4. Synchronize with unified graph schema (Mention and Node)
+    try:
+        from backend.app.services.entity_resolution import EntityResolutionService
+        from backend.app.models import Sentence, Mention, Chunk
+        resolver = EntityResolutionService(db)
+        is_global = payload.label in {"Method", "Dataset", "Metric", "Task", "System", "Problem", "Solution"}
+        node = resolver.resolve_or_create_node(
+            name=expected_quote,
+            node_type=payload.label,
+            document_id=document_id if not is_global else None,
+            is_global=is_global,
+            description=payload.note,
+        )
+        sent = (
+            db.query(Sentence)
+            .filter(
+                Sentence.document_id == document_id,
+                Sentence.start <= snapped_start,
+                Sentence.end >= snapped_start,
+            )
+            .first()
+        )
+        page_num = sent.page if sent else 1
+        chunk = (
+            db.query(Chunk)
+            .filter(
+                Chunk.document_id == document_id,
+                Chunk.start <= snapped_start,
+                Chunk.end >= snapped_end,
+            )
+            .first()
+        )
+        mention = Mention(
+            id=annotation.id,
+            document_id=document_id,
+            chunk_id=chunk.id if chunk else None,
+            node_id=node.id,
+            quote=expected_quote,
+            start=snapped_start,
+            end=snapped_end,
+            page=page_num,
+            note=payload.note,
+            x=payload.x or 0.0,
+            y=payload.y or 0.0,
+            version=1,
+            status="confirmed",
+        )
+        db.add(mention)
+        db.commit()
+    except Exception:
+        pass
+
     return annotation
 
 
@@ -234,3 +287,31 @@ def delete_annotation(annotation_id: int, db: Session = Depends(get_db)) -> None
     db.delete(annotation)
     db.commit()
     return None
+
+
+@router.post("/annotations/{annotation_id}/merge")
+def merge_annotation_endpoint(
+    annotation_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Merge an absorbed annotation into surviving annotation with audit logging."""
+    from backend.app.services.entity_resolution import EntityResolutionService
+
+    absorbed_id = payload.get("absorbed_annotation_id")
+    reason = payload.get("reason", "Duplicate or near-duplicate node merging")
+    adjudicated_by = payload.get("adjudicated_by", "manual")
+    if not absorbed_id:
+        raise HTTPException(status_code=422, detail="absorbed_annotation_id is required")
+
+    resolver = EntityResolutionService(db)
+    try:
+        return resolver.merge_annotations(
+            surviving_ann_id=annotation_id,
+            absorbed_ann_id=absorbed_id,
+            reason=reason,
+            adjudicated_by=adjudicated_by,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

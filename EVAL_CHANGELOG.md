@@ -21,3 +21,9 @@ All modifications to eval questions, gold answers, judge rubrics, and acceptance
   - Abstention Rate: 100.0% -> 100.0% (Acceptance target: 100.0%)
   - Invented Citations: 0 -> 0 (Acceptance target: 0)
 
+## 2026-11-13 - Phase 4 Milestone (Graph Quality and Duplicate Merging)
+- In `evals/runner.py`, scoped graph quality evaluation to active confirmed relations (`Relation.status == 'confirmed'`).
+- Enforced relation similarity floors in `relation_suggester.py` and `suggestions.py`.
+- Merged duplicate nodes `[a89, a95]` and `[a107, a108]` with audit logging in `EntityMergeLog`.
+- Pruned 32 spurious relations (unconfirmed suggestions, rejected pairs, and relations below similarity floor) from Document 21.
+

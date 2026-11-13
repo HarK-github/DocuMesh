@@ -19,16 +19,6 @@ from backend.app.settings import get_settings
 router = APIRouter(tags=["Suggestions"])
 
 
-def _deserialize_embedding(blob: bytes) -> np.ndarray:
-    """Convert stored BLOB into 1D float32 numpy array."""
-    return np.frombuffer(blob, dtype=np.float32)
-
-
-def _serialize_embedding(arr: np.ndarray) -> bytes:
-    """Convert numpy array into raw byte string for BLOB storage."""
-    return np.asarray(arr, dtype=np.float32).tobytes()
-
-
 @router.get("/documents/{document_id}/suggestions", response_model=List[SuggestionResponse])
 def list_suggestions(
     document_id: int,
@@ -176,7 +166,7 @@ def generate_highlight_suggestions(
     if missing_texts:
         computed = embedder.embed(missing_texts)
         for i, emb in zip(missing_indices, computed):
-            sentences[i].embedding = _serialize_embedding(emb)
+            sentences[i].embedding = np.asarray(emb, dtype=np.float32).tolist()
         db.commit()
 
     # 1. Positives
@@ -194,7 +184,7 @@ def generate_highlight_suggestions(
             positive_embs = list(embedder.embed([seed_ann.quote]))
         else:
             first_sent = sentences[0]
-            positive_embs = [_deserialize_embedding(first_sent.embedding)] if first_sent.embedding else []
+            positive_embs = [np.asarray(first_sent.embedding, dtype=np.float32)] if first_sent.embedding is not None else []
 
     if not positive_embs:
         return []
@@ -210,12 +200,12 @@ def generate_highlight_suggestions(
         .all()
     )
     negative_embs = [
-        _deserialize_embedding(s.sentence.embedding)
+        np.asarray(s.sentence.embedding, dtype=np.float32)
         for s in rejected_sugs
         if s.sentence and s.sentence.embedding is not None
     ]
 
-    # 3. Retrieve candidates using SQLite embeddings
+    # 3. Retrieve candidates using pgvector embeddings
     q_vec = np.mean(positive_embs, axis=0)
     raw_candidates = retrieve_candidates(
         query_vector=q_vec,
@@ -235,7 +225,7 @@ def generate_highlight_suggestions(
                     "start": s.start,
                     "end": s.end,
                     "page": s.page,
-                    "embedding": _deserialize_embedding(s.embedding),
+                    "embedding": np.asarray(s.embedding, dtype=np.float32),
                 })
 
     # 4. Filters:
@@ -267,10 +257,9 @@ def generate_highlight_suggestions(
 
         c_vec = cand.get("embedding") if cand.get("embedding") is not None else cand.get("vector")
         if c_vec is None:
-            # Look up sentence embedding
             sent_obj = db.query(Sentence).filter(Sentence.id == s_id).first()
-            if sent_obj and sent_obj.embedding:
-                c_vec = _deserialize_embedding(sent_obj.embedding)
+            if sent_obj and sent_obj.embedding is not None:
+                c_vec = np.asarray(sent_obj.embedding, dtype=np.float32)
             else:
                 continue
 
@@ -358,8 +347,10 @@ def infer_dynamic_relation(
     target_label: Optional[str],
     seed_id: int,
     target_id: int,
+    seed_quote: Optional[str] = None,
+    target_quote: Optional[str] = None,
 ) -> tuple[int, int, str]:
-    """Dynamically determine typed relationship and direction based on annotation labels."""
+    """Dynamically determine typed relationship and direction based on annotation labels and content."""
     s = (seed_label or "").lower()
     t = (target_label or "").lower()
 
@@ -371,20 +362,33 @@ def infer_dynamic_relation(
         src = target_id if s == "claim" else seed_id
         tgt = seed_id if s == "claim" else target_id
         return src, tgt, "supports"
-    if s == "definition":
-        return seed_id, target_id, "defines"
-    if t == "definition":
-        return target_id, seed_id, "defines"
     if s == "method" and t == "result":
         return seed_id, target_id, "causes"
     if s == "result" and t == "method":
         return target_id, seed_id, "causes"
+
+    # Only create "defines" if the target passage actually mentions key terms from the definition
+    if s == "definition" and seed_quote and target_quote:
+        s_words = {w.lower().strip(".,'\"():") for w in seed_quote.split() if len(w) > 4}
+        t_words = {w.lower().strip(".,'\"():") for w in target_quote.split() if len(w) > 4}
+        if len(s_words & t_words) >= 2:
+            return seed_id, target_id, "defines"
+        return seed_id, target_id, "similar_to"
+    if t == "definition" and seed_quote and target_quote:
+        s_words = {w.lower().strip(".,'\"():") for w in seed_quote.split() if len(w) > 4}
+        t_words = {w.lower().strip(".,'\"():") for w in target_quote.split() if len(w) > 4}
+        if len(s_words & t_words) >= 2:
+            return target_id, seed_id, "defines"
+        return target_id, seed_id, "similar_to"
+
     return seed_id, target_id, "similar_to"
 
 
 @router.post("/suggestions/{suggestion_id}/accept", response_model=SuggestionResponse)
 def accept_suggestion(suggestion_id: int, db: Session = Depends(get_db)) -> SuggestionResponse:
     """Accept a suggestion: create annotation and confirmed dynamic relation in one transaction (idempotent)."""
+    from backend.app.services.relation_suggester import RELATION_SIMILARITY_FLOORS, DEFAULT_SIMILARITY_FLOOR
+
     sug = db.query(Suggestion).filter(Suggestion.id == suggestion_id).first()
     if not sug:
         raise HTTPException(status_code=404, detail="Suggestion not found")
@@ -431,9 +435,21 @@ def accept_suggestion(suggestion_id: int, db: Session = Depends(get_db)) -> Sugg
                 or db.query(Annotation).filter(Annotation.id == sug.seed_annotation_id).first()
             )
             seed_label = seed_ann.label if seed_ann else None
+            seed_quote = seed_ann.quote if seed_ann else None
             src_id, tgt_id, dynamic_type = infer_dynamic_relation(
-                seed_label, ann.label, sug.seed_annotation_id, ann.id
+                seed_label, ann.label, sug.seed_annotation_id, ann.id,
+                seed_quote=seed_quote, target_quote=ann.quote,
             )
+
+            floor = RELATION_SIMILARITY_FLOORS.get(dynamic_type, DEFAULT_SIMILARITY_FLOOR)
+            sug_score = float(sug.score or 0.0)
+
+            # Rule/taxonomy edges below floor are NEVER marked 'confirmed'
+            # and similar_to is NEVER marked 'confirmed'
+            if dynamic_type == "similar_to" or sug_score < floor:
+                rel_status = "suggested"
+            else:
+                rel_status = "confirmed"
 
             rel = (
                 db.query(Relation)
@@ -451,8 +467,9 @@ def accept_suggestion(suggestion_id: int, db: Session = Depends(get_db)) -> Sugg
                     source_id=src_id,
                     target_id=tgt_id,
                     type=dynamic_type,
-                    status="confirmed",
-                    reason=str(round(sug.score, 4)),
+                    status=rel_status,
+                    reason=f"Dynamic taxonomy link (score={round(sug_score, 4)})",
+                    cos_score=sug_score,
                     version=1,
                 )
                 db.add(rel)
