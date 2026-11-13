@@ -84,7 +84,7 @@ flowchart TD
     end
 
     CitationValidator --> ChatPanel
-    ChatPanel <-->|Click [s*] / [r*]| ReaderView
+    ChatPanel <-->|Click Grounded Citation| ReaderView
     ChatPanel <-->|Focus Relation Edge| GraphView
 ```
 

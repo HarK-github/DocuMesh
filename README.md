@@ -52,7 +52,7 @@ flowchart TD
     DB <--> Graph
     Reader <-->|Bidirectional Focus Sync| Graph
     RRF --> Chat
-    Chat <-->|Click Citation [s*] / [r*]| Reader
+    Chat <-->|Click Grounded Citation| Reader
     Chat <-->|Focus Relation Edge| Graph
 ```
 
