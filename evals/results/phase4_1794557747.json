@@ -1,0 +1,1863 @@
+{
+  "document_id": 21,
+  "tag": "phase4",
+  "timestamp": "2026-11-13T08:15:47.628018+00:00",
+  "summary": {
+    "overall": {
+      "count": 22,
+      "gold_span_recall": 1.0,
+      "mrr": 0.3601,
+      "dangling_id_rate": 0.0,
+      "similar_to_share": 0.0,
+      "correctness": 4.55,
+      "faithfulness": 4.55,
+      "citation_support": 5.0,
+      "completeness": 4.55,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 0
+    },
+    "dev": {
+      "count": 14,
+      "gold_span_recall": 1.0,
+      "mrr": 0.3045,
+      "dangling_id_rate": 0.0,
+      "similar_to_share": 0.0,
+      "correctness": 4.57,
+      "faithfulness": 4.57,
+      "citation_support": 5.0,
+      "completeness": 4.57,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 0
+    },
+    "held_out": {
+      "count": 8,
+      "gold_span_recall": 1.0,
+      "mrr": 0.4712,
+      "dangling_id_rate": 0.0,
+      "similar_to_share": 0.0,
+      "correctness": 4.5,
+      "faithfulness": 4.5,
+      "citation_support": 5.0,
+      "completeness": 4.5,
+      "abstention_rate": 1.0,
+      "invented_citations_count": 0
+    }
+  },
+  "graph_quality": {
+    "node_count": 21,
+    "node_label_accuracy": 0.381,
+    "per_class_accuracy": {
+      "Problem": {
+        "correct": 3,
+        "total": 3
+      },
+      "Method": {
+        "correct": 0,
+        "total": 3
+      },
+      "Claim": {
+        "correct": 0,
+        "total": 3
+      },
+      "Definition": {
+        "correct": 3,
+        "total": 5
+      },
+      "Evidence": {
+        "correct": 1,
+        "total": 3
+      },
+      "Result": {
+        "correct": 0,
+        "total": 2
+      },
+      "Solution": {
+        "correct": 1,
+        "total": 1
+      }
+    },
+    "total_edges": 45,
+    "valid_edges": 13,
+    "invalid_edges_count": 32,
+    "invalid_edges": [
+      {
+        "source": "a110",
+        "target": "a89",
+        "type": "solves",
+        "reason": "Spurious rule edge: a universal computer does not directly solve 'Can machines think?' without intermediate reasoning"
+      },
+      {
+        "source": "a89",
+        "target": "a97",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a89",
+        "target": "a98",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a90",
+        "target": "a89",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a89",
+        "target": "a92",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a89",
+        "target": "a94",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a107",
+        "target": "a89",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a110",
+        "target": "a92",
+        "type": "solves",
+        "reason": "Spurious rule edge (cos_sim=0.271) claiming digital computer solves the imitation game"
+      },
+      {
+        "source": "a92",
+        "target": "a97",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      },
+      {
+        "source": "a92",
+        "target": "a98",
+        "type": "similar_to",
+        "reason": "Spurious similar_to edge"
+      }
+    ],
+    "edge_precision": 0.2889,
+    "edges_below_floor_confirmed": 0,
+    "duplicate_rate": 0.0
+  },
+  "highlight_quality": {
+    "annotations_count": 21,
+    "key_ideas_total": 13,
+    "key_ideas_covered": 9,
+    "key_idea_recall": 0.6923,
+    "forbidden_highlights_count": 5,
+    "forbidden_samples": [
+      {
+        "id": 88,
+        "quote": "COMPUTING MACHINERY AND INTELLIGENCE By A. M. Turing",
+        "reason": "Title and author byline header."
+      },
+      {
+        "id": 89,
+        "quote": "1. The Imitation Game I propose to consider the question, 'Can machines think?'",
+        "reason": "Section title header."
+      },
+      {
+        "id": 96,
+        "quote": "2. Critique of the New Problem As well as asking, 'What is the answer to this new form of the question', one may ask, 'Is this new question a worthy one to investigate?'",
+        "reason": "Section title header."
+      },
+      {
+        "id": 99,
+        "quote": "3. The Digital Computers The idea behind digital computers may be explained by saying that these machines are intended to carry out any operations which could be done by a human computer.",
+        "reason": "Section title header."
+      },
+      {
+        "id": 106,
+        "quote": "4. Universality of Digital Computers Digital computers can be constructed, and indeed have been constructed, according to these principles.",
+        "reason": "Section title header."
+      }
+    ],
+    "density_per_100_words": 3.87,
+    "percent_sentences_highlighted": 61.76,
+    "boundary_quality": 0.9048
+  },
+  "qa_details": [
+    {
+      "id": "q1",
+      "question": "What is the imitation game?",
+      "type": "definitional",
+      "split": "dev",
+      "answer": "The imitation game is a game played with three people, a man (A), a woman (B), and an interrogator (C) who may be of either sex. The object of the game for the interrogator is to determine which of the other two is the man and which is the woman. [c124]",
+      "latency_seconds": 3.83,
+      "retrieval": {
+        "gold_spans_total": 4,
+        "gold_spans_recalled": 4,
+        "gold_span_recall": 1.0,
+        "mrr": 0.1333,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.25,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2976,
+        "context_approx_tokens": 513,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited bracketed ID [c124] directly supports the specific claim it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q2",
+      "question": "What does the interrogator do?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "The object of the game for the interrogator is to determine which of the other two is the man and which is the woman [a93].",
+      "latency_seconds": 3.07,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 2,
+        "gold_span_recall": 1.0,
+        "mrr": 0.5,
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2885,
+        "context_approx_tokens": 499,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but minor non-critical detail omitted. The interrogator's object is to determine which of the other two is the man and which is the woman.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail omitted. The interrogator's object is to determine which of the other two is the man and which is the woman.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The core response is fully supported; at most one minor extrapolated word/phrasing that does not alter meaning. The generated answer is based on the provided context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears. The generated answer is supported by the provided context text.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but minor details are omitted."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q3",
+      "question": "Why does Turing replace 'Can machines think?'",
+      "type": "why_purpose",
+      "split": "dev",
+      "answer": "Turing replaces 'Can machines think?' with \"Will the interrogator decide wrongly as often when the game is played like this as he does when the game is played between a man and a woman?\" [c124, c125]",
+      "latency_seconds": 3.75,
+      "retrieval": {
+        "gold_spans_total": 4,
+        "gold_spans_recalled": 4,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0982,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.25
+      },
+      "context_structure": {
+        "context_chars": 2793,
+        "context_approx_tokens": 485,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer accurately reflects the content of the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the content of the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "All cited bracketed IDs directly support the specific claim or sentence they are attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q4",
+      "question": "What advantage does the imitation game have?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "The imitation game has the advantage of drawing a fairly sharp line between the physical and the intellectual capacities of a human being [a98].",
+      "latency_seconds": 2.72,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2976,
+        "context_approx_tokens": 513,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited bracketed ID [a98] directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable and the model provides a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q5",
+      "question": "What happens when a machine takes the part of A?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to the text, when a machine takes the part of A in the imitation game, the interrogator may decide wrongly as often as he does when the game is played between a man and a woman [c124].",
+      "latency_seconds": 2.64,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 2,
+        "gold_span_recall": 1.0,
+        "mrr": 0.5,
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2877,
+        "context_approx_tokens": 484,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer mostly correctly addresses the question, but omits some minor details. The core response is accurate, but minor extrapolated words/phrasing do not alter meaning.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly addresses the question, but omits some minor details. The core response is accurate, but minor extrapolated words/phrasing do not alter meaning.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly supported by the provided context, but contains one minor extrapolated word/phrasing that does not alter meaning.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited bracketed ID [c124] directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially addresses all components of the question, but may be considered superficial.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information, and does not hallucinate an answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q6",
+      "question": "What are the three parts of a digital computer?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to [c126], a digital computer can usually be regarded as consisting of three parts: (i) Store of information, (ii) Executive unit which carries out operations, and (iii) Control which ensures instructions are obeyed correctly.",
+      "latency_seconds": 5.46,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2837,
+        "context_approx_tokens": 470,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provided a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q7",
+      "question": "What is a universal machine according to Turing?",
+      "type": "definitional",
+      "split": "dev",
+      "answer": "According to Turing, a universal machine is a machine that can simulate any discrete state machine [c126, (iii)]. This special property of digital computers, that they can simulate any discrete state machine, is described by saying that they are universal machines [c126, (iii)].",
+      "latency_seconds": 3.44,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 2,
+        "gold_span_recall": 1.0,
+        "mrr": 0.1,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2899,
+        "context_approx_tokens": 478,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer accurately reflects the definition of a universal machine according to Turing.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer accurately reflects the definition of a universal machine according to Turing.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer strictly grounds its claims in the provided context text, with no hallucination.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "All cited bracketed IDs directly support the specific claims or sentences they are attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer thoroughly addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing an answer when the question is answerable."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q8",
+      "question": "How does the human computer operate according to the text?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to the text, the human computer is supposed to follow fixed rules, which are supplied in a book, and has no authority to deviate from them in any detail [c126].",
+      "latency_seconds": 5.64,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 3,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2959,
+        "context_approx_tokens": 489,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly states that the human computer is supposed to follow fixed rules without authority to deviate from them in any detail, using rules supplied in a book. However, it omits the detail about the unlimited supply of paper for calculations.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly states that the human computer is supposed to follow fixed rules without authority to deviate from them in any detail, using rules supplied in a book. However, it omits the detail about the unlimited supply of paper for calculations.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, accurately citing [c126] to support the claim. However, it does not fully capture the nuances of the original text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer accurately cites [c126] to support the claim, and the cited ID directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, accurately stating the main point about the human computer following fixed rules. However, it omits some details from the original text.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer provides a response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q9",
+      "question": "Why is it unnecessary to design various new machines for different computing processes?",
+      "type": "why_purpose",
+      "split": "dev",
+      "answer": "According to [c127], \"The existence of machines with this property has the important consequence that, considerations of speed apart, it is unnecessary to design various new machines to do various computing processes.\"",
+      "latency_seconds": 3.73,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 2,
+        "gold_span_recall": 1.0,
+        "mrr": 0.5556,
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5
+      },
+      "context_structure": {
+        "context_chars": 2990,
+        "context_approx_tokens": 464,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable and the model provides a correct answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q10",
+      "question": "Can engineers or chemists make artificial human skin according to the author?",
+      "type": "factual",
+      "split": "dev",
+      "answer": "According to the author, it is possible that at some time this might be done, but even if this invention were available, it would be of little interest to try to make a 'thinking machine' more human by dressing it up in such artificial flesh. [c125]",
+      "latency_seconds": 3.09,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 2,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2976,
+        "context_approx_tokens": 486,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but minor non-critical detail is omitted. The core response is accurate, but the author's tone and nuances are not fully captured.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail is omitted. The core response is accurate, but the author's tone and nuances are not fully captured.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the cited context, but contains a minor extrapolated word/phrasing that does not alter meaning. The core response is supported by the provided context text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited bracketed ID [c125] directly supports the specific claim or sentence it is attached to. The citation is accurate and relevant.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but does not fully address all aspects of the user's question. The main question is directly answered, but some nuances are omitted.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer is provided."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q11",
+      "question": "How does the imitation game separate physical capacities from intellectual capacities?",
+      "type": "multi_hop",
+      "split": "dev",
+      "answer": "According to the text, the imitation game has the advantage of drawing a fairly sharp line between the physical and the intellectual capacities of a human being [a98].",
+      "latency_seconds": 2.01,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 3,
+        "gold_span_recall": 1.0,
+        "mrr": 0.3333,
+        "recall_at_1": 0.3333,
+        "recall_at_3": 0.3333,
+        "recall_at_5": 0.3333
+      },
+      "context_structure": {
+        "context_chars": 2976,
+        "context_approx_tokens": 513,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly addresses the question, but omits some minor details. The core idea of the imitation game separating physical and intellectual capacities is present.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly addresses the question, but omits some minor details. The core idea of the imitation game separating physical and intellectual capacities is present.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but contains a minor extrapolated phrase that does not alter the meaning. The core response is fully supported by the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited bracketed ID [a98] directly supports the specific claim it is attached to, and all cited IDs exist.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but omits some minor details. The main idea of the imitation game is addressed.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q12",
+      "question": "What connects the rules supplied in a book to the operations of a digital computer?",
+      "type": "multi_hop",
+      "split": "dev",
+      "answer": "The rules supplied in a book are connected to the operations of a digital computer through the Executive unit which carries out operations [a104].",
+      "latency_seconds": 2.16,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 3,
+        "gold_span_recall": 1.0,
+        "mrr": 0.4333,
+        "recall_at_1": 0.3333,
+        "recall_at_3": 0.3333,
+        "recall_at_5": 0.6667
+      },
+      "context_structure": {
+        "context_chars": 2970,
+        "context_approx_tokens": 454,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer mostly correctly identifies the connection between the rules supplied in a book and the operations of a digital computer, but omits some nuances.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly identifies the connection between the rules supplied in a book and the operations of a digital computer, but omits some nuances.",
+              "failed_claims": [
+                "The generated answer does not explicitly mention the control component, which is also crucial in ensuring instructions are obeyed correctly."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but contains a minor extrapolation in the phrase 'through the Executive unit which carries out operations'.",
+              "failed_claims": [
+                "The generated answer does not directly support the claim that the Executive unit is the only part responsible for carrying out operations."
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer accurately cites the relevant context chunk [a104] to support the claim.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but omits some minor details.",
+              "failed_claims": [
+                "The generated answer does not explicitly address the role of the control component in ensuring instructions are obeyed correctly."
+              ]
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly identifies the connection between the rules supplied in a book and the operations of a digital computer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q13",
+      "question": "What year was the Turing machine first built in hardware?",
+      "type": "unanswerable",
+      "split": "dev",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 1.71,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2831,
+        "context_approx_tokens": 472,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so there is no citation support to evaluate.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains by stating it cannot find the information."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q14",
+      "question": "What programming language was used to program the digital computer?",
+      "type": "unanswerable",
+      "split": "dev",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 1.4,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2957,
+        "context_approx_tokens": 451,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer matches the gold answer, indicating that the model correctly abstains from providing a specific programming language.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer matches the gold answer, indicating that the model correctly abstains from providing a specific programming language.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in the provided context, with no claims not found in the context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so citation support is not applicable.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question, providing a clear and concise response."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The model correctly abstains from providing a specific programming language, stating that it couldn't find the information in the document."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q15",
+      "question": "Can digital computers mimic discrete state machines?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "Yes, digital computers can mimic the actions of any other discrete state machine [a107].",
+      "latency_seconds": 1.89,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2947,
+        "context_approx_tokens": 447,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is completely correct and matches the gold answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is completely correct and matches the gold answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the cited context.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited ID [a107] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The model correctly answered the question without abstaining."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q16",
+      "question": "What role does the 'Store' play in a digital computer?",
+      "type": "definitional",
+      "split": "held_out",
+      "answer": "According to [c126], a digital computer can usually be regarded as consisting of three parts: (i) Store of information. This suggests that the 'Store' plays a role in holding or storing information in a digital computer.",
+      "latency_seconds": 4.86,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.2,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2837,
+        "context_approx_tokens": 470,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly identifies the role of the 'Store' in a digital computer, but omits some minor details.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly identifies the role of the 'Store' in a digital computer, but omits some minor details.",
+              "failed_claims": [
+                {
+                  "claim": "The 'Store' plays a role in holding or storing information in a digital computer.",
+                  "reason": "The generated answer is mostly correct, but does not explicitly mention the 'Store' as the primary component for storing information."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but contains a minor extrapolated phrase that does not alter the meaning.",
+              "failed_claims": [
+                {
+                  "claim": "A digital computer can usually be regarded as consisting of three parts: (i) Store of information.",
+                  "reason": "The generated answer accurately cites the relevant context, but the phrase 'This suggests that the 'Store' plays a role in holding or storing information in a digital computer' is a minor extrapolation."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The generated answer accurately cites the relevant context, and each citation directly supports the specific claim or sentence it is attached to.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question, but does not address all aspects of the user's question.",
+              "failed_claims": [
+                {
+                  "claim": "The generated answer does not explicitly mention the 'Store' as the primary component for storing information.",
+                  "reason": "The generated answer is mostly complete, but omits some minor details."
+                }
+              ]
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the generated answer provides a correct response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q17",
+      "question": "What is the function of the executive unit in a digital computer?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "According to [a104], the executive unit in a digital computer is responsible for carrying out operations.",
+      "latency_seconds": 1.62,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2934,
+        "context_approx_tokens": 482,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but minor non-critical detail omitted. The gold answer states the executive unit carries out individual operations, while the generated answer states it carries out operations.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but minor non-critical detail omitted. The gold answer states the executive unit carries out individual operations, while the generated answer states it carries out operations.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly supported by the provided context, but contains a minor extrapolated word/phrasing that does not alter meaning.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "Every citation directly supports the exact sentence/claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but may leave out some minor details."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provided a generated answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q18",
+      "question": "What does the control component do in a digital computer?",
+      "type": "factual",
+      "split": "held_out",
+      "answer": "According to the document, the control component ensures that instructions are obeyed correctly [a102].",
+      "latency_seconds": 2.53,
+      "retrieval": {
+        "gold_spans_total": 1,
+        "gold_spans_recalled": 1,
+        "gold_span_recall": 1.0,
+        "mrr": 0.2,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2983,
+        "context_approx_tokens": 462,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 1,
+        "valid_citations_count": 1,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is mostly correct, but it lacks the nuance of the gold answer. The control component ensures that instructions are obeyed correctly and in the right order.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly correct, but it lacks the nuance of the gold answer. The control component ensures that instructions are obeyed correctly and in the right order.",
+              "failed_claims": [
+                {
+                  "claim": "The control component ensures that instructions are obeyed correctly and in the right order.",
+                  "reason": "The generated answer is missing the nuance of the gold answer."
+                }
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the context, but it lacks the nuance of the gold answer. The control component ensures that instructions are obeyed correctly [a102].",
+              "failed_claims": [
+                {
+                  "claim": "The control component ensures that instructions are obeyed correctly [a102].",
+                  "reason": "The generated answer is missing the nuance of the gold answer."
+                }
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited ID [a102] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer is substantially complete, but it lacks the nuance of the gold answer.",
+              "failed_claims": [
+                {
+                  "claim": "The control component ensures that instructions are obeyed correctly and in the right order.",
+                  "reason": "The generated answer is missing the nuance of the gold answer."
+                }
+              ]
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a generated answer."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q19",
+      "question": "Why would dressing a thinking machine in artificial flesh be of little interest?",
+      "type": "why_purpose",
+      "split": "held_out",
+      "answer": "According to the text, it is because \"it would be of little interest to try to make a 'thinking machine' more human by dressing it up in such artificial flesh\" [c125].",
+      "latency_seconds": 2.83,
+      "retrieval": {
+        "gold_spans_total": 2,
+        "gold_spans_recalled": 2,
+        "gold_span_recall": 1.0,
+        "mrr": 0.0385,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0
+      },
+      "context_structure": {
+        "context_chars": 2993,
+        "context_approx_tokens": 510,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer is a direct quote from the provided context, accurately reflecting the original text.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is a direct quote from the provided context, accurately reflecting the original text.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context, with no claims not found in the text.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited bracketed ID [c125] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question based on the document, providing a complete response."
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a direct and accurate response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q20",
+      "question": "Compare the role of the human computer with the digital computer.",
+      "type": "comparison",
+      "split": "held_out",
+      "answer": "According to [c126], a human computer is supposed to follow fixed rules, having no authority to deviate from them in any detail. He is also supposed to have an unlimited supply of paper on which he does his calculations. In contrast, a digital computer consists of three parts: (i) Store of information, (ii) Executive unit which carries out operations, and (iii) Control which ensures instructions are obeyed correctly. [c126]",
+      "latency_seconds": 3.94,
+      "retrieval": {
+        "gold_spans_total": 3,
+        "gold_spans_recalled": 3,
+        "gold_span_recall": 1.0,
+        "mrr": 0.3889,
+        "recall_at_1": 0.3333,
+        "recall_at_3": 0.3333,
+        "recall_at_5": 0.3333
+      },
+      "context_structure": {
+        "context_chars": 2904,
+        "context_approx_tokens": 477,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": false
+      },
+      "judge": {
+        "correctness_mean": 4.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 4.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 4.0,
+        "abstention_verdict": "n/a",
+        "judge_reasons": "The generated answer mostly correctly describes the role of the human computer in comparison to the digital computer. However, it slightly deviates from the gold answer by not mentioning the unlimited supply of paper.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 4,
+              "reasons": "The generated answer mostly correctly describes the role of the human computer in comparison to the digital computer. However, it slightly deviates from the gold answer by not mentioning the unlimited supply of paper.",
+              "failed_claims": [
+                "The generated answer does not mention the unlimited supply of paper."
+              ]
+            },
+            "faithfulness": {
+              "score": 4,
+              "reasons": "The generated answer is mostly faithful to the provided context, but contains a minor extrapolation by mentioning the three parts of a digital computer.",
+              "failed_claims": [
+                "The generated answer slightly deviates from the provided context by mentioning the three parts of a digital computer."
+              ]
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "The cited ID [c126] directly supports the specific claim where it appears.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 4,
+              "reasons": "The generated answer substantially completes the question by describing the role of the human computer in comparison to the digital computer.",
+              "failed_claims": []
+            },
+            "abstention": {
+              "verdict": "n/a",
+              "reasons": "The question is answerable, and the model provides a response."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q21",
+      "question": "How many vacuum tubes or transistors did Turing's computer use?",
+      "type": "unanswerable",
+      "split": "held_out",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 1.03,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2910,
+        "context_approx_tokens": 486,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer matches the gold answer, indicating that the system correctly abstained from providing an answer.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer matches the gold answer, indicating that the system correctly abstained from providing an answer.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is faithful to the context, as it correctly states that the document does not provide specifications regarding vacuum tubes or transistors.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so citation support is not applicable.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses all aspects of the user's question, as it correctly states that the document does not provide specifications regarding vacuum tubes or transistors."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The system correctly abstained from providing an answer, as the document does not provide specifications regarding vacuum tubes or transistors."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "q22",
+      "question": "Who was the first female programmer mentioned in the text?",
+      "type": "unanswerable",
+      "split": "held_out",
+      "answer": "I couldn't find this in the document.",
+      "latency_seconds": 1.9,
+      "retrieval": {
+        "gold_spans_total": 0,
+        "gold_spans_recalled": 0,
+        "gold_span_recall": 1.0,
+        "mrr": 1.0,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0
+      },
+      "context_structure": {
+        "context_chars": 2888,
+        "context_approx_tokens": 506,
+        "total_edge_lines": 0,
+        "similar_to_edges": 0,
+        "similar_to_share": 0.0,
+        "total_edge_refs": 0,
+        "dangling_refs_count": 0,
+        "dangling_ids": [],
+        "dangling_id_rate": 0.0
+      },
+      "deterministic_citations": {
+        "total_citations": 0,
+        "valid_citations_count": 0,
+        "invented_citations_count": 0,
+        "invented_citations": [],
+        "citation_accuracy": 1.0,
+        "abstention_pass": true,
+        "has_abstention_phrase": true
+      },
+      "judge": {
+        "correctness_mean": 5.0,
+        "correctness_spread": 0.0,
+        "faithfulness_mean": 5.0,
+        "faithfulness_spread": 0.0,
+        "citation_support_mean": 5.0,
+        "completeness_mean": 5.0,
+        "abstention_verdict": "pass",
+        "judge_reasons": "The generated answer is identical to the gold answer, indicating complete correctness.",
+        "all_runs": [
+          {
+            "correctness": {
+              "score": 5,
+              "reasons": "The generated answer is identical to the gold answer, indicating complete correctness.",
+              "failed_claims": []
+            },
+            "faithfulness": {
+              "score": 5,
+              "reasons": "The generated answer is strictly grounded in and supported by the provided context, with no hallucination.",
+              "failed_claims": []
+            },
+            "citation_support": {
+              "score": 5,
+              "reasons": "There are no citations in the generated answer, so citation support is not applicable.",
+              "invalid_citations": []
+            },
+            "completeness": {
+              "score": 5,
+              "reasons": "The generated answer addresses the question directly and exhaustively, with no omitted crucial aspects."
+            },
+            "abstention": {
+              "verdict": "pass",
+              "reasons": "The generated answer correctly abstains from providing a specific answer, stating that it couldn't find the information."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
